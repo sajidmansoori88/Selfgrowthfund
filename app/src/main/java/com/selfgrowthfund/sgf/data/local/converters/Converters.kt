@@ -6,6 +6,8 @@ import com.google.gson.reflect.TypeToken
 import java.util.*
 
 class Converters {
+    private val gson = Gson()
+
     // Existing Date converters
     @TypeConverter
     fun fromTimestamp(value: Long?): Date? = value?.let { Date(it) }

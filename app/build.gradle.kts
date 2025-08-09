@@ -1,139 +1,103 @@
-import org.gradle.kotlin.dsl.implementation
+    plugins {
+        alias(libs.plugins.android.application)
+        alias(libs.plugins.kotlin.android)
+        alias(libs.plugins.ksp)
+        alias(libs.plugins.dagger.hilt.android)
+    }
 
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.dagger.hilt.android")
-    id("com.google.devtools.ksp")
-    kotlin("kapt")
-}
+    android {
+        namespace = "com.selfgrowthfund.sgf"
+        compileSdk = 34
 
-android {
-    namespace = "com.selfgrowthfund.sgf"
-    compileSdk = 34
+        defaultConfig {
+            applicationId = "com.selfgrowthfund.sgf"
+            minSdk = 24
+            targetSdk = 34
+            versionCode = 1
+            versionName = "1.0"
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            vectorDrawables.useSupportLibrary = true
+        }
 
-    defaultConfig {
-        applicationId = "com.selfgrowthfund.sgf"
-        minSdk = 23
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
-
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments += mapOf(
-                    "room.schemaLocation" to "$projectDir/schemas",
-                    "room.incremental" to "true",
-                    "room.expandProjection" to "true"
+        buildTypes {
+            release {
+                isMinifyEnabled = false
+                proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
                 )
             }
         }
-    }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
         }
-        debug {
-            applicationIdSuffix = ".debug"
-            isDebuggable = true
+
+        kotlinOptions {
+            jvmTarget = "17"
         }
-    }
 
-    compileOptions {
-        isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
+        buildFeatures {
+            compose = true
+        }
 
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs = listOf(
-            "-Xjvm-default=all",
-            "-opt-in=kotlin.RequiresOptIn"
-        )
-    }
-
-    buildFeatures {
-        viewBinding = true
-        buildConfig = true
-        compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
-    }
-
-    lint {
-        disable += "Instantiatable" // Fix for Hilt false positive on @HiltAndroidApp
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            excludes += "META-INF/versions/9/previous-compilation-data.bin"
+        composeOptions {
+            kotlinCompilerExtensionVersion = "1.5.11"
         }
     }
-}
 
-dependencies {
-    /* Core */
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.10.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.activity:activity-ktx:1.8.0")
-    implementation("androidx.fragment:fragment-ktx:1.6.1")
+    dependencies {
+        // Compose
+        implementation(platform(libs.composeBom))
+        implementation(libs.compose.ui)
+        implementation(libs.compose.material3)
+        implementation(libs.compose.foundation)
+        implementation(libs.compose.runtime)
+        implementation(libs.compose.ui.text)
+        implementation(libs.compose.tooling.preview)
+        debugImplementation(libs.compose.tooling)
 
-    /* Compose */
-    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
-    implementation("androidx.activity:activity-compose:1.8.0")
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+        // AndroidX Core
+        implementation(libs.androidx.core.ktx)
+        implementation(libs.androidx.appcompat)
+        implementation(libs.material)
+        implementation(libs.androidx.constraintlayout)
+        implementation(libs.androidx.activity.ktx)
+        implementation(libs.androidx.fragment.ktx)
 
-    /* Room */
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    ksp("androidx.room:room-compiler:$roomVersion")
 
-    /* Hilt */
-    implementation("com.google.dagger:hilt-android:2.48.1")
-    kapt("com.google.dagger:hilt-android-compiler:2.48.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+        // Room
+        implementation(libs.room.runtime)
+        implementation(libs.room.ktx)
+        ksp(libs.room.compiler)
+        testImplementation(libs.androidx.room.testing)
 
-    /* Coroutines */
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+        // Lifecycle
+        implementation(libs.androidx.lifecycle.viewmodel.ktx)
+        implementation(libs.androidx.lifecycle.livedata.ktx)
+        implementation(libs.androidx.lifecycle.runtime.ktx)
+        implementation(libs.androidx.lifecycle.runtime.compose)
 
-    /* Gson (TypeConverters) */
-    implementation("com.google.code.gson:gson:2.10.1")
+        // Coroutines
+        implementation(libs.kotlinx.coroutines.android)
+        implementation(libs.kotlinx.coroutines.test)
+        implementation(libs.kotlinx.coroutines.core)
 
-    /* Desugaring */
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+        // Networking
+        implementation(libs.retrofit)
+        implementation(libs.okhttp)
+        implementation(libs.okhttp.logging.interceptor)
 
-    /* Testing */
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-}
+        // Hilt
+        implementation(libs.hilt.android)
+        ksp(libs.hilt.compiler)
 
-kapt {
-    correctErrorTypes = true
-}
+        // Desugaring
+        coreLibraryDesugaring(libs.android.desugar.jdk.libs)
 
-ksp {
-    arg("room.generateKotlin", "true")
-    arg("room.incremental", "true")
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
+        // Testing
+        testImplementation(libs.junit)
+        androidTestImplementation(libs.androidx.junit)
+        androidTestImplementation(libs.androidx.espresso.core)
+    }

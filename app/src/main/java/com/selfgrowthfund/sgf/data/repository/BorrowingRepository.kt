@@ -7,6 +7,7 @@ import com.selfgrowthfund.sgf.data.local.entities.BorrowingStatus
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
+import java.util.Locale
 import javax.inject.Inject
 
 class BorrowingRepository @Inject constructor(
@@ -90,6 +91,6 @@ class BorrowingRepository @Inject constructor(
     private suspend fun generateNextBorrowingId(): String {
         val lastId = borrowingDao.getLastBorrowingId()
         val numeric = lastId?.removePrefix("BR")?.toIntOrNull() ?: 0
-        return "BR" + String.format("%04d", numeric + 1)
+        return "BR" + String.format(Locale.US, "%04d", numeric + 1)
     }
 }

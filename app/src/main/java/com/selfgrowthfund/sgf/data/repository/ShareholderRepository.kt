@@ -1,4 +1,3 @@
-// app/src/main/java/com/selfgrowthfund/sgf/data/repository/ShareholderRepositoryImpl.kt
 package com.selfgrowthfund.sgf.data.repository
 
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
@@ -12,38 +11,51 @@ class ShareholderRepository @Inject constructor(
     private val dao: ShareholderDao,
     private val dates: Dates
 ) {
-    // Flow for reactive updates
+    // Reactive streams
     fun getAllShareholdersStream(): Flow<List<Shareholder>> = dao.getAllShareholdersFlow()
+    fun getShareholderByIdStream(id: String): Flow<Shareholder?> = dao.getShareholderByIdFlow(id)
 
-    // Standard suspend functions
+    // Direct access
     suspend fun getShareholderById(id: String): Shareholder? = dao.getShareholderById(id)
 
     suspend fun searchShareholders(query: String): List<Shareholder> =
         dao.searchShareholders("%$query%")
 
-    suspend fun addShareholder(shareholder: Shareholder): Result<Unit> = try {
-        shareholder.apply {
-            createdAt = dates.now()
-            updatedAt = createdAt
-        }
-        dao.insertShareholder(shareholder)
+    suspend fun addShareholder(shareholder: Shareholder): kotlin.Result<Unit> = try {
+        val timestamp = dates.now()
+        val newShareholder = shareholder.copy(
+            createdAt = timestamp,
+            updatedAt = timestamp
+        )
+        dao.insertShareholder(newShareholder)
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
 
-    suspend fun updateShareholder(shareholder: Shareholder): Result<Unit> = try {
-        shareholder.updatedAt = dates.now()
-        dao.updateShareholder(shareholder)
+    suspend fun updateShareholder(shareholder: Shareholder): kotlin.Result<Unit> = try {
+        val updated = shareholder.copy(updatedAt = dates.now())
+        dao.updateShareholder(updated)
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
 
-    suspend fun deleteShareholder(id: String): Result<Unit> = try {
-        dao.deleteShareholder(id)
+    suspend fun deleteShareholder(id: String): kotlin.Result<Unit> = try {
+        dao.getShareholderById(id)?.let {
+            dao.deleteShareholder(it)
+            Result.Success(Unit)
+        } ?: Result.Error(Exception("Shareholder not found"))
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
+
+    suspend fun deleteById(id: String): Result<Unit> = try {
+        dao.deleteById(id)
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
+
+    suspend fun getLastShareholderId(): String? = dao.getLastId()
 }
