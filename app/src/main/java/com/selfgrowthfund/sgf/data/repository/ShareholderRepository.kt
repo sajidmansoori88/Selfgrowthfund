@@ -21,7 +21,7 @@ class ShareholderRepository @Inject constructor(
     suspend fun searchShareholders(query: String): List<Shareholder> =
         dao.searchShareholders("%$query%")
 
-    suspend fun addShareholder(shareholder: Shareholder): kotlin.Result<Unit> = try {
+    suspend fun addShareholder(shareholder: Shareholder): Result<Unit> = try {
         val timestamp = dates.now()
         val newShareholder = shareholder.copy(
             createdAt = timestamp,
@@ -33,7 +33,7 @@ class ShareholderRepository @Inject constructor(
         Result.Error(e)
     }
 
-    suspend fun updateShareholder(shareholder: Shareholder): kotlin.Result<Unit> = try {
+    suspend fun updateShareholder(shareholder: Shareholder): Result<Unit> = try {
         val updated = shareholder.copy(updatedAt = dates.now())
         dao.updateShareholder(updated)
         Result.Success(Unit)
@@ -41,7 +41,7 @@ class ShareholderRepository @Inject constructor(
         Result.Error(e)
     }
 
-    suspend fun deleteShareholder(id: String): kotlin.Result<Unit> = try {
+    suspend fun deleteShareholder(id: String): Result<Unit> = try {
         dao.getShareholderById(id)?.let {
             dao.deleteShareholder(it)
             Result.Success(Unit)

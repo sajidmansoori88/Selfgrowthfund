@@ -1,103 +1,101 @@
-    plugins {
-        alias(libs.plugins.android.application)
-        alias(libs.plugins.kotlin.android)
-        alias(libs.plugins.ksp)
-        alias(libs.plugins.dagger.hilt.android)
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.dagger.hilt.android)
+}
+
+android {
+    namespace = "com.selfgrowthfund.sgf"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.selfgrowthfund.sgf"
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    android {
-        namespace = "com.selfgrowthfund.sgf"
-        compileSdk = 34
-
-        defaultConfig {
-            applicationId = "com.selfgrowthfund.sgf"
-            minSdk = 24
-            targetSdk = 34
-            versionCode = 1
-            versionName = "1.0"
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-            vectorDrawables.useSupportLibrary = true
-        }
-
-        buildTypes {
-            release {
-                isMinifyEnabled = false
-                proguardFiles(
-                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro"
-                )
-            }
-        }
-
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-        }
-
-        kotlinOptions {
-            jvmTarget = "17"
-        }
-
-        buildFeatures {
-            compose = true
-        }
-
-        composeOptions {
-            kotlinCompilerExtensionVersion = "1.5.11"
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
-    dependencies {
-        // Compose
-        implementation(platform(libs.composeBom))
-        implementation(libs.compose.ui)
-        implementation(libs.compose.material3)
-        implementation(libs.compose.foundation)
-        implementation(libs.compose.runtime)
-        implementation(libs.compose.ui.text)
-        implementation(libs.compose.tooling.preview)
-        debugImplementation(libs.compose.tooling)
-
-        // AndroidX Core
-        implementation(libs.androidx.core.ktx)
-        implementation(libs.androidx.appcompat)
-        implementation(libs.material)
-        implementation(libs.androidx.constraintlayout)
-        implementation(libs.androidx.activity.ktx)
-        implementation(libs.androidx.fragment.ktx)
-
-
-        // Room
-        implementation(libs.room.runtime)
-        implementation(libs.room.ktx)
-        ksp(libs.room.compiler)
-        testImplementation(libs.androidx.room.testing)
-
-        // Lifecycle
-        implementation(libs.androidx.lifecycle.viewmodel.ktx)
-        implementation(libs.androidx.lifecycle.livedata.ktx)
-        implementation(libs.androidx.lifecycle.runtime.ktx)
-        implementation(libs.androidx.lifecycle.runtime.compose)
-
-        // Coroutines
-        implementation(libs.kotlinx.coroutines.android)
-        implementation(libs.kotlinx.coroutines.test)
-        implementation(libs.kotlinx.coroutines.core)
-
-        // Networking
-        implementation(libs.retrofit)
-        implementation(libs.okhttp)
-        implementation(libs.okhttp.logging.interceptor)
-
-        // Hilt
-        implementation(libs.hilt.android)
-        ksp(libs.hilt.compiler)
-
-        // Desugaring
-        coreLibraryDesugaring(libs.android.desugar.jdk.libs)
-
-        // Testing
-        testImplementation(libs.junit)
-        androidTestImplementation(libs.androidx.junit)
-        androidTestImplementation(libs.androidx.espresso.core)
+    buildFeatures {
+        compose = true
+        viewBinding = true
+        dataBinding = true
     }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+dependencies {
+    // ✅ Compose
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material3)
+    implementation(libs.activity.compose)
+    implementation(libs.navigation.compose)
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
+    implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
+
+    // ✅ Tooling for @Preview
+    debugImplementation(libs.compose.tooling)
+    implementation(libs.compose.tooling.preview)
+
+    // ✅ Room
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.ksp)
+
+    // ✅ Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
+    // ✅ Networking
+    implementation(libs.retrofit)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
+
+    // ✅ Coroutines
+    implementation(libs.coroutines.core)
+    implementation(libs.coroutines.android)
+
+    // ✅ AndroidX Core
+    implementation(libs.androidx.core.ktx)
+
+    // ✅ Gson
+    implementation(libs.gson)
+
+    // ✅ Unit Tests (JVM)
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.room.testing)
+
+    // ✅ Instrumentation tests (Android)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.coroutines.test)
+    androidTestImplementation(libs.room.testing)
+}

@@ -1,20 +1,39 @@
 package com.selfgrowthfund.sgf.ui.shareholders
 
 import android.app.DatePickerDialog
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import android.widget.Toast
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @Composable
-fun ShareholderFormScreen(viewModel: ShareholderViewModel) {
+fun ShareholderFormScreen(
+    viewModel: ShareholderViewModel,
+    navController: NavController
+) {
     var fullName by remember { mutableStateOf("") }
     var mobile by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
@@ -29,7 +48,8 @@ fun ShareholderFormScreen(viewModel: ShareholderViewModel) {
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
-    val submissionResult by viewModel.submissionResult.collectAsStateWithLifecycle()
+    val submissionResult: com.selfgrowthfund.sgf.utils.Result<Unit>?
+            by viewModel.submissionResult.collectAsStateWithLifecycle()
 
     fun validate(): Boolean {
         fullNameError = if (fullName.isBlank()) "Required" else null
@@ -57,48 +77,57 @@ fun ShareholderFormScreen(viewModel: ShareholderViewModel) {
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
+
         OutlinedTextField(
             value = fullName,
             onValueChange = { fullName = it },
             label = { Text("Full Name") },
             isError = fullNameError != null,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next)
         )
-        if (fullNameError != null) Text(fullNameError!!, color = MaterialTheme.colorScheme.error)
+        fullNameError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+        }
 
         OutlinedTextField(
             value = mobile,
             onValueChange = { mobile = it },
             label = { Text("Mobile Number") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             isError = mobileError != null,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next)
         )
-        if (mobileError != null) Text(mobileError!!, color = MaterialTheme.colorScheme.error)
+        mobileError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+        }
 
         OutlinedTextField(
             value = address,
             onValueChange = { address = it },
             label = { Text("Address") },
             isError = addressError != null,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next)
         )
-        if (addressError != null) Text(addressError!!, color = MaterialTheme.colorScheme.error)
+        addressError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+        }
 
         OutlinedTextField(
             value = shareBalance,
             onValueChange = { shareBalance = it },
             label = { Text("Share Balance") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = shareBalanceError != null,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
         )
-        if (shareBalanceError != null) Text(shareBalanceError!!, color = MaterialTheme.colorScheme.error)
+        shareBalanceError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Text("Join Date: ${dateFormatter.format(joinDate)}", modifier = Modifier.padding(vertical = 8.dp))
 
-        Text("Join Date: ${dateFormatter.format(joinDate)}")
-        Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
             val calendar = Calendar.getInstance().apply { time = joinDate }
             DatePickerDialog(
@@ -134,12 +163,27 @@ fun ShareholderFormScreen(viewModel: ShareholderViewModel) {
             Text("Submit")
         }
 
-        submissionResult?.let {
-            if (it.isSuccess) {
-                Text("✅ Shareholder saved successfully!", color = MaterialTheme.colorScheme.primary)
+        when (submissionResult) {
+            is com.selfgrowthfund.sgf.utils.Result.Success -> {
+                Toast.makeText(context, "✅ Shareholder saved!", Toast.LENGTH_SHORT).show()
                 resetForm()
-            } else {
-                Text("❌ Error: ${it.exceptionOrNull()?.message}", color = MaterialTheme.colorScheme.error)
+                navController.navigate("shareholderList") {
+                    popUpTo("shareholderForm") { inclusive = true }
+                }
+            }
+            is com.selfgrowthfund.sgf.utils.Result.Error -> {
+                val error = (submissionResult as com.selfgrowthfund.sgf.utils.Result.Error).exception
+                Text(
+                    "❌ Error: ${error.message ?: "Unknown error"}",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+            }
+            com.selfgrowthfund.sgf.utils.Result.Loading -> {
+                // Optional loading UI
+            }
+            null -> {
+                // Initial state
             }
         }
     }

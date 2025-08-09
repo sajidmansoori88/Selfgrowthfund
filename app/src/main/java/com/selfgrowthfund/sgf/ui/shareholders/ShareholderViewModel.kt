@@ -4,10 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
 import com.selfgrowthfund.sgf.data.repository.ShareholderRepository
+import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,6 +44,10 @@ class ShareholderViewModel @Inject constructor(
     private val _submissionResult = MutableStateFlow<Result<Unit>?>(null)
     val submissionResult: StateFlow<Result<Unit>?> = _submissionResult
 
+    fun clearSubmissionResult() {
+        _submissionResult.value = null
+    }
+
     fun submitShareholder(
         fullName: String,
         mobileNumber: String,
@@ -47,7 +57,7 @@ class ShareholderViewModel @Inject constructor(
     ) {
         val shareBalance = shareBalanceInput.toDoubleOrNull()
         if (fullName.isBlank() || mobileNumber.isBlank() || address.isBlank() || shareBalance == null || shareBalance <= 0.0) {
-            _submissionResult.value = Result.failure(Exception("Validation failed"))
+            _submissionResult.value = Result.Error(Exception("Validation failed"))
             return
         }
 
