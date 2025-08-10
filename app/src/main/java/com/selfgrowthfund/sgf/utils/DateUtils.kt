@@ -24,10 +24,13 @@ object DateUtils {
     }
 
     fun isLatePayment(dueMonth: String, paymentDate: String): Boolean {
-        val dueDate = "10${dueMonth.replace("-", "")}" // Convert May-2025 to 10May2025
+        val dueDate = "10${dueMonth.replace("-", "")}" // e.g., May-2025 → 10May2025
         return try {
             val due = SimpleDateFormat(DUE_DATE_FORMAT, Locale.US).parse(dueDate)
+                ?: throw IllegalArgumentException("Invalid due date format")
             val payment = SimpleDateFormat(PAYMENT_DATE_FORMAT, Locale.US).parse(paymentDate)
+                ?: throw IllegalArgumentException("Invalid payment date format")
+
             payment.after(due)
         } catch (e: Exception) {
             throw IllegalArgumentException("Invalid date format")
@@ -38,7 +41,10 @@ object DateUtils {
         val dueDate = "10${dueMonth.replace("-", "")}"
         return try {
             val due = SimpleDateFormat(DUE_DATE_FORMAT, Locale.US).parse(dueDate)
+                ?: throw IllegalArgumentException("Invalid due date format")
             val payment = SimpleDateFormat(PAYMENT_DATE_FORMAT, Locale.US).parse(paymentDate)
+                ?: throw IllegalArgumentException("Invalid payment date format")
+
             TimeUnit.MILLISECONDS.toDays(payment.time - due.time).toInt()
         } catch (e: Exception) {
             throw IllegalArgumentException("Invalid date format")

@@ -10,7 +10,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.selfgrowthfund.sgf.data.local.converters.Converters
 import com.selfgrowthfund.sgf.data.local.dao.*
 import com.selfgrowthfund.sgf.data.local.entities.*
-import java.util.*
 
 @Database(
     entities = [
@@ -37,8 +36,8 @@ abstract class AppDatabase : RoomDatabase() {
 
         // Define all migrations
         private val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("""
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
                     CREATE TABLE borrowings (
                         borrowId TEXT PRIMARY KEY NOT NULL,
                         shareholderId TEXT NOT NULL,
@@ -61,7 +60,7 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                database.execSQL("""
+                db.execSQL("""
                     CREATE TABLE repayments (
                         repaymentId TEXT PRIMARY KEY NOT NULL,
                         borrowId TEXT NOT NULL,
@@ -74,14 +73,14 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                database.execSQL("CREATE INDEX idx_borrowings_shareholder ON borrowings(shareholderId)")
-                database.execSQL("CREATE INDEX idx_repayments_borrowing ON repayments(borrowId)")
+                db.execSQL("CREATE INDEX idx_borrowings_shareholder ON borrowings(shareholderId)")
+                db.execSQL("CREATE INDEX idx_repayments_borrowing ON repayments(borrowId)")
             }
         }
 
         private val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("""
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
                     CREATE TABLE investments (
                         investmentId TEXT PRIMARY KEY NOT NULL,
                         investeeType TEXT NOT NULL,
@@ -102,8 +101,8 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                database.execSQL("CREATE INDEX idx_investments_status ON investments(status)")
-                database.execSQL("CREATE INDEX idx_investments_dueDate ON investments(returnDueDate)")
+                db.execSQL("CREATE INDEX idx_investments_status ON investments(status)")
+                db.execSQL("CREATE INDEX idx_investments_dueDate ON investments(returnDueDate)")
             }
         }
 
@@ -128,7 +127,7 @@ abstract class AppDatabase : RoomDatabase() {
                 AppDatabase::class.java
             )
                 .allowMainThreadQueries()
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(false)
                 .build()
         }
     }

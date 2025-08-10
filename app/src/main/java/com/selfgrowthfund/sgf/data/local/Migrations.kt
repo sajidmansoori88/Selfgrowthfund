@@ -6,17 +6,17 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 object Migrations {
     // Migration from version 1 to 2 (complete schema overhaul)
     val MIGRATION_1_2 = object : Migration(1, 2) {
-        override fun migrate(database: SupportSQLiteDatabase) {
+        override fun migrate(db: SupportSQLiteDatabase) {
             // 1. First create new tables with proper constraints
-            createShareholdersTable(database)
-            createBorrowingsTable(database)
-            createRepaymentsTable(database)
+            createShareholdersTable(db)
+            createBorrowingsTable(db)
+            createRepaymentsTable(db)
 
             // 2. Then migrate existing data if needed
-            migrateExistingShareholders(database)
+            migrateExistingShareholders(db)
 
             // 3. Add performance indexes
-            createIndexes(database)
+            createIndexes(db)
         }
 
         private fun createShareholdersTable(db: SupportSQLiteDatabase) {
@@ -100,12 +100,12 @@ object Migrations {
 
     // Migration from version 2 to 3 (future changes)
     val MIGRATION_2_3 = object : Migration(2, 3) {
-        override fun migrate(database: SupportSQLiteDatabase) {
+        override fun migrate(db: SupportSQLiteDatabase) {
             // Example: Add email field to shareholders
-            database.execSQL("ALTER TABLE shareholders ADD COLUMN email TEXT")
+            db.execSQL("ALTER TABLE shareholders ADD COLUMN email TEXT")
 
             // Example: Add loan purpose field to borrowings
-            database.execSQL("ALTER TABLE borrowings ADD COLUMN purpose TEXT NOT NULL DEFAULT 'General'")
+            db.execSQL("ALTER TABLE borrowings ADD COLUMN purpose TEXT NOT NULL DEFAULT 'General'")
         }
     }
 }

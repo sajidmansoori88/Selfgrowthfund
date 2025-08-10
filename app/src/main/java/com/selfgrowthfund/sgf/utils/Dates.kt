@@ -23,19 +23,19 @@ object Dates {
 
     // Format to "May-2023"
     fun formatToDueMonth(date: Date): String =
-        dueMonthFormat.get().format(date)
+        dueMonthFormat.get()!!.format(date) // Non-null assertion
 
     // Format to "05052023"
     fun formatToPaymentDate(date: Date): String =
-        paymentDateFormat.get().format(date)
+        paymentDateFormat.get()!!.format(date) // Non-null assertion
 
     // Parse from "May-2023"
     fun parseDueMonth(dateStr: String): Date? =
-        runCatching { dueMonthFormat.get().parse(dateStr) }.getOrNull()
+        runCatching { dueMonthFormat.get()!!.parse(dateStr) }.getOrNull()
 
     // Parse from "05052023"
     fun parsePaymentDate(dateStr: String): Date? =
-        runCatching { paymentDateFormat.get().parse(dateStr) }.getOrNull()
+        runCatching { paymentDateFormat.get()!!.parse(dateStr) }.getOrNull()
 
     // Days between two dates
     fun daysBetween(startDate: Date, endDate: Date): Int {
