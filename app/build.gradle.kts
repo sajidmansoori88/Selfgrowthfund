@@ -1,8 +1,11 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.dagger.hilt.android)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -43,8 +46,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17) // ✅ Correct enum usage
+        }
+    }
+
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
     }
 }
 
@@ -53,14 +62,19 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.runtime)
     implementation(libs.activity.compose)
     implementation(libs.navigation.compose)
-    implementation("androidx.fragment:fragment-ktx:1.6.2")
-    implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
-
-    // ✅ Tooling for @Preview
-    debugImplementation(libs.compose.tooling)
     implementation(libs.compose.tooling.preview)
+    debugImplementation(libs.compose.tooling)
+
+    // ✅ AndroidX Core
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.fragment.ktx)
 
     // ✅ Room
     implementation(libs.room.runtime)
@@ -70,29 +84,42 @@ dependencies {
     // ✅ Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.fragment)
+
+    // ✅ Lifecycle
+    implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.lifecycle.livedata.ktx)
+    implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.lifecycle.runtime.compose)
+
+    // ✅ Coroutines
+    implementation(libs.coroutines.core)
+    implementation(libs.coroutines.android)
 
     // ✅ Networking
     implementation(libs.retrofit)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
 
-    // ✅ Coroutines
-    implementation(libs.coroutines.core)
-    implementation(libs.coroutines.android)
-
-    // ✅ AndroidX Core
-    implementation(libs.androidx.core.ktx)
-
     // ✅ Gson
     implementation(libs.gson)
 
-    // ✅ Unit Tests (JVM)
+    // ✅ Logging
+    implementation(libs.timber)
+
+    // ✅ Material (classic)
+    implementation(libs.material)
+
+    // ✅ Desugaring
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    // ✅ Unit Tests
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.room.testing)
 
-    // ✅ Instrumentation tests (Android)
+    // ✅ Instrumentation Tests
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.truth)

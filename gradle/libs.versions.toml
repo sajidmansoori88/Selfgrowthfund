@@ -1,34 +1,80 @@
+# ------------------------------------------------------------------------------
+# 📦 Version Catalog: SelfGrowthFund Android Project
+# ------------------------------------------------------------------------------
+
+# ✅ Upgrade Checklist (Kotlin / AGP / Compose / KSP)
+# ------------------------------------------------------------------------------
+# When upgrading Kotlin:
+# - Update [versions] → kotlin = "<new_version>"
+# - Update [versions] → ksp = "<new_version>-<ksp_patch>"
+# - Confirm plugin availability in pluginManagement repositories
+# - Sync AGP version if needed (androidGradlePlugin)
+# - Match composeCompiler to Kotlin version
+# - Run: ./gradlew clean build --refresh-dependencies
+
+# When upgrading Compose:
+# - Update composeBom to latest stable (see https://developer.android.com/jetpack/androidx/releases/compose)
+# - Ensure composeCompiler matches Kotlin and AGP
+# - Pin any non-BOM Compose modules if needed
+
+# When upgrading AGP:
+# - Update androidGradlePlugin
+# - Confirm compatibility with Kotlin and Compose Compiler
+# - Check desugar version if using Java 8+ APIs
+
+# When upgrading KSP:
+# - Use version matching Kotlin: "<kotlin_version>-<ksp_patch>"
+# - Confirm plugin is published (https://maven.google.com)
+# - Update [plugins] → ksp
+
+# When upgrading libraries:
+# - Prefer stable releases
+# - Align Room, Lifecycle, Coroutines, Retrofit, OkHttp with Kotlin version
+# - Check for breaking changes in release notes
+
+# 🔁 After any upgrade:
+# - Run ./gradlew clean build --refresh-dependencies
+# - Validate instrumentation and unit tests
+# - Update onboarding docs if setup changes
+# ------------------------------------------------------------------------------
+
 [versions]
-androidGradlePlugin = "8.6.0"
-kotlin = "1.9.22"
-ksp = "1.9.22-1.0.16"
-room = "2.6.1"
-lifecycle = "2.6.2"
-coroutines = "1.7.3"
-retrofit = "2.9.0"
-okhttp = "5.0.0-alpha.12"
-hilt = "2.48.1"
-desugar = "2.0.4"
-composeCompiler = "1.5.10"
-composeBom = "2025.07.00"
-activityCompose = "1.9.0"
+androidGradlePlugin = "8.12.0"
+kotlin = "2.2.0"
+ksp = "2.2.0-2.0.2"
+room = "2.7.2"
+lifecycle = "2.9.2"
+coroutines = "1.10.2"
+retrofit = "3.0.0"
+okhttp = "5.1.0"
+hilt = "2.57"
+hiltNavigationFragment = "1.2.0"
+desugar = "2.1.5"
+composeCompiler = "1.5.15"
+composeBom = "2025.07.00" # From Compose release notes July 2025
+activityCompose = "1.10.1"
 navigation = "2.9.3"
 foundation = "1.8.3"
 material3 = "1.3.2"
 uiTooling = "1.8.3"
 gson = "2.13.1"
 junit4 = "4.13.2"
-androidxJunitExt = "1.1.5"
+androidxJunitExt = "1.3.0"
 espressoCore = "3.7.0"
-truth = "1.4.2"
+truth = "1.4.4"
+androidxCore = "1.16.0"
+appcompat = "1.7.1"
+constraintLayout = "2.2.1"
+activityKtx = "1.10.1"
+fragmentKtx = "1.8.8"
 
 [libraries]
 # Core Android
-androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.12.0" }
-androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.6.1" }
-androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.1.4" }
-androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version = "1.8.1" }
-androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version = "1.6.2" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintLayout" }
+androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activityKtx" }
+androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 
 # Compose (BOM-managed unless pinned intentionally)
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -40,7 +86,6 @@ compose-runtime = { module = "androidx.compose.runtime:runtime" }
 compose-ui-text = { module = "androidx.compose.ui:ui-text" }
 compose-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "uiTooling" }
 compose-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "uiTooling" }
-compose-compiler = { module = "androidx.compose.compiler:compiler", version.ref = "composeCompiler" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 
@@ -72,6 +117,8 @@ okhttp-logging-interceptor = { module = "com.squareup.okhttp3:logging-intercepto
 # Hilt
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+hilt-navigation-fragment = { module = "androidx.hilt:hilt-navigation-fragment", version.ref = "hiltNavigationFragment" }
+
 
 # Desugaring
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar" }
@@ -99,3 +146,4 @@ android-library = { id = "com.android.library", version.ref = "androidGradlePlug
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 dagger-hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
