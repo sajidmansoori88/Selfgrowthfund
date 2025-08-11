@@ -1,17 +1,31 @@
 # SelfGrowthFund 💰📱
 
-An Android app for managing a community savings group. Shareholders can deposit money, request loans, and get profit shares.
+An Android application for managing savings groups, tracking member deposits, borrowings, group investments and profit sharing. This app is designed to streamline the financial transactions and operational management of community-based savings groups.
 
 ---
 
 ## 📦 Features
 
-- 💸 Track Deposits by Shareholders  
-- 📋 Manage Loans and Repayments  
-- 📊 Auto Profit Sharing based on deposit share  
-- 📅 Multi-user role-based access (e.g., Admin, Collector)
+- 👥 Member management with detailed shareholder profiles  
+- 💸 Record and track deposits and loans  
+- 📈 Profit sharing calculations and distribution  
+- 🔄 Real-time data sync with Room database and Kotlin Flow  
+- 🎨 Modern UI built with Jetpack Compose  
+- 🧩 Dependency injection with Hilt for clean architecture  
+- 🔐 Support for multiple user roles and responsibilities 
 
 ---
+
+## 🏗 Architecture
+
+The project follows a modular architecture pattern with clear separation of concerns:
+
+- **Data Layer**: Room database entities, DAOs, and repository implementations  
+- **Domain Layer**: Use cases and business logic (planned for future modularization)  
+- **Presentation Layer**: Jetpack Compose UI and ViewModels  
+- **Dependency Injection**: Hilt for managing dependencies
+
+  ---
 
 ## 📐 Tech Stack
 
