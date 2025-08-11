@@ -7,7 +7,7 @@ An Android application for managing savings groups, tracking member deposits, bo
 ## 📦 Features
 
 - 👥 Member management with detailed shareholder profiles  
-- 💸 Record and track deposits and loans  
+- 💸 Record and track deposits, borrowings and group investments  
 - 📈 Profit sharing calculations and distribution  
 - 🔄 Real-time data sync with Room database and Kotlin Flow  
 - 🎨 Modern UI built with Jetpack Compose  
