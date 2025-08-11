@@ -33,7 +33,7 @@ class ShareholderViewModel @Inject constructor(
         repository.getShareholderById(id)
 
     suspend fun deleteShareholder(id: String): Result<Unit> =
-        repository.deleteShareholder(id)
+        repository.deleteShareholderById(id)
 
     suspend fun addShareholder(shareholder: Shareholder): Result<Unit> =
         repository.addShareholder(shareholder)

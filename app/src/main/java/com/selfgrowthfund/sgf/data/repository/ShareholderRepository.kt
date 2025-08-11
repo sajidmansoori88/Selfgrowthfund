@@ -11,6 +11,7 @@ class ShareholderRepository @Inject constructor(
     private val dao: ShareholderDao,
     private val dates: Dates
 ) {
+
     // Reactive streams
     fun getAllShareholdersStream(): Flow<List<Shareholder>> = dao.getAllShareholdersFlow()
     fun getShareholderByIdStream(id: String): Flow<Shareholder?> = dao.getShareholderByIdFlow(id)
@@ -22,26 +23,20 @@ class ShareholderRepository @Inject constructor(
         dao.searchShareholders("%$query%")
 
     suspend fun addShareholder(shareholder: Shareholder): Result<Unit> = try {
-        val timestamp = dates.now()
-        val newShareholder = shareholder.copy(
-            createdAt = timestamp,
-            updatedAt = timestamp
-        )
-        dao.insertShareholder(newShareholder)
+        dao.insertShareholder(shareholder.withTimestamps())
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
 
     suspend fun updateShareholder(shareholder: Shareholder): Result<Unit> = try {
-        val updated = shareholder.copy(updatedAt = dates.now())
-        dao.updateShareholder(updated)
+        dao.updateShareholder(shareholder.copy(updatedAt = dates.now()))
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
 
-    suspend fun deleteShareholder(id: String): Result<Unit> = try {
+    suspend fun deleteShareholderById(id: String): Result<Unit> = try {
         dao.getShareholderById(id)?.let {
             dao.deleteShareholder(it)
             Result.Success(Unit)
@@ -50,12 +45,9 @@ class ShareholderRepository @Inject constructor(
         Result.Error(e)
     }
 
-    suspend fun deleteById(id: String): Result<Unit> = try {
-        dao.deleteById(id)
-        Result.Success(Unit)
-    } catch (e: Exception) {
-        Result.Error(e)
-    }
-
     suspend fun getLastShareholderId(): String? = dao.getLastId()
+
+    // Helper
+    private fun Shareholder.withTimestamps(): Shareholder =
+        copy(createdAt = dates.now(), updatedAt = dates.now())
 }

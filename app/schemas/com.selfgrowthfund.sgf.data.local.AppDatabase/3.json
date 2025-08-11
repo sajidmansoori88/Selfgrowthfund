@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "524d4241fc6e2a8463dd948042cea65e",
+    "identityHash": "97f81c5001e5b53c63a521956b0b5629",
     "entities": [
       {
         "tableName": "shareholders",
@@ -53,8 +53,7 @@
           {
             "fieldPath": "exitDate",
             "columnName": "exitDate",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "status",
@@ -86,9 +85,7 @@
           "columnNames": [
             "shareholderId"
           ]
-        },
-        "indices": [],
-        "foreignKeys": []
+        }
       },
       {
         "tableName": "deposits",
@@ -179,8 +176,26 @@
             "depositId"
           ]
         },
-        "indices": [],
-        "foreignKeys": []
+        "indices": [
+          {
+            "name": "index_deposits_shareholderId",
+            "unique": false,
+            "columnNames": [
+              "shareholderId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposits_shareholderId` ON `${TABLE_NAME}` (`shareholderId`)"
+          },
+          {
+            "name": "index_deposits_dueMonth",
+            "unique": false,
+            "columnNames": [
+              "dueMonth"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposits_dueMonth` ON `${TABLE_NAME}` (`dueMonth`)"
+          }
+        ]
       },
       {
         "tableName": "borrowings",
@@ -219,26 +234,22 @@
           {
             "fieldPath": "consentingMember1Id",
             "columnName": "consentingMember1Id",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "consentingMember1Name",
             "columnName": "consentingMember1Name",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "consentingMember2Id",
             "columnName": "consentingMember2Id",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "consentingMember2Name",
             "columnName": "consentingMember2Name",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "borrowEligibility",
@@ -273,14 +284,12 @@
           {
             "fieldPath": "closedDate",
             "columnName": "closedDate",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "notes",
             "columnName": "notes",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "createdBy",
@@ -300,9 +309,7 @@
           "columnNames": [
             "borrowId"
           ]
-        },
-        "indices": [],
-        "foreignKeys": []
+        }
       },
       {
         "tableName": "repayments",
@@ -383,14 +390,12 @@
           {
             "fieldPath": "notes",
             "columnName": "notes",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "penaltyCalculationNotes",
             "columnName": "penaltyCalculationNotes",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -409,8 +414,7 @@
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_repayments_borrowId` ON `${TABLE_NAME}` (`borrowId`)"
           }
-        ],
-        "foreignKeys": []
+        ]
       },
       {
         "tableName": "investments",
@@ -431,8 +435,7 @@
           {
             "fieldPath": "investeeName",
             "columnName": "investeeName",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "ownershipType",
@@ -443,8 +446,7 @@
           {
             "fieldPath": "partnerNames",
             "columnName": "partnerNames",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "investmentDate",
@@ -509,8 +511,7 @@
           {
             "fieldPath": "remarks",
             "columnName": "remarks",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -518,15 +519,12 @@
           "columnNames": [
             "investmentId"
           ]
-        },
-        "indices": [],
-        "foreignKeys": []
+        }
       }
     ],
-    "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '524d4241fc6e2a8463dd948042cea65e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '97f81c5001e5b53c63a521956b0b5629')"
     ]
   }
 }
