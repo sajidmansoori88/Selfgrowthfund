@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.selfgrowthfund.sgf.data.local.types.DepositStatus
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import java.text.SimpleDateFormat
 import java.util.*
@@ -64,7 +65,7 @@ data class DepositEntry(
     val modeOfPayment: String,
 
     @ColumnInfo(name = "status")
-    val status: String = STATUS_PENDING,
+    val status: DepositStatus = DepositStatus.Pending,
 
     @ColumnInfo(name = "approvedBy")
     val approvedBy: String? = null,

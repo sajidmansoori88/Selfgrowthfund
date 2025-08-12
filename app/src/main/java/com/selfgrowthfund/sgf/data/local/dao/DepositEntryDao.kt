@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.DepositEntry
+import com.selfgrowthfund.sgf.data.local.types.DepositStatus
 
 @Dao
 interface DepositEntryDao {
@@ -22,7 +23,7 @@ interface DepositEntryDao {
     suspend fun getForMonth(shareholderId: String, dueMonth: String): DepositEntry?
 
     @Query("SELECT * FROM deposit_entries WHERE status = :status ORDER BY dueMonth ASC")
-    suspend fun getByStatus(status: String): List<DepositEntry>
+    suspend fun getByStatus(status: DepositStatus): List<DepositEntry>
 
     @Query("SELECT * FROM deposit_entries WHERE status = :status AND dueMonth < :cutoffMonth")
     suspend fun getOverduePending(status: String, cutoffMonth: String): List<DepositEntry>
