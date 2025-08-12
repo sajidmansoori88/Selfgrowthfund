@@ -3,7 +3,9 @@ package com.selfgrowthfund.sgf.data.local.converters
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import java.util.Date
+import java.time.YearMonth
 
 class Converters {
 
@@ -36,4 +38,15 @@ class Converters {
             gson.toJson(it)
         }
     }
+    @TypeConverter
+    fun fromDueMonth(value: DueMonth?): String? {
+        return value?.toString()
+    }
+
+    @TypeConverter
+    fun toDueMonth(value: String?): DueMonth? {
+        return value?.let { DueMonth.parse(it) }
+    }
+
+
 }

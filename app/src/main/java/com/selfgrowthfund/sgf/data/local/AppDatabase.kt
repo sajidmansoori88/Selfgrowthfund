@@ -15,6 +15,7 @@ import com.selfgrowthfund.sgf.data.local.entities.*
     entities = [
         Shareholder::class,
         Deposit::class,
+        DepositEntry::class,
         Borrowing::class,
         Repayment::class,
         Investment::class
@@ -26,6 +27,7 @@ import com.selfgrowthfund.sgf.data.local.entities.*
 abstract class AppDatabase : RoomDatabase() {
     abstract fun shareholderDao(): ShareholderDao
     abstract fun depositDao(): DepositDao
+    abstract fun depositEntryDao(): DepositEntryDao
     abstract fun borrowingDao(): BorrowingDao
     abstract fun repaymentDao(): RepaymentDao
     abstract fun investmentDao(): InvestmentDao

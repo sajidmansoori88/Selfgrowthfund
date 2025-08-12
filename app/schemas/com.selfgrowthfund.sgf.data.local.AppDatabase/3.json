@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "97f81c5001e5b53c63a521956b0b5629",
+    "identityHash": "2515d6a1556c642fc34688344caa0e36",
     "entities": [
       {
         "tableName": "shareholders",
@@ -194,6 +194,138 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_deposits_dueMonth` ON `${TABLE_NAME}` (`dueMonth`)"
+          }
+        ]
+      },
+      {
+        "tableName": "deposit_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` TEXT NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `status` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `isSynced` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`depositId`))",
+        "fields": [
+          {
+            "fieldPath": "depositId",
+            "columnName": "depositId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderId",
+            "columnName": "shareholderId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderName",
+            "columnName": "shareholderName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dueMonth",
+            "columnName": "dueMonth",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paymentDate",
+            "columnName": "paymentDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareNos",
+            "columnName": "shareNos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareAmount",
+            "columnName": "shareAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "additionalContribution",
+            "columnName": "additionalContribution",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "penalty",
+            "columnName": "penalty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalAmount",
+            "columnName": "totalAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paymentStatus",
+            "columnName": "paymentStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modeOfPayment",
+            "columnName": "modeOfPayment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedBy",
+            "columnName": "approvedBy",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "depositId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_deposit_entries_shareholderId",
+            "unique": false,
+            "columnNames": [
+              "shareholderId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposit_entries_shareholderId` ON `${TABLE_NAME}` (`shareholderId`)"
+          },
+          {
+            "name": "index_deposit_entries_dueMonth",
+            "unique": false,
+            "columnNames": [
+              "dueMonth"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposit_entries_dueMonth` ON `${TABLE_NAME}` (`dueMonth`)"
           }
         ]
       },
@@ -524,7 +656,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '97f81c5001e5b53c63a521956b0b5629')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2515d6a1556c642fc34688344caa0e36')"
     ]
   }
 }
