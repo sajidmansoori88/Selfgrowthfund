@@ -1,7 +1,7 @@
 package com.selfgrowthfund.sgf.ui.extensions
 
 import com.selfgrowthfund.sgf.R
-import com.selfgrowthfund.sgf.data.local.types.DepositStatus
+import com.selfgrowthfund.sgf.model.enums.DepositStatus
 
 fun DepositStatus.iconRes(): Int = when (this) {
     DepositStatus.Pending -> R.drawable.ic_pending

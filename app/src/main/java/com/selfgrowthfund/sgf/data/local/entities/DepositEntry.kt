@@ -4,7 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.selfgrowthfund.sgf.data.local.types.DepositStatus
+import com.selfgrowthfund.sgf.model.enums.DepositStatus
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import java.text.SimpleDateFormat
 import java.util.*

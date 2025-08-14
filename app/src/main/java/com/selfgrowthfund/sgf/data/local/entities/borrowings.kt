@@ -6,7 +6,8 @@ import java.util.*
 
 @Entity(tableName = "borrowings")
 data class Borrowing(
-    @PrimaryKey val borrowId: String,
+    @PrimaryKey
+    val borrowId: String,
     val shareholderId: String,
     val shareholderName: String,
     val applicationDate: Date,

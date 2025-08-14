@@ -2,7 +2,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.DepositEntry
-import com.selfgrowthfund.sgf.data.local.types.DepositStatus
+import com.selfgrowthfund.sgf.model.enums.DepositStatus
 
 @Dao
 interface DepositEntryDao {

@@ -17,6 +17,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    /* Database */
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
@@ -25,7 +26,7 @@ object AppModule {
             AppDatabase::class.java,
             "self_growth_fund.db"
         )
-            .fallbackToDestructiveMigration() // Remove in production
+            .fallbackToDestructiveMigration(false) // Remove in production
             .build()
     }
 
@@ -45,10 +46,17 @@ object AppModule {
     @Provides
     fun provideInvestmentDao(db: AppDatabase): InvestmentDao = db.investmentDao()
 
+    @Provides
+    fun provideDepositEntryDao(db: AppDatabase): DepositEntryDao = db.depositEntryDao()
+
+    @Provides
+    fun provideInvestmentReturnsDao(db: AppDatabase): InvestmentReturnsDao =
+        db.investmentReturnsDao()
+
     /* Utilities */
     @Provides
     @Singleton
-    fun provideDates(): Dates = Dates // <-- Fixed: don't call Dates()
+    fun provideDates(): Dates = Dates // Singleton object, no constructor needed
 
     /* Repositories */
     @Provides
@@ -56,18 +64,14 @@ object AppModule {
     fun provideShareholderRepository(
         shareholderDao: ShareholderDao,
         dates: Dates
-    ): ShareholderRepository {
-        return ShareholderRepository(shareholderDao, dates)
-    }
+    ): ShareholderRepository = ShareholderRepository(shareholderDao, dates)
 
     @Provides
     @Singleton
     fun provideDepositRepository(
         depositDao: DepositDao,
         dates: Dates
-    ): DepositRepository {
-        return DepositRepository(depositDao, dates)
-    }
+    ): DepositRepository = DepositRepository(depositDao, dates)
 
     @Provides
     @Singleton
@@ -75,9 +79,20 @@ object AppModule {
         borrowingDao: BorrowingDao,
         shareholderDao: ShareholderDao,
         dates: Dates
-    ): BorrowingRepository {
-        return BorrowingRepository(borrowingDao, shareholderDao, dates)
-    }
+    ): BorrowingRepository = BorrowingRepository(borrowingDao, shareholderDao, dates)
 
-    // Add more repositories as needed...
+    @Provides
+    @Singleton
+    fun provideInvestmentRepository(
+        investmentDao: InvestmentDao,
+        dates: Dates
+    ): InvestmentRepository = InvestmentRepository(investmentDao, dates)
+
+    @Provides
+    @Singleton
+    fun provideInvestmentReturnsRepository(
+        returnsDao: InvestmentReturnsDao,
+        investmentDao: InvestmentDao,
+        dates: Dates
+    ): InvestmentReturnsRepository = InvestmentReturnsRepository(returnsDao, investmentDao, dates)
 }

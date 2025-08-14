@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.data.local.entities
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
+import androidx.room.PrimaryKey
 import com.selfgrowthfund.sgf.utils.Dates
 import java.util.*
 
@@ -19,6 +20,7 @@ import java.util.*
     indices = [Index("investmentId")]
 )
 data class InvestmentReturns(
+    @PrimaryKey
     val returnId: String,
     val investmentId: String,
     val investmentName: String,

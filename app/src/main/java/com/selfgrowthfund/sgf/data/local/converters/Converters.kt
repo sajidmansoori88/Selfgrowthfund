@@ -1,16 +1,10 @@
 package com.selfgrowthfund.sgf.data.local.converters
 
 import androidx.room.TypeConverter
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.selfgrowthfund.sgf.data.local.types.DepositStatus
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import java.util.Date
-import java.time.YearMonth
 
 class Converters {
-
-    private val gson = Gson()
 
     // ✅ Date converters
     @TypeConverter
@@ -23,32 +17,13 @@ class Converters {
         return date?.time
     }
 
-    // ✅ List<String> converters with KSP-safe annotations
     @TypeConverter
-    @JvmSuppressWildcards
-    fun fromStringList(value: String?): List<String>? {
-        return value?.let {
-            gson.fromJson(it, object : TypeToken<List<String>>() {}.type)
-        }
-    }
+    fun fromDueMonth(dueMonth: DueMonth): String = dueMonth.value
 
     @TypeConverter
-    @JvmSuppressWildcards
-    fun toStringList(list: List<String>?): String? {
-        return list?.let {
-            gson.toJson(it)
-        }
-    }
-    @TypeConverter
-    fun fromDepositStatus(status: DepositStatus?): String? {
-        return status?.name
-    }
-
-    @TypeConverter
-    fun toDepositStatus(value: String?): DepositStatus? {
-        return value?.let { DepositStatus.valueOf(it) }
-    }
+    fun toDueMonth(value: String): DueMonth = DueMonth(value)
 
 
-
+    // 🧩 Add more converters below as needed
+    // For example: LocalDateTime, enums, lists, etc.
 }

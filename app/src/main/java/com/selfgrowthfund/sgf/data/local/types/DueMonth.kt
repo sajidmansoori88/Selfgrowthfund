@@ -1,12 +1,10 @@
 package com.selfgrowthfund.sgf.data.local.types
 
-data class DueMonth(val year: Int, val month: Int) {
-    override fun toString(): String = "%04d-%02d".format(year, month)
+@JvmInline
+value class DueMonth(val value: String) {
+    override fun toString(): String = value
 
     companion object {
-        fun parse(value: String): DueMonth {
-            val parts = value.split("-")
-            return DueMonth(parts[0].toInt(), parts[1].toInt())
-        }
+        fun from(value: String): DueMonth = DueMonth(value)
     }
 }
