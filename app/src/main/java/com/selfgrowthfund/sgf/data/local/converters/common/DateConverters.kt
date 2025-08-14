@@ -1,8 +1,9 @@
-package com.selfgrowthfund.sgf.data.local.converters
+package com.selfgrowthfund.sgf.data.local.converters.common
 
 import androidx.room.TypeConverter
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 object DateConverters {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())

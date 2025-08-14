@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "2515d6a1556c642fc34688344caa0e36",
+    "identityHash": "86b3c967b902892b38d330175b1f878a",
     "entities": [
       {
         "tableName": "shareholders",
@@ -89,7 +89,7 @@
       },
       {
         "tableName": "deposits",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` TEXT NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`depositId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` TEXT NOT NULL, `shareNos` INTEGER NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, PRIMARY KEY(`depositId`))",
         "fields": [
           {
             "fieldPath": "depositId",
@@ -128,12 +128,6 @@
             "notNull": true
           },
           {
-            "fieldPath": "shareAmount",
-            "columnName": "shareAmount",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
             "fieldPath": "additionalContribution",
             "columnName": "additionalContribution",
             "affinity": "REAL",
@@ -162,12 +156,6 @@
             "columnName": "modeOfPayment",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
           }
         ],
         "primaryKey": {
@@ -175,27 +163,7 @@
           "columnNames": [
             "depositId"
           ]
-        },
-        "indices": [
-          {
-            "name": "index_deposits_shareholderId",
-            "unique": false,
-            "columnNames": [
-              "shareholderId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposits_shareholderId` ON `${TABLE_NAME}` (`shareholderId`)"
-          },
-          {
-            "name": "index_deposits_dueMonth",
-            "unique": false,
-            "columnNames": [
-              "dueMonth"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposits_dueMonth` ON `${TABLE_NAME}` (`dueMonth`)"
-          }
-        ]
+        }
       },
       {
         "tableName": "deposit_entries",
@@ -549,6 +517,131 @@
         ]
       },
       {
+        "tableName": "investment_returns",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`returnId` TEXT NOT NULL, `investmentId` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `actualReturnPeriod` INTEGER NOT NULL, `amountInvested` REAL NOT NULL, `amountReceived` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `actualProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `actualProfitAmount` REAL NOT NULL, `profitPercentVariance` REAL NOT NULL, `profitAmountVariance` REAL NOT NULL, `returnDate` INTEGER NOT NULL, `remarks` TEXT, PRIMARY KEY(`returnId`), FOREIGN KEY(`investmentId`) REFERENCES `investments`(`investmentId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "returnId",
+            "columnName": "returnId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "investmentId",
+            "columnName": "investmentId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "investmentName",
+            "columnName": "investmentName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedReturnPeriod",
+            "columnName": "expectedReturnPeriod",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualReturnPeriod",
+            "columnName": "actualReturnPeriod",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountInvested",
+            "columnName": "amountInvested",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountReceived",
+            "columnName": "amountReceived",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedProfitPercent",
+            "columnName": "expectedProfitPercent",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualProfitPercent",
+            "columnName": "actualProfitPercent",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedProfitAmount",
+            "columnName": "expectedProfitAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualProfitAmount",
+            "columnName": "actualProfitAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profitPercentVariance",
+            "columnName": "profitPercentVariance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profitAmountVariance",
+            "columnName": "profitAmountVariance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "returnDate",
+            "columnName": "returnDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remarks",
+            "columnName": "remarks",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "returnId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_investment_returns_investmentId",
+            "unique": false,
+            "columnNames": [
+              "investmentId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_investment_returns_investmentId` ON `${TABLE_NAME}` (`investmentId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "investments",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "investmentId"
+            ],
+            "referencedColumns": [
+              "investmentId"
+            ]
+          }
+        ]
+      },
+      {
         "tableName": "investments",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`investmentId` TEXT NOT NULL, `investeeType` TEXT NOT NULL, `investeeName` TEXT, `ownershipType` TEXT NOT NULL, `partnerNames` TEXT, `investmentDate` INTEGER NOT NULL, `investmentType` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `amount` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `returnDueDate` INTEGER NOT NULL, `modeOfPayment` TEXT NOT NULL, `status` TEXT NOT NULL, `remarks` TEXT, PRIMARY KEY(`investmentId`))",
         "fields": [
@@ -656,7 +749,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2515d6a1556c642fc34688344caa0e36')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '86b3c967b902892b38d330175b1f878a')"
     ]
   }
 }

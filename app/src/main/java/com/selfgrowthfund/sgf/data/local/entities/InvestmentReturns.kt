@@ -3,8 +3,11 @@ package com.selfgrowthfund.sgf.data.local.entities
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import com.selfgrowthfund.sgf.utils.Dates
-import java.util.*
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
+import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 @Entity(
     tableName = "investment_returns",
@@ -18,7 +21,9 @@ import java.util.*
     ],
     indices = [Index("investmentId")]
 )
+@TypeConverters(AppTypeConverters::class)
 data class InvestmentReturns(
+    @PrimaryKey
     val returnId: String,
     val investmentId: String,
     val investmentName: String,
@@ -32,15 +37,15 @@ data class InvestmentReturns(
     val actualProfitAmount: Double,
     val profitPercentVariance: Double,
     val profitAmountVariance: Double,
-    val returnDate: Date,
+    val returnDate: LocalDateTime,
     val remarks: String? = null
+    val createdAt: Date = Date()
 ) {
-    // Secondary constructor with inline calculations
     constructor(
         returnId: String,
         investment: Investment,
         amountReceived: Double,
-        returnDate: Date = Dates.now(),
+        returnDate: LocalDateTime = LocalDateTime.now(),
         remarks: String? = null
     ) : this(
         returnId = returnId,
@@ -61,14 +66,10 @@ data class InvestmentReturns(
     )
 
     companion object {
-        // Static calculation methods
-        private fun calculateDaysBetween(startDate: Date, endDate: Date): Int {
-            val diff = endDate.time - startDate.time
-            return (diff / (1000 * 60 * 60 * 24)).toInt()
-        }
+        private fun calculateDaysBetween(startDate: LocalDateTime, endDate: LocalDateTime): Int =
+            ChronoUnit.DAYS.between(startDate, endDate).toInt()
 
-        private fun calculateActualProfitPercent(amountInvested: Double, amountReceived: Double): Double {
-            return ((amountReceived - amountInvested) / amountInvested) * 100
-        }
+        private fun calculateActualProfitPercent(amountInvested: Double, amountReceived: Double): Double =
+            ((amountReceived - amountInvested) / amountInvested) * 100
     }
 }

@@ -2,44 +2,91 @@ package com.selfgrowthfund.sgf.data.repository
 
 import com.selfgrowthfund.sgf.data.local.dao.RepaymentDao
 import com.selfgrowthfund.sgf.data.local.entities.Repayment
-import com.selfgrowthfund.sgf.data.local.dao.RepaymentDao.BorrowingRepaymentSummary
-import com.selfgrowthfund.sgf.data.local.dao.RepaymentDao.MonthlyRepaymentReport
-import com.selfgrowthfund.sgf.data.local.dao.RepaymentDao.RepaymentWithBorrowingDetails
+import com.selfgrowthfund.sgf.data.local.dao.RepaymentDao.*
+import com.selfgrowthfund.sgf.data.local.types.PaymentMode
+import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class RepaymentRepository @Inject constructor(
     private val dao: RepaymentDao
 ) {
-    // CRUD
-    suspend fun insert(repayment: Repayment) = dao.insert(repayment)
-    suspend fun update(repayment: Repayment) = dao.update(repayment)
-    suspend fun delete(repayment: Repayment) = dao.delete(repayment)
-    suspend fun getById(repaymentId: String): Repayment? = dao.getById(repaymentId)
+    // Helper for Flow conversions
+    private fun <T> Flow<T>.asResult(): Flow<Result<T>> =
+        this
+            .map<T, Result<T>> { value -> Result.Success(value) }
+            .catch { e -> emit(Result.Error<T>(e)) }
 
-    // Borrowing-specific Queries
-    suspend fun getAllByBorrowIdList(borrowId: String): List<Repayment> = dao.getByBorrowIdList(borrowId)
-    fun getAllByBorrowId(borrowId: String): Flow<List<Repayment>> = dao.getByBorrowIdFlow(borrowId)
-    suspend fun getLastRepayment(borrowId: String): Repayment? = dao.getLastRepayment(borrowId)
+    // CRUD Operations
+    suspend fun insert(repayment: Repayment): Result<Unit> =
+        try { dao.insert(repayment); Result.Success(Unit) }
+        catch (e: Exception) { Result.Error(e) }
+
+    suspend fun update(repayment: Repayment): Result<Unit> =
+        try { dao.update(repayment); Result.Success(Unit) }
+        catch (e: Exception) { Result.Error(e) }
+
+    suspend fun delete(repayment: Repayment): Result<Unit> =
+        try { dao.delete(repayment); Result.Success(Unit) }
+        catch (e: Exception) { Result.Error(e) }
+
+    suspend fun getById(repaymentId: String): Result<Repayment?> =
+        try { Result.Success(dao.getById(repaymentId)) }
+        catch (e: Exception) { Result.Error(e) }
+
+    // Borrowing-specific
+    suspend fun getAllByBorrowIdList(borrowId: String): Result<List<Repayment>> =
+        try { Result.Success(dao.getByBorrowIdList(borrowId)) }
+        catch (e: Exception) { Result.Error(e) }
+
+    fun getAllByBorrowId(borrowId: String): Flow<Result<List<Repayment>>> =
+        dao.getByBorrowIdFlow(borrowId).asResult()
+
+    suspend fun getLastRepayment(borrowId: String): Result<Repayment?> =
+        try { Result.Success(dao.getLastRepayment(borrowId)) }
+        catch (e: Exception) { Result.Error(e) }
 
     // Aggregates
-    suspend fun getTotalPrincipalRepaid(borrowId: String): Double = dao.getTotalPrincipalRepaid(borrowId)
-    suspend fun getTotalPenaltyPaid(borrowId: String): Double = dao.getTotalPenaltyPaid(borrowId)
-    suspend fun getBorrowingRepaymentSummary(borrowId: String): BorrowingRepaymentSummary =
-        dao.getBorrowingRepaymentSummary(borrowId)
+    suspend fun getTotalPrincipalRepaid(borrowId: String): Result<Double> =
+        try { Result.Success(dao.getTotalPrincipalRepaid(borrowId)) }
+        catch (e: Exception) { Result.Error(e) }
 
-    // Shareholder Reports
-    suspend fun getMonthlyShareholderReport(shareholderName: String): List<MonthlyRepaymentReport> =
-        dao.getMonthlyShareholderReport(shareholderName)
+    suspend fun getTotalPenaltyPaid(borrowId: String): Result<Double> =
+        try { Result.Success(dao.getTotalPenaltyPaid(borrowId)) }
+        catch (e: Exception) { Result.Error(e) }
 
-    // Late Repayment Detection
-    suspend fun getLateRepayments(shareholderName: String): List<Repayment> =
-        dao.getLateRepayments(shareholderName)
+    suspend fun getBorrowingRepaymentSummary(borrowId: String): Result<BorrowingRepaymentSummary> =
+        try { Result.Success(dao.getBorrowingRepaymentSummary(borrowId)) }
+        catch (e: Exception) { Result.Error(e) }
+
+    // Payment Mode
+    suspend fun countByPaymentMode(borrowId: String, mode: PaymentMode): Result<Int> =
+        try { Result.Success(dao.countByPaymentMode(borrowId, mode)) }
+        catch (e: Exception) { Result.Error(e) }
+
+    suspend fun getMonthlyTotalByPaymentMode(mode: PaymentMode, monthYear: String): Result<Double?> =
+        try { Result.Success(dao.getMonthlyTotalByPaymentMode(mode, monthYear)) }
+        catch (e: Exception) { Result.Error(e) }
+
+    // Reports
+    suspend fun getMonthlyShareholderReport(shareholderName: String): Result<List<MonthlyRepaymentReport>> =
+        try { Result.Success(dao.getMonthlyShareholderReport(shareholderName)) }
+        catch (e: Exception) { Result.Error(e) }
+
+    // Late payments
+    suspend fun getLateRepayments(shareholderName: String): Result<List<Repayment>> =
+        try { Result.Success(dao.getLateRepayments(shareholderName)) }
+        catch (e: Exception) { Result.Error(e) }
 
     // Search
-    suspend fun searchRepayments(query: String): List<Repayment> = dao.searchRepayments(query)
+    suspend fun searchRepayments(query: String): Result<List<Repayment>> =
+        try { Result.Success(dao.searchRepayments(query)) }
+        catch (e: Exception) { Result.Error(e) }
 
-    // Detailed Info
-    suspend fun getRepaymentsWithBorrowingDetails(borrowId: String): List<RepaymentWithBorrowingDetails> =
-        dao.getRepaymentsWithBorrowingDetails(borrowId)
+    // Detailed info
+    suspend fun getRepaymentsWithBorrowingDetails(borrowId: String): Result<List<RepaymentWithBorrowingDetails>> =
+        try { Result.Success(dao.getRepaymentsWithBorrowingDetails(borrowId)) }
+        catch (e: Exception) { Result.Error(e) }
 }

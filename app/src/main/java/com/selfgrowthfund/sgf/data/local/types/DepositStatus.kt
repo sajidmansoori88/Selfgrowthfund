@@ -4,5 +4,11 @@ enum class DepositStatus(val label: String) {
     Pending("Pending"),
     Approved("Approved"),
     Rejected("Rejected"),
-    AutoRejected("Auto-Rejected")
+    AutoRejected("Auto-Rejected");
+
+    companion object {
+        fun fromString(value: String): DepositStatus =
+            entries.firstOrNull { it.label == value } ?: Pending
+    }
+    fun toDisplayString(): String = label
 }

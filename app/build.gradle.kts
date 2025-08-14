@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.compose.compiler)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -44,11 +45,14 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlin {
+        jvmToolchain(17)
+
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17) // ✅ Correct enum usage
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -125,4 +129,16 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.coroutines.test)
     androidTestImplementation(libs.room.testing)
+
+    // ✅ Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.play.services.auth)
+    ksp("androidx.room:room-compiler:2.6.1")
+
+    // Logging
+    implementation(libs.timber)
+
+    implementation("androidx.paging:paging-compose:1.0.0-alpha20")
+    implementation("androidx.room:room-paging:2.6.1")
 }

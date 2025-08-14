@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Investment
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDateTime
 
 @Dao
 interface InvestmentDao {
@@ -35,17 +36,17 @@ interface InvestmentDao {
 
     // Special Queries
     @Query("""
-        SELECT * FROM investments 
+        SELECT * FROM investments  
         WHERE returnDueDate BETWEEN :startDate AND :endDate
         AND status = 'Active'
     """)
-    suspend fun getDueBetween(startDate: Long, endDate: Long): List<Investment>
+    suspend fun getDueBetween(startDate: LocalDateTime, endDate: LocalDateTime): List<Investment>
 
     @Query("""
-        SELECT * FROM investments 
-        WHERE (investmentId LIKE :query 
-        OR investmentName LIKE :query 
-        OR investeeName LIKE :query)
+        SELECT * FROM investments  
+        WHERE (investmentId LIKE '%' || :query || '%' 
+        OR investmentName LIKE '%' || :query || '%' 
+        OR investeeName LIKE '%' || :query || '%')
     """)
     suspend fun search(query: String): List<Investment>
 

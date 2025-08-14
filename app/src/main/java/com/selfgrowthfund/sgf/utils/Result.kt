@@ -5,7 +5,7 @@ package com.selfgrowthfund.sgf.utils
  */
 sealed class Result<out T> {
     data class Success<out T>(val data: T) : Result<T>()
-    data class Error(val exception: Throwable) : Result<Nothing>()
+    data class Error<out T>(val exception: Throwable) : Result<T>()
     object Loading : Result<Nothing>()
 }
 
@@ -30,7 +30,7 @@ val <T> Result<T>.dataOrNull: T?
 /**
  * Extension property to safely extract the exception from an error result.
  */
-val Result<*>.exceptionOrNull: Throwable?
+val <T> Result<T>.exceptionOrNull: Throwable?
     get() = (this as? Result.Error)?.exception
 
 /**
@@ -38,7 +38,7 @@ val Result<*>.exceptionOrNull: Throwable?
  */
 inline fun <T, R> Result<T>.map(transform: (T) -> R): Result<R> = when (this) {
     is Result.Success -> Result.Success(transform(data))
-    is Result.Error -> this
+    is Result.Error -> Result.Error(exception)
     Result.Loading -> Result.Loading
 }
 
@@ -47,6 +47,6 @@ inline fun <T, R> Result<T>.map(transform: (T) -> R): Result<R> = when (this) {
  */
 inline fun <T, R> Result<T>.flatMap(transform: (T) -> Result<R>): Result<R> = when (this) {
     is Result.Success -> transform(data)
-    is Result.Error -> this
+    is Result.Error -> Result.Error(exception)
     Result.Loading -> Result.Loading
 }

@@ -1,12 +1,48 @@
 package com.selfgrowthfund.sgf.data.local.types
 
-data class DueMonth(val year: Int, val month: Int) {
-    override fun toString(): String = "%04d-%02d".format(year, month)
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
+/**
+ * Immutable class representing a due month with year.
+ */
+@ConsistentCopyVisibility
+data class DueMonth private constructor(
+    private val yearMonth: YearMonth
+) {
     companion object {
-        fun parse(value: String): DueMonth {
-            val parts = value.split("-")
-            return DueMonth(parts[0].toInt(), parts[1].toInt())
+        private val formatter = DateTimeFormatter.ofPattern("MMM-yyyy")
+        private val DEFAULT_MONTH = YearMonth.now().plusMonths(1) // Default: next month
+
+        fun fromYearMonth(yearMonth: YearMonth): DueMonth = DueMonth(yearMonth)
+
+        fun parse(
+            value: String,
+            fallbackToDefault: Boolean = true
+        ): DueMonth {
+            return try {
+                DueMonth(YearMonth.parse(value, formatter))
+            } catch (e: DateTimeParseException) {
+                if (fallbackToDefault) DEFAULT else throw e
+            }
         }
+
+        // For Room type converter
+        fun fromString(value: String): DueMonth =
+            try {
+                DueMonth(YearMonth.parse(value, formatter))
+            } catch (_: DateTimeParseException) {
+                DEFAULT
+            }
+
+        val DEFAULT: DueMonth = DueMonth(DEFAULT_MONTH)
     }
+
+    fun getYearMonth(): YearMonth = yearMonth
+
+    override fun toString(): String = yearMonth.format(formatter)
+
+    fun isPast(): Boolean = yearMonth.isBefore(YearMonth.now())
+    fun isCurrent(): Boolean = yearMonth == YearMonth.now()
 }

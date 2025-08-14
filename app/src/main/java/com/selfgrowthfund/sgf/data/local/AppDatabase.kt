@@ -1,15 +1,18 @@
 package com.selfgrowthfund.sgf.data.local
 
 import android.content.Context
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.selfgrowthfund.sgf.data.local.converters.Converters
+import com.selfgrowthfund.sgf.data.local.converters.*
+import com.selfgrowthfund.sgf.data.local.converters.common.DateConverters
+import com.selfgrowthfund.sgf.data.local.converters.enums.StatusConverters
+import com.selfgrowthfund.sgf.data.local.converters.custom.DueMonthConverter
 import com.selfgrowthfund.sgf.data.local.dao.*
 import com.selfgrowthfund.sgf.data.local.entities.*
+
+// ✅ Compile-time constant
+private const val DB_VERSION = 3
 
 @Database(
     entities = [
@@ -18,13 +21,20 @@ import com.selfgrowthfund.sgf.data.local.entities.*
         DepositEntry::class,
         Borrowing::class,
         Repayment::class,
+        InvestmentReturns::class,
         Investment::class
     ],
-    version = 3,
+    version = DB_VERSION,
     exportSchema = true
 )
-@TypeConverters(Converters::class)
+@TypeConverters(
+    DateConverters::class,
+    StatusConverters::class,
+    DueMonthConverter::class,
+    AppTypeConverters::class
+)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun shareholderDao(): ShareholderDao
     abstract fun depositDao(): DepositDao
     abstract fun depositEntryDao(): DepositEntryDao
@@ -36,7 +46,7 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        // Define all migrations
+        // === MIGRATIONS ===
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -60,7 +70,7 @@ abstract class AppDatabase : RoomDatabase() {
                         createdAt INTEGER NOT NULL,
                         FOREIGN KEY(shareholderId) REFERENCES shareholders(id)
                     )
-                """)
+                """.trimIndent())
 
                 db.execSQL("""
                     CREATE TABLE repayments (
@@ -73,7 +83,7 @@ abstract class AppDatabase : RoomDatabase() {
                         notes TEXT,
                         FOREIGN KEY(borrowId) REFERENCES borrowings(borrowId)
                     )
-                """)
+                """.trimIndent())
 
                 db.execSQL("CREATE INDEX idx_borrowings_shareholder ON borrowings(shareholderId)")
                 db.execSQL("CREATE INDEX idx_repayments_borrowing ON repayments(borrowId)")
@@ -101,7 +111,7 @@ abstract class AppDatabase : RoomDatabase() {
                         status TEXT NOT NULL,
                         remarks TEXT
                     )
-                """)
+                """.trimIndent())
 
                 db.execSQL("CREATE INDEX idx_investments_status ON investments(status)")
                 db.execSQL("CREATE INDEX idx_investments_dueDate ON investments(returnDueDate)")
@@ -137,13 +147,11 @@ abstract class AppDatabase : RoomDatabase() {
     private class DatabaseCallback : RoomDatabase.Callback() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
-            // Initialize with default data
             db.execSQL("INSERT INTO shareholders(id, name) VALUES('DEFAULT', 'System Account')")
         }
 
         override fun onOpen(db: SupportSQLiteDatabase) {
             super.onOpen(db)
-            // Enable foreign key constraints
             db.execSQL("PRAGMA foreign_keys = ON")
         }
     }

@@ -1,35 +1,72 @@
 package com.selfgrowthfund.sgf.data.local.entities
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.*
+import com.selfgrowthfund.sgf.data.local.types.BorrowingStatus
+import java.time.LocalDateTime
 
 @Entity(tableName = "borrowings")
 data class Borrowing(
-    @PrimaryKey val borrowId: String,
+    @PrimaryKey
+    @ColumnInfo(name = "borrowId")
+    val borrowId: String,
+
+    @ColumnInfo(name = "shareholderId")
     val shareholderId: String,
+
+    @ColumnInfo(name = "shareholderName")
     val shareholderName: String,
-    val applicationDate: Date,
+
+    @ColumnInfo(name = "applicationDate")
+    val applicationDate: LocalDateTime,
+
+    @ColumnInfo(name = "amountRequested")
     val amountRequested: Double,
+
+    @ColumnInfo(name = "consentingMember1Id")
     val consentingMember1Id: String?,
+
+    @ColumnInfo(name = "consentingMember1Name")
     val consentingMember1Name: String?,
+
+    @ColumnInfo(name = "consentingMember2Id")
     val consentingMember2Id: String?,
+
+    @ColumnInfo(name = "consentingMember2Name")
     val consentingMember2Name: String?,
+
+    @ColumnInfo(name = "borrowEligibility")
     val borrowEligibility: Double,
+
+    @ColumnInfo(name = "approvedAmount")
     val approvedAmount: Double,
-    val borrowStartDate: Date,
-    val dueDate: Date, // borrowStartDate + 45 days
-    val status: String = "Pending",
-    val closedDate: Date? = null, // Added field to track when borrowing was closed
+
+    @ColumnInfo(name = "borrowStartDate")
+    val borrowStartDate: LocalDateTime,
+
+    @ColumnInfo(name = "dueDate")
+    val dueDate: LocalDateTime, // borrowStartDate + 45 days
+
+    @ColumnInfo(name = "status")
+    val status: BorrowingStatus = BorrowingStatus.PENDING,
+
+    @ColumnInfo(name = "closedDate")
+    val closedDate: LocalDateTime? = null,
+
+    @ColumnInfo(name = "notes")
     val notes: String? = null,
+
+    @ColumnInfo(name = "createdBy")
     val createdBy: String,
-    val createdAt: Date = Date()
+
+    @ColumnInfo(name = "createdAt")
+    val createdAt: LocalDateTime = LocalDateTime.now()
 ) {
-    // Secondary constructor for new entries
     constructor(
         shareholderId: String,
         shareholderName: String,
-        applicationDate: Date,
+        applicationDate: LocalDateTime,
         amountRequested: Double,
         consentingMember1Id: String?,
         consentingMember1Name: String?,
@@ -37,7 +74,7 @@ data class Borrowing(
         consentingMember2Name: String?,
         borrowEligibility: Double,
         approvedAmount: Double,
-        borrowStartDate: Date,
+        borrowStartDate: LocalDateTime,
         createdBy: String,
         notes: String? = null
     ) : this(
@@ -55,19 +92,14 @@ data class Borrowing(
         borrowStartDate = borrowStartDate,
         dueDate = calculateDueDate(borrowStartDate),
         status = BorrowingStatus.PENDING,
-        closedDate = null, // Initially null for new entries
+        closedDate = null,
         notes = notes,
         createdBy = createdBy
     )
 
     companion object {
-        private fun calculateDueDate(startDate: Date): Date {
-            val calendar = Calendar.getInstance().apply {
-                time = startDate
-                add(Calendar.DAY_OF_YEAR, 45)
-            }
-            return calendar.time
-        }
+        fun calculateDueDate(startDate: LocalDateTime): LocalDateTime =
+            startDate.plusDays(45)
 
         fun calculateEligibility(
             shareholderAmount: Double,
@@ -86,23 +118,11 @@ data class Borrowing(
     fun validate(): Boolean {
         return approvedAmount <= borrowEligibility &&
                 amountRequested > 0 &&
-                !borrowStartDate.before(applicationDate)
+                !borrowStartDate.isBefore(applicationDate)
     }
 
     fun isActive(): Boolean = status == BorrowingStatus.ACTIVE
     fun isPending(): Boolean = status == BorrowingStatus.PENDING
     fun isCompleted(): Boolean = status == BorrowingStatus.COMPLETED
     fun isRejected(): Boolean = status == BorrowingStatus.REJECTED
-}
-
-object BorrowingStatus {
-    const val PENDING = "Pending"
-    const val APPROVED = "Approved"
-    const val REJECTED = "Rejected"
-    const val ACTIVE = "Active"
-    const val COMPLETED = "Completed"
-
-    fun getAllStatuses(): List<String> = listOf(PENDING, APPROVED, REJECTED, ACTIVE, COMPLETED)
-    fun getActiveStatuses(): List<String> = listOf(PENDING, APPROVED, ACTIVE)
-    fun getClosedStatuses(): List<String> = listOf(COMPLETED, REJECTED)
 }

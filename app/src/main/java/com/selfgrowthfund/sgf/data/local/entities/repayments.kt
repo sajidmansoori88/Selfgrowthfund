@@ -2,18 +2,26 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
-import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.TimeUnit
+import androidx.room.TypeConverters
+import com.selfgrowthfund.sgf.data.local.types.PaymentMode
+import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
-@Entity(tableName = "repayments")
+@Entity(
+    tableName = "repayments",
+    indices = [Index("borrowId")]
+)
+@TypeConverters(AppTypeConverters::class)
 data class Repayment(
     @PrimaryKey
     @ColumnInfo(name = "repaymentId")
     val repaymentId: String = generateRepaymentId(),
 
-    @ColumnInfo(name = "borrowId", index = true)
+    @ColumnInfo(name = "borrowId")
     val borrowId: String,
 
     @ColumnInfo(name = "shareholderName")
@@ -26,7 +34,7 @@ data class Repayment(
     val penaltyDue: Double,
 
     @ColumnInfo(name = "repaymentDate")
-    val repaymentDate: Date,
+    val repaymentDate: LocalDateTime,
 
     @ColumnInfo(name = "principalRepaid")
     val principalRepaid: Double,
@@ -38,7 +46,7 @@ data class Repayment(
     val totalAmountPaid: Double = principalRepaid + penaltyPaid,
 
     @ColumnInfo(name = "modeOfPayment")
-    val modeOfPayment: String,
+    val modeOfPayment: PaymentMode, // ✅ Fixed type
 
     @ColumnInfo(name = "finalOutstanding")
     val finalOutstanding: Double = outstandingBefore - principalRepaid,
@@ -54,23 +62,23 @@ data class Repayment(
 ) {
     companion object {
         private var lastId = 0
-        private val idFormat = SimpleDateFormat("ddMMyyyy", Locale.US)
+        private val idFormatter = DateTimeFormatter.ofPattern("ddMMyyyy")
 
         fun generateRepaymentId(): String {
             lastId++
-            return "RP${idFormat.format(Date())}-${"%04d".format(lastId)}"
+            return "RP${LocalDateTime.now().format(idFormatter)}-${"%04d".format(lastId)}"
         }
 
         fun create(
             borrowId: String,
             shareholderName: String,
             outstandingBefore: Double,
-            repaymentDate: Date,
+            repaymentDate: LocalDateTime,
             principalRepaid: Double,
             penaltyPaid: Double,
-            modeOfPayment: String,
-            borrowStartDate: Date,
-            dueDate: Date,
+            modeOfPayment: PaymentMode, // ✅ Corrected
+            borrowStartDate: LocalDateTime,
+            dueDate: LocalDateTime,
             previousRepayments: List<Repayment>
         ): Repayment {
             val (penaltyAmount, notes) = calculatePenalty(
@@ -89,46 +97,34 @@ data class Repayment(
                 repaymentDate = repaymentDate,
                 principalRepaid = principalRepaid,
                 penaltyPaid = penaltyPaid,
-                modeOfPayment = modeOfPayment,
-                notes = "Processed on ${formatDate(Date())}",
+                modeOfPayment = modeOfPayment, // ✅ Corrected
+                notes = "Processed on ${formatDate(LocalDateTime.now())}",
                 penaltyCalculationNotes = notes
             )
         }
 
         private fun calculatePenalty(
-            borrowStartDate: Date,
-            dueDate: Date,
-            repaymentDate: Date,
+            borrowStartDate: LocalDateTime,
+            dueDate: LocalDateTime,
+            repaymentDate: LocalDateTime,
             outstandingBefore: Double,
             previousRepayments: List<Repayment>
         ): Pair<Double, String> {
-            val gracePeriodEnd = addDays(dueDate, 45)
+            val gracePeriodEnd = dueDate.plusDays(45)
 
-            if (repaymentDate.before(gracePeriodEnd)) {
+            if (repaymentDate.isBefore(gracePeriodEnd)) {
                 return 0.0 to "No penalty (within grace period until ${formatDate(gracePeriodEnd)})"
             }
 
-            val daysLate = calculateDaysBetween(dueDate, repaymentDate)
+            val daysLate = ChronoUnit.DAYS.between(dueDate, repaymentDate).toInt()
             val monthsLate = daysLate / 30
             val penalty = outstandingBefore * 0.01 * monthsLate
 
             return penalty to "1% monthly penalty for $monthsLate month(s) late ($daysLate days)"
         }
 
-        // Helper functions
-        private fun addDays(date: Date, days: Int): Date {
-            return Calendar.getInstance().apply {
-                time = date
-                add(Calendar.DAY_OF_YEAR, days)
-            }.time
-        }
-
-        private fun calculateDaysBetween(startDate: Date, endDate: Date): Int {
-            return TimeUnit.MILLISECONDS.toDays(endDate.time - startDate.time).toInt()
-        }
-
-        private fun formatDate(date: Date): String {
-            return SimpleDateFormat("dd MMM yyyy", Locale.US).format(date)
+        private fun formatDate(date: LocalDateTime): String {
+            return date.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
         }
     }
 }

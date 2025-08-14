@@ -48,16 +48,15 @@ object AppModule {
     /* Utilities */
     @Provides
     @Singleton
-    fun provideDates(): Dates = Dates // <-- Fixed: don't call Dates()
+    fun provideDates(): Dates = Dates // Object, no constructor call
 
     /* Repositories */
     @Provides
     @Singleton
     fun provideShareholderRepository(
-        shareholderDao: ShareholderDao,
-        dates: Dates
+        shareholderDao: ShareholderDao
     ): ShareholderRepository {
-        return ShareholderRepository(shareholderDao, dates)
+        return ShareholderRepository(shareholderDao) // Only DAO is needed
     }
 
     @Provides
@@ -79,5 +78,22 @@ object AppModule {
         return BorrowingRepository(borrowingDao, shareholderDao, dates)
     }
 
-    // Add more repositories as needed...
+    @Provides
+    @Singleton
+    fun provideInvestmentRepository(
+        investmentDao: InvestmentDao,
+        dates: Dates
+    ): InvestmentRepository {
+        return InvestmentRepository(investmentDao, dates)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInvestmentReturnsRepository(
+        returnsDao: InvestmentReturnsDao,
+        investmentDao: InvestmentDao,
+        dates: Dates
+    ): InvestmentReturnsRepository {
+        return InvestmentReturnsRepository(returnsDao, investmentDao, dates)
+    }
 }

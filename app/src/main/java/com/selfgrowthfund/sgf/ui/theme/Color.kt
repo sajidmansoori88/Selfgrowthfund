@@ -1,4 +1,4 @@
-package com.selfgrowthfund.selfgrowthfund.sgf.ui.theme
+package com.selfgrowthfund.sgf.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

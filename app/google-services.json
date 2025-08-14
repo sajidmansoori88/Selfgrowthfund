@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "483314716729",
+    "project_id": "selfgrowhtfund",
+    "storage_bucket": "selfgrowhtfund.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:483314716729:android:47e47ba0edb57eb19bfde8",
+        "android_client_info": {
+          "package_name": "com.selfgrowthfund.sgf"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "483314716729-s5qi88sr312sgd34v04ufn62qdn3osrp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.selfgrowthfund.sgf",
+            "certificate_hash": "046c68393e6c774f9e8f97372cb2f5798a2d629a"
+          }
+        },
+        {
+          "client_id": "483314716729-hmj5hsh6e3j58e6cnnf6uutcog1h2btv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOEj73D2ie8b2ypNWBwyR840Bz7N0Adp4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "483314716729-hmj5hsh6e3j58e6cnnf6uutcog1h2btv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

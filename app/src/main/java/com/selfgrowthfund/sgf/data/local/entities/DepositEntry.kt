@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.selfgrowthfund.sgf.data.local.types.DepositStatus
+import com.selfgrowthfund.sgf.data.local.types.PaymentStatus
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import java.text.SimpleDateFormat
 import java.util.*
@@ -24,7 +25,7 @@ const val MODE_ONLINE = "Online"
 @Entity(
     tableName = "deposit_entries",
     indices = [Index(value = ["shareholderId"], name = "index_deposit_entries_shareholderId"),
-    Index(value = ["dueMonth"],name = "index_deposit_entries_dueMonth")]
+        Index(value = ["dueMonth"],name = "index_deposit_entries_dueMonth")]
 )
 data class DepositEntry(
     @PrimaryKey
@@ -59,7 +60,7 @@ data class DepositEntry(
     val totalAmount: Double,
 
     @ColumnInfo(name = "paymentStatus")
-    val paymentStatus: String,
+    val paymentStatus: PaymentStatus,
 
     @ColumnInfo(name = "modeOfPayment")
     val modeOfPayment: String,

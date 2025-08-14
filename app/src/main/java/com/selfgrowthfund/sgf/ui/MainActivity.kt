@@ -1,47 +1,37 @@
 package com.selfgrowthfund.sgf.ui
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.selfgrowthfund.selfgrowthfund.sgf.ui.theme.SelfGrowthFundTheme
+import com.selfgrowthfund.sgf.ui.theme.SelfGrowthFundTheme
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        Log.d(TAG, "MainActivity launched")
+
         setContent {
             SelfGrowthFundTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                AppRoot()
             }
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun AppRoot() {
     Text(
-        text = "Hello $name!",
-        modifier = modifier
+        text = "Welcome to SelfGrowthFund!",
+        style = MaterialTheme.typography.headlineMedium
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SelfGrowthFundTheme {
-        Greeting("Android")
-    }
 }

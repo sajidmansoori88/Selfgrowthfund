@@ -2,44 +2,36 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.*
+import androidx.room.TypeConverters
+import com.selfgrowthfund.sgf.data.local.types.ShareholderStatus
+import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import java.time.LocalDateTime
 
 @Entity(tableName = "shareholders")
+@TypeConverters(AppTypeConverters::class)
 data class Shareholder(
-    @PrimaryKey
-    val shareholderId: String,      // Format: SH001, SH002 etc.
+    @PrimaryKey val shareholderId: String,
 
-    // Core Information
-    val fullName: String,           // Member's full name
-    val mobileNumber: String,       // Required contact number
-    val address: String,            // Current address
+    val fullName: String,
+    val mobileNumber: String,
+    val address: String,
 
-    // Share Details
-    val shareBalance: Double,       // Current shares owned
-    val sharePrice: Double = 2000.0,// Fixed ₹2000/share
+    val shareBalance: Double,
+    val sharePrice: Double = 2000.0,
 
-    // Membership Dates
-    val joinDate: Date,             // Membership start date
-    val exitDate: Date? = null,     // Null if active
+    val joinDate: LocalDateTime,
+    val exitDate: LocalDateTime? = null,
 
-    // Status
-    val status: String = STATUS_ACTIVE,
-    val lastUpdated: Date = Date(),  // Auto-timestamp
+    val status: ShareholderStatus = ShareholderStatus.Active,
+    val lastUpdated: LocalDateTime = LocalDateTime.now(),
 
-    // Audit Fields
-    var createdAt: Date = Date(),    // Set on creation
-    var updatedAt: Date = Date()     // Updated on changes
+    var createdAt: LocalDateTime = LocalDateTime.now(),
+    var updatedAt: LocalDateTime = LocalDateTime.now()
 ) {
     companion object {
-        // Status Constants
-        const val STATUS_ACTIVE = "Active"
-        const val STATUS_INACTIVE = "Inactive"
-
-        // Business Rules
         const val MIN_SHARES = 1
-        const val ELIGIBILITY_PERCENTAGE = 0.90 // 90% of share value
+        const val ELIGIBILITY_PERCENTAGE = 0.90
 
-        // ID Generation
         fun generateNextId(lastId: String?): String {
             return lastId?.let {
                 val num = it.removePrefix("SH").toInt()
@@ -48,13 +40,11 @@ data class Shareholder(
         }
     }
 
-    /** Calculates maximum borrowable amount (90% of total share value) */
     fun calculateMaxBorrowAmount(): Double {
         return (shareBalance * sharePrice) * ELIGIBILITY_PERCENTAGE
     }
 
     fun isEligibleForLoan(): Boolean {
-        return status == STATUS_ACTIVE &&
-                shareBalance >= MIN_SHARES
+        return status == ShareholderStatus.Active && shareBalance >= MIN_SHARES
     }
 }
