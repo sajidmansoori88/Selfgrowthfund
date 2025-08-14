@@ -45,8 +45,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    ndkVersion = "27.0.12077973"
+    buildToolsVersion = "36.0.0"
 
     kotlin {
+        jvmToolchain(17)
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17) // ✅ Correct enum usage
         }
