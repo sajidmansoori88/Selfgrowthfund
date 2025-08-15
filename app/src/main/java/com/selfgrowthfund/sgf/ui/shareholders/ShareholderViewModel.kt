@@ -1,9 +1,11 @@
 package com.selfgrowthfund.sgf.ui.shareholders
 
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
 import com.selfgrowthfund.sgf.data.repository.ShareholderRepository
+import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -71,7 +73,8 @@ class ShareholderViewModel @Inject constructor(
                 mobileNumber = mobileNumber,
                 address = address,
                 shareBalance = shareBalance,
-                joinDate = joinDate
+                joinDate = Date(),
+                role = MemberRole.MEMBER
             )
 
             val result = repository.addShareholder(newShareholder)

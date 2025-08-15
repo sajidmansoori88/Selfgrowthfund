@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "aff2bec2628b03c2363fbf030959538b",
+    "identityHash": "e5a81d42690389f1e9ae12834dc376c0",
     "entities": [
       {
         "tableName": "shareholders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`shareholderId` TEXT NOT NULL, `fullName` TEXT NOT NULL, `mobileNumber` TEXT NOT NULL, `address` TEXT NOT NULL, `shareBalance` REAL NOT NULL, `sharePrice` REAL NOT NULL, `joinDate` INTEGER NOT NULL, `exitDate` INTEGER, `role` TEXT NOT NULL, `status` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`shareholderId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`shareholderId` TEXT NOT NULL, `fullName` TEXT NOT NULL, `mobileNumber` TEXT NOT NULL, `address` TEXT NOT NULL, `shareBalance` REAL NOT NULL, `sharePrice` REAL NOT NULL, `joinDate` INTEGER NOT NULL, `exitDate` INTEGER, `status` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`shareholderId`))",
         "fields": [
           {
             "fieldPath": "shareholderId",
@@ -54,12 +54,6 @@
             "fieldPath": "exitDate",
             "columnName": "exitDate",
             "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "role",
-            "columnName": "role",
-            "affinity": "TEXT",
-            "notNull": true
           },
           {
             "fieldPath": "status",
@@ -787,7 +781,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aff2bec2628b03c2363fbf030959538b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e5a81d42690389f1e9ae12834dc376c0')"
     ]
   }
 }

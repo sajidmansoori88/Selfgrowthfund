@@ -52,4 +52,11 @@ class EnumConverters {
 
     @TypeConverter
     fun toInvestmentStatus(value: String): InvestmentStatus = InvestmentStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromRole(role: MemberRole): String = role.name
+
+    @TypeConverter
+    fun toRole(name: String): MemberRole = MemberRole.valueOf(name)
+
 }

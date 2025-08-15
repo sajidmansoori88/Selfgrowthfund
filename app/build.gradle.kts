@@ -70,6 +70,8 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.navigation.compose)
     implementation(libs.compose.tooling.preview)
+    implementation(libs.room.testing)
+    implementation(libs.androidx.junit.ktx)
     debugImplementation(libs.compose.tooling)
 
     // ✅ AndroidX Core
@@ -138,4 +140,9 @@ dependencies {
 
     // ✅ Optional: Firebase Auth
     implementation(libs.firebase.auth)
+
+    androidTestImplementation ("androidx.room:room-testing:2.7.2") // or your Room version
+    androidTestImplementation ("androidx.test:core:1.7.0")
+    androidTestImplementation ("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation (libs.junit)
 }

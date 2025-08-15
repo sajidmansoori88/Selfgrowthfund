@@ -2,6 +2,8 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.selfgrowthfund.sgf.model.enums.MemberRole
+import com.selfgrowthfund.sgf.utils.Dates
 import java.util.*
 
 @Entity(tableName = "shareholders")
@@ -21,6 +23,9 @@ data class Shareholder(
     // Membership Dates
     val joinDate: Date,             // Membership start date
     val exitDate: Date? = null,     // Null if active
+
+    // Member Roles
+    val role: MemberRole,
 
     // Status
     val status: String = STATUS_ACTIVE,
