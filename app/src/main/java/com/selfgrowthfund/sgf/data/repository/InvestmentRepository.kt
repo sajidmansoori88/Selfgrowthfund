@@ -57,7 +57,7 @@ class InvestmentRepository @Inject constructor(
     }
 
     suspend fun getInvestmentsDueSoon(daysThreshold: Int = 7): Result<List<Investment>> = try {
-        val now = dates.now().time
+        val now = dates.now()
         val threshold = now + (daysThreshold * 24 * 60 * 60 * 1000L)
         Result.Success(dao.getDueBetween(now, threshold))
     } catch (e: Exception) {

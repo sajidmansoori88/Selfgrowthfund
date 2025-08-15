@@ -89,3 +89,17 @@ enum class InvestmentStatus(override val label: String) : LabelledEnum {
     Sold("Sold"),
     WrittenOff("Written-Off");
 }
+
+enum class MemberRole(override val label: String) : LabelledEnum {
+    MEMBER_ADMIN("Member Admin"),
+    MEMBER_TREASURER("Member Treasurer"),
+    MEMBER("Member");
+
+    companion object {
+        fun fromLabel(label: String): MemberRole =
+            entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: MEMBER
+
+        fun getAllLabels(): List<String> = entries.map { it.label }
+    }
+}
+

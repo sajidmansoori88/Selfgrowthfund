@@ -49,6 +49,7 @@ retrofit = "3.0.0"
 okhttp = "5.1.0"
 hilt = "2.57"
 hiltNavigationFragment = "1.2.0"
+hiltNavigationCompose = "1.2.0"
 desugar = "2.1.5"
 composeCompiler = "1.5.15"
 composeBom = "2025.08.00" # From Compose release notes July 2025
@@ -67,6 +68,9 @@ appcompat = "1.7.1"
 constraintLayout = "2.2.1"
 activityKtx = "1.10.1"
 fragmentKtx = "1.8.9"
+firebase-bom = "34.1.0"
+firebase-firestore = "25.1.4"
+firebase-auth = "23.2.1"
 
 [libraries]
 # Core Android
@@ -119,6 +123,8 @@ hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt"
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 hilt-navigation-fragment = { module = "androidx.hilt:hilt-navigation-fragment", version.ref = "hiltNavigationFragment" }
 
+# HiltNavigation
+hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 
 # Desugaring
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar" }
@@ -139,6 +145,11 @@ espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref =
 
 # Kotlin Plugin
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-firestore = { module = "com.google.firebase:firebase-firestore-ktx", version.ref = "firebase-firestore" }
+firebase-auth = { module = "com.google.firebase:firebase-auth-ktx", version.ref = "firebase-auth" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }

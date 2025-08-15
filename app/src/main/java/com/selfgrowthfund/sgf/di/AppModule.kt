@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.di
 
 import android.content.Context
 import androidx.room.Room
+import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.data.local.AppDatabase
 import com.selfgrowthfund.sgf.data.local.dao.*
 import com.selfgrowthfund.sgf.data.repository.*
@@ -56,15 +57,18 @@ object AppModule {
     /* Utilities */
     @Provides
     @Singleton
-    fun provideDates(): Dates = Dates // Singleton object, no constructor needed
+    fun provideDates(): Dates = Dates()
+
 
     /* Repositories */
     @Provides
     @Singleton
     fun provideShareholderRepository(
         shareholderDao: ShareholderDao,
-        dates: Dates
-    ): ShareholderRepository = ShareholderRepository(shareholderDao, dates)
+        dates: Dates,
+        firestore: FirebaseFirestore
+    ): ShareholderRepository = ShareholderRepository(shareholderDao, dates, firestore)
+
 
     @Provides
     @Singleton

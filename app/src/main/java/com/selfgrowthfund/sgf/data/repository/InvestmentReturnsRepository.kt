@@ -3,11 +3,9 @@ package com.selfgrowthfund.sgf.data.repository
 
 import com.selfgrowthfund.sgf.data.local.dao.InvestmentDao
 import com.selfgrowthfund.sgf.data.local.dao.InvestmentReturnsDao
-import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturns
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class InvestmentReturnsRepository @Inject constructor(

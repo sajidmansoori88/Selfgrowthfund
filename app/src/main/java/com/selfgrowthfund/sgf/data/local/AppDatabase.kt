@@ -7,7 +7,6 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.selfgrowthfund.sgf.data.local.converters.Converters
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
 import com.selfgrowthfund.sgf.data.local.converters.EnumConverters
 import com.selfgrowthfund.sgf.data.local.dao.*
@@ -27,7 +26,6 @@ import com.selfgrowthfund.sgf.data.local.entities.*
     exportSchema = true
 )
 @TypeConverters(
-    Converters::class,
     AppTypeConverters::class,
     EnumConverters::class
 )

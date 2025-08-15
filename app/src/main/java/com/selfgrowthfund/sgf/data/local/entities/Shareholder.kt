@@ -58,3 +58,4 @@ data class Shareholder(
                 shareBalance >= MIN_SHARES
     }
 }
+

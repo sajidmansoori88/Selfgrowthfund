@@ -88,6 +88,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.fragment)
+    implementation(libs.hilt.navigation.compose)
 
     // ✅ Lifecycle
     implementation(libs.lifecycle.viewmodel.ktx)
@@ -128,4 +129,13 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.coroutines.test)
     androidTestImplementation(libs.room.testing)
+
+    // ✅ Firebase BOM
+    implementation(platform(libs.firebase.bom))
+
+    // ✅Firestore
+    implementation(libs.firebase.firestore)
+
+    // ✅ Optional: Firebase Auth
+    implementation(libs.firebase.auth)
 }

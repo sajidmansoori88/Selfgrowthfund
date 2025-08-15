@@ -7,6 +7,7 @@ import com.selfgrowthfund.sgf.data.local.entities.BorrowingStatus
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
@@ -62,16 +63,21 @@ class BorrowingRepository @Inject constructor(
         borrowId: String,
         status: String
     ): Result<Unit> = try {
-        val closedDate = if (BorrowingStatus.getClosedStatuses().contains(status)) dates.now() else null
+        val closedDate: Date? = if (BorrowingStatus.getClosedStatuses().contains(status)) {
+            dates.nowDate()
+        } else {
+            null
+        }
         borrowingDao.updateBorrowingStatus(borrowId, status, closedDate)
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
 
+
     // ==================== Business Logic ====================
     fun getOverdueBorrowings(): Flow<List<Borrowing>> {
-        val currentTimeMillis = dates.now().time
+        val currentTimeMillis = dates.now()
         return borrowingDao.getOverdueBorrowings(currentTimeMillis)
     }
 

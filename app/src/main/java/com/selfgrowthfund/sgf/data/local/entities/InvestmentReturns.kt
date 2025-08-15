@@ -34,7 +34,7 @@ data class InvestmentReturns(
     val actualProfitAmount: Double,
     val profitPercentVariance: Double,
     val profitAmountVariance: Double,
-    val returnDate: Date,
+    val returnDate: Long,
     val remarks: String? = null
 ) {
     // Secondary constructor with inline calculations
@@ -42,7 +42,7 @@ data class InvestmentReturns(
         returnId: String,
         investment: Investment,
         amountReceived: Double,
-        returnDate: Date = Dates.now(),
+        returnDate: Long = Dates().now(),
         remarks: String? = null
     ) : this(
         returnId = returnId,
@@ -64,8 +64,8 @@ data class InvestmentReturns(
 
     companion object {
         // Static calculation methods
-        private fun calculateDaysBetween(startDate: Date, endDate: Date): Int {
-            val diff = endDate.time - startDate.time
+        private fun calculateDaysBetween(startDate: Date, endDate: Long): Int {
+            val diff = endDate - startDate.time
             return (diff / (1000 * 60 * 60 * 24)).toInt()
         }
 

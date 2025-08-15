@@ -1,15 +1,21 @@
 package com.selfgrowthfund.sgf.data.repository
 
+import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
+import com.selfgrowthfund.sgf.features.addshareholders.ui.domain.ShareholderInput
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 import javax.inject.Inject
+
 
 class ShareholderRepository @Inject constructor(
     private val dao: ShareholderDao,
-    private val dates: Dates
+    private val dates: Dates,
+    private val firestore: FirebaseFirestore
 ) {
 
     // Reactive streams
@@ -30,7 +36,7 @@ class ShareholderRepository @Inject constructor(
     }
 
     suspend fun updateShareholder(shareholder: Shareholder): Result<Unit> = try {
-        dao.updateShareholder(shareholder.copy(updatedAt = dates.now()))
+        dao.updateShareholder(shareholder.copy(updatedAt = Date(dates.now()))) // ✅ Convert Long → Date
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
@@ -47,7 +53,28 @@ class ShareholderRepository @Inject constructor(
 
     suspend fun getLastShareholderId(): String? = dao.getLastId()
 
+    // 🔄 Firestore sync
+    suspend fun syncShareholderToFirestore(input: ShareholderInput): Result<Unit> = try {
+        val now = dates.now()
+        val doc = firestore.collection("shareholders").document()
+        val data = mapOf(
+            "name" to input.name,
+            "dateOfBirth" to dates.format(input.dateOfBirth),
+            "joiningDate" to dates.format(input.joiningDate),
+            "mobileNumber" to input.mobileNumber,
+            "email" to input.email,
+            "role" to input.role,
+            "createdAt" to now, // raw timestamp
+            "createdAtFormatted" to dates.format(now), // ✅ formatted string
+            "uid" to null
+        )
+        doc.set(data).await()
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
+
     // Helper
     private fun Shareholder.withTimestamps(): Shareholder =
-        copy(createdAt = dates.now(), updatedAt = dates.now())
+        copy(createdAt = Date(dates.now()), updatedAt = Date(dates.now()))
 }
