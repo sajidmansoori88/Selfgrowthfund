@@ -25,7 +25,7 @@ import com.selfgrowthfund.sgf.data.local.entities.*
 abstract class AppDatabase : RoomDatabase() {
 
     companion object {
-        const val VERSION = 3
+        const val VERSION = 4
 
         @Volatile
         private var INSTANCE: AppDatabase? = null
@@ -40,7 +40,8 @@ abstract class AppDatabase : RoomDatabase() {
                     .addCallback(DatabaseCallback())
                     .addMigrations(
                         Migrations.MIGRATION_1_2,
-                        Migrations.MIGRATION_2_3
+                        Migrations.MIGRATION_2_3,
+                        Migrations.MIGRATION_3_4
                     )
                     .build()
                 INSTANCE = instance

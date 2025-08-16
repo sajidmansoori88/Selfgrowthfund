@@ -1,0 +1,799 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "10b975c06b75b174c22ae2e804ac20fe",
+    "entities": [
+      {
+        "tableName": "shareholders",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`shareholderId` TEXT NOT NULL, `fullName` TEXT NOT NULL, `mobileNumber` TEXT NOT NULL, `address` TEXT NOT NULL, `shareBalance` REAL NOT NULL, `sharePrice` REAL NOT NULL, `joinDate` INTEGER NOT NULL, `exitDate` INTEGER, `role` TEXT NOT NULL, `status` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`shareholderId`))",
+        "fields": [
+          {
+            "fieldPath": "shareholderId",
+            "columnName": "shareholderId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileNumber",
+            "columnName": "mobileNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareBalance",
+            "columnName": "shareBalance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sharePrice",
+            "columnName": "sharePrice",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "joinDate",
+            "columnName": "joinDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exitDate",
+            "columnName": "exitDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "role",
+            "columnName": "role",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "shareholderId"
+          ]
+        }
+      },
+      {
+        "tableName": "deposits",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` TEXT NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`depositId`))",
+        "fields": [
+          {
+            "fieldPath": "depositId",
+            "columnName": "depositId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderId",
+            "columnName": "shareholderId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderName",
+            "columnName": "shareholderName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dueMonth",
+            "columnName": "dueMonth",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paymentDate",
+            "columnName": "paymentDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareNos",
+            "columnName": "shareNos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareAmount",
+            "columnName": "shareAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "additionalContribution",
+            "columnName": "additionalContribution",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "penalty",
+            "columnName": "penalty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalAmount",
+            "columnName": "totalAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paymentStatus",
+            "columnName": "paymentStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modeOfPayment",
+            "columnName": "modeOfPayment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "depositId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_deposits_shareholderId",
+            "unique": false,
+            "columnNames": [
+              "shareholderId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposits_shareholderId` ON `${TABLE_NAME}` (`shareholderId`)"
+          },
+          {
+            "name": "index_deposits_dueMonth",
+            "unique": false,
+            "columnNames": [
+              "dueMonth"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposits_dueMonth` ON `${TABLE_NAME}` (`dueMonth`)"
+          }
+        ]
+      },
+      {
+        "tableName": "deposit_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` TEXT NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `status` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `isSynced` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, PRIMARY KEY(`depositId`))",
+        "fields": [
+          {
+            "fieldPath": "depositId",
+            "columnName": "depositId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderId",
+            "columnName": "shareholderId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderName",
+            "columnName": "shareholderName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dueMonth",
+            "columnName": "dueMonth",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paymentDate",
+            "columnName": "paymentDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareNos",
+            "columnName": "shareNos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareAmount",
+            "columnName": "shareAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "additionalContribution",
+            "columnName": "additionalContribution",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "penalty",
+            "columnName": "penalty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalAmount",
+            "columnName": "totalAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paymentStatus",
+            "columnName": "paymentStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modeOfPayment",
+            "columnName": "modeOfPayment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedBy",
+            "columnName": "approvedBy",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entrySource",
+            "columnName": "entrySource",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "depositId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_deposit_entries_shareholderId",
+            "unique": false,
+            "columnNames": [
+              "shareholderId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposit_entries_shareholderId` ON `${TABLE_NAME}` (`shareholderId`)"
+          },
+          {
+            "name": "index_deposit_entries_dueMonth",
+            "unique": false,
+            "columnNames": [
+              "dueMonth"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposit_entries_dueMonth` ON `${TABLE_NAME}` (`dueMonth`)"
+          }
+        ]
+      },
+      {
+        "tableName": "borrowings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`borrowId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `applicationDate` INTEGER NOT NULL, `amountRequested` REAL NOT NULL, `consentingMember1Id` TEXT, `consentingMember1Name` TEXT, `consentingMember2Id` TEXT, `consentingMember2Name` TEXT, `borrowEligibility` REAL NOT NULL, `approvedAmount` REAL NOT NULL, `borrowStartDate` INTEGER NOT NULL, `dueDate` INTEGER NOT NULL, `status` TEXT NOT NULL, `closedDate` INTEGER, `notes` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`borrowId`))",
+        "fields": [
+          {
+            "fieldPath": "borrowId",
+            "columnName": "borrowId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderId",
+            "columnName": "shareholderId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderName",
+            "columnName": "shareholderName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "applicationDate",
+            "columnName": "applicationDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountRequested",
+            "columnName": "amountRequested",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "consentingMember1Id",
+            "columnName": "consentingMember1Id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "consentingMember1Name",
+            "columnName": "consentingMember1Name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "consentingMember2Id",
+            "columnName": "consentingMember2Id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "consentingMember2Name",
+            "columnName": "consentingMember2Name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "borrowEligibility",
+            "columnName": "borrowEligibility",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedAmount",
+            "columnName": "approvedAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "borrowStartDate",
+            "columnName": "borrowStartDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dueDate",
+            "columnName": "dueDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "closedDate",
+            "columnName": "closedDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdBy",
+            "columnName": "createdBy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "borrowId"
+          ]
+        }
+      },
+      {
+        "tableName": "repayments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`repaymentId` TEXT NOT NULL, `borrowId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `outstandingBefore` REAL NOT NULL, `penaltyDue` REAL NOT NULL, `repaymentDate` INTEGER NOT NULL, `principalRepaid` REAL NOT NULL, `penaltyPaid` REAL NOT NULL, `totalAmountPaid` REAL NOT NULL, `modeOfPayment` TEXT NOT NULL, `finalOutstanding` REAL NOT NULL, `borrowingStatus` TEXT NOT NULL, `notes` TEXT, `penaltyCalculationNotes` TEXT, PRIMARY KEY(`repaymentId`))",
+        "fields": [
+          {
+            "fieldPath": "repaymentId",
+            "columnName": "repaymentId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "borrowId",
+            "columnName": "borrowId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderName",
+            "columnName": "shareholderName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outstandingBefore",
+            "columnName": "outstandingBefore",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "penaltyDue",
+            "columnName": "penaltyDue",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "repaymentDate",
+            "columnName": "repaymentDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "principalRepaid",
+            "columnName": "principalRepaid",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "penaltyPaid",
+            "columnName": "penaltyPaid",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalAmountPaid",
+            "columnName": "totalAmountPaid",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modeOfPayment",
+            "columnName": "modeOfPayment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "finalOutstanding",
+            "columnName": "finalOutstanding",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "borrowingStatus",
+            "columnName": "borrowingStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "penaltyCalculationNotes",
+            "columnName": "penaltyCalculationNotes",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "repaymentId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_repayments_borrowId",
+            "unique": false,
+            "columnNames": [
+              "borrowId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_repayments_borrowId` ON `${TABLE_NAME}` (`borrowId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "investments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`investmentId` TEXT NOT NULL, `investeeType` TEXT NOT NULL, `investeeName` TEXT, `ownershipType` TEXT NOT NULL, `partnerNames` TEXT, `investmentDate` INTEGER NOT NULL, `investmentType` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `amount` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `returnDueDate` INTEGER NOT NULL, `modeOfPayment` TEXT NOT NULL, `status` TEXT NOT NULL, `remarks` TEXT, PRIMARY KEY(`investmentId`))",
+        "fields": [
+          {
+            "fieldPath": "investmentId",
+            "columnName": "investmentId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "investeeType",
+            "columnName": "investeeType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "investeeName",
+            "columnName": "investeeName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ownershipType",
+            "columnName": "ownershipType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "partnerNames",
+            "columnName": "partnerNames",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "investmentDate",
+            "columnName": "investmentDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "investmentType",
+            "columnName": "investmentType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "investmentName",
+            "columnName": "investmentName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedProfitPercent",
+            "columnName": "expectedProfitPercent",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedProfitAmount",
+            "columnName": "expectedProfitAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedReturnPeriod",
+            "columnName": "expectedReturnPeriod",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "returnDueDate",
+            "columnName": "returnDueDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modeOfPayment",
+            "columnName": "modeOfPayment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remarks",
+            "columnName": "remarks",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "investmentId"
+          ]
+        }
+      },
+      {
+        "tableName": "investment_returns",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`returnId` TEXT NOT NULL, `investmentId` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `actualReturnPeriod` INTEGER NOT NULL, `amountInvested` REAL NOT NULL, `amountReceived` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `actualProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `actualProfitAmount` REAL NOT NULL, `profitPercentVariance` REAL NOT NULL, `profitAmountVariance` REAL NOT NULL, `returnDate` INTEGER NOT NULL, `remarks` TEXT, PRIMARY KEY(`returnId`), FOREIGN KEY(`investmentId`) REFERENCES `investments`(`investmentId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "returnId",
+            "columnName": "returnId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "investmentId",
+            "columnName": "investmentId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "investmentName",
+            "columnName": "investmentName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedReturnPeriod",
+            "columnName": "expectedReturnPeriod",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualReturnPeriod",
+            "columnName": "actualReturnPeriod",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountInvested",
+            "columnName": "amountInvested",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountReceived",
+            "columnName": "amountReceived",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedProfitPercent",
+            "columnName": "expectedProfitPercent",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualProfitPercent",
+            "columnName": "actualProfitPercent",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedProfitAmount",
+            "columnName": "expectedProfitAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualProfitAmount",
+            "columnName": "actualProfitAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profitPercentVariance",
+            "columnName": "profitPercentVariance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profitAmountVariance",
+            "columnName": "profitAmountVariance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "returnDate",
+            "columnName": "returnDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remarks",
+            "columnName": "remarks",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "returnId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_investment_returns_investmentId",
+            "unique": false,
+            "columnNames": [
+              "investmentId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_investment_returns_investmentId` ON `${TABLE_NAME}` (`investmentId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "investments",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "investmentId"
+            ],
+            "referencedColumns": [
+              "investmentId"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '10b975c06b75b174c22ae2e804ac20fe')"
+    ]
+  }
+}

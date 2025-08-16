@@ -103,3 +103,9 @@ enum class MemberRole(override val label: String) : LabelledEnum {
     }
 }
 
+enum class EntrySource {
+    USER,        // Regular member entry
+    ADMIN,       // Direct entry by Admin
+    SYSTEM,      // Auto-generated or synced from external source
+    MIGRATION    // Legacy or imported data
+}

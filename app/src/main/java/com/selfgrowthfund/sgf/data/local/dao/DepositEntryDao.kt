@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.DepositEntry
 import com.selfgrowthfund.sgf.model.enums.DepositStatus
+import com.selfgrowthfund.sgf.model.enums.EntrySource
 
 @Dao
 interface DepositEntryDao {
@@ -30,4 +31,8 @@ interface DepositEntryDao {
 
     @Query("SELECT depositId FROM deposit_entries ORDER BY createdAt DESC LIMIT 1")
     suspend fun getLastId(): String?
+
+    @Query("SELECT * FROM deposit_entries WHERE entrySource = :source")
+    fun getEntriesBySource(source: EntrySource): List<DepositEntry>
+
 }

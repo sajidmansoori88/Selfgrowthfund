@@ -1,19 +1,27 @@
 package com.selfgrowthfund.sgf.ui.deposits
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.selfgrowthfund.sgf.model.enums.MemberRole
 
 @Composable
 fun AddDepositScreen(
-    viewModel: DepositViewModel = viewModel(),
-    onBack: () -> Unit
+    role: MemberRole,
+    shareholderId: String,
+    shareholderName: String,
+    lastDepositId: String?,
+    onBack: () -> Unit,
+    factory: DepositViewModelFactory,
+    modifier: Modifier = Modifier
 ) {
+    val viewModel = remember {
+        factory.create(role, shareholderId, shareholderName, lastDepositId)
+    }
+
     val dueMonth by viewModel.dueMonth.collectAsState()
     val paymentDate by viewModel.paymentDate.collectAsState()
     val shareNos by viewModel.shareNos.collectAsState()
@@ -22,9 +30,7 @@ fun AddDepositScreen(
     val totalAmount by viewModel.totalAmount.collectAsState()
     val paymentStatus by viewModel.paymentStatus.collectAsState()
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
 
         Text("Add Deposit", style = MaterialTheme.typography.headlineSmall)
 
@@ -42,7 +48,7 @@ fun AddDepositScreen(
         OutlinedTextField(
             value = paymentDate,
             onValueChange = { viewModel.paymentDate.value = it },
-            label = { Text("Payment Date (dd/MM/yyyy)") },
+            label = { Text("Payment Date (dd-MM-yyyy)") },
             modifier = Modifier.fillMaxWidth()
         )
 

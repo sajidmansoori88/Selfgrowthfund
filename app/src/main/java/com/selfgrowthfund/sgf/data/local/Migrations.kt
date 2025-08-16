@@ -108,4 +108,12 @@ object Migrations {
             db.execSQL("ALTER TABLE borrowings ADD COLUMN purpose TEXT NOT NULL DEFAULT 'General'")
         }
     }
+
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE deposit_entries ADD COLUMN entrySource TEXT NOT NULL DEFAULT 'USER'"
+            )
+        }
+    }
 }

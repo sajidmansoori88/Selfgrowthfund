@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.data.local.converters
 import android.os.Build
 import androidx.room.TypeConverter
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
+import com.selfgrowthfund.sgf.model.enums.EntrySource
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -14,7 +15,7 @@ import java.util.logging.Logger
 object AppTypeConverters {
 
     private val logger = Logger.getLogger("AppTypeConverters")
-    private val fallbackFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private val fallbackFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
 
     // ===== LocalDateTime ↔ Long =====
     @TypeConverter
@@ -92,4 +93,15 @@ object AppTypeConverters {
     @TypeConverter
     @JvmStatic
     fun toDueMonth(value: String): DueMonth = DueMonth(value)
+}
+
+// ===== EntrySource ↔ String =====
+@TypeConverter
+fun fromEntrySource(source: EntrySource?): String? {
+    return source?.name
+}
+
+@TypeConverter
+fun toEntrySource(value: String?): EntrySource? {
+    return value?.let { EntrySource.valueOf(it) }
 }

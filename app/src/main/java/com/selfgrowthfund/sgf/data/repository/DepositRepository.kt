@@ -2,11 +2,14 @@ package com.selfgrowthfund.sgf.data.repository
 
 import com.selfgrowthfund.sgf.data.local.dao.DepositDao
 import com.selfgrowthfund.sgf.data.local.entities.Deposit
+import com.selfgrowthfund.sgf.data.local.entities.DepositEntry
+import com.selfgrowthfund.sgf.data.local.dao.DepositEntryDao
 import com.selfgrowthfund.sgf.utils.Dates
 import javax.inject.Inject
 
 class DepositRepository @Inject constructor(
     private val depositDao: DepositDao,
+    private val depositEntryDao: DepositEntryDao,
     dates: Dates
 ) {
     suspend fun createDeposit(
@@ -46,4 +49,9 @@ class DepositRepository @Inject constructor(
 
     suspend fun getMonthlySummary(monthYear: String) =
         depositDao.getMonthlyTotal(monthYear)
+
+    suspend fun insertDepositEntry(entry: DepositEntry) {
+        depositEntryDao.insert(entry)
+    }
+
 }

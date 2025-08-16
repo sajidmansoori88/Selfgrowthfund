@@ -30,7 +30,8 @@ object AppModule {
         )
             .addMigrations(
                 Migrations.MIGRATION_1_2,
-                Migrations.MIGRATION_2_3
+                Migrations.MIGRATION_2_3,
+                Migrations.MIGRATION_3_4
             )
             .addCallback(AppDatabase.DatabaseCallback())
             .build()
@@ -59,8 +60,9 @@ object AppModule {
     @Provides @Singleton
     fun provideDepositRepository(
         depositDao: DepositDao,
+        depositEntryDao: DepositEntryDao,
         dates: Dates
-    ): DepositRepository = DepositRepository(depositDao, dates)
+    ): DepositRepository = DepositRepository(depositDao, depositEntryDao, dates)
 
     @Provides @Singleton
     fun provideBorrowingRepository(

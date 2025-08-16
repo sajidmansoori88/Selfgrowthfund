@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 
 object DateUtils {
     private const val DUE_DATE_FORMAT = "dd-MMM-yyyy"       // e.g., "10-Aug-2025"
-    private const val PAYMENT_DATE_FORMAT = "dd/MM/yyyy"    // e.g., "11/08/2025"
+    private const val PAYMENT_DATE_FORMAT = "dd-MM-yyyy"    // e.g., "11-08-2025"
     private const val DISPLAY_DATE_FORMAT = "dd MMM yyyy"
 
     fun addDays(date: Date, days: Int): Date {
@@ -17,6 +17,18 @@ object DateUtils {
         return calendar.time
     }
 
+    fun formatterDueDate(): SimpleDateFormat =
+        SimpleDateFormat(DUE_DATE_FORMAT, Locale.ENGLISH)
+
+    fun formatterPaymentDate(): SimpleDateFormat =
+        SimpleDateFormat(PAYMENT_DATE_FORMAT, Locale.getDefault())
+
+    fun formatterDisplayDate(): SimpleDateFormat =
+        SimpleDateFormat(DISPLAY_DATE_FORMAT, Locale.ENGLISH)
+
+    fun formatterMonthYear(): SimpleDateFormat =
+        SimpleDateFormat("MMM-yyyy", Locale.ENGLISH)
+
     fun parseDueMonth(monthYear: String): Pair<String, Int> {
         val (month, year) = monthYear.split("-")
         require(year.toIntOrNull() != null) { "Invalid year format" }
@@ -24,11 +36,11 @@ object DateUtils {
     }
 
     fun isLatePayment(dueMonth: String, paymentDate: String): Boolean {
-        val dueDateStr = "10-$dueMonth" // e.g., "10-Aug-2025"
+        val dueDateStr = "10-$dueMonth"
         return try {
-            val due = SimpleDateFormat(DUE_DATE_FORMAT, Locale.ENGLISH).parse(dueDateStr)
+            val due = formatterDueDate().parse(dueDateStr)
                 ?: throw IllegalArgumentException("Invalid due date format")
-            val payment = SimpleDateFormat(PAYMENT_DATE_FORMAT, Locale.ENGLISH).parse(paymentDate)
+            val payment = formatterPaymentDate().parse(paymentDate)
                 ?: throw IllegalArgumentException("Invalid payment date format")
 
             payment.after(due)
@@ -40,9 +52,9 @@ object DateUtils {
     fun calculateDaysLate(dueMonth: String, paymentDate: String): Int {
         val dueDateStr = "10-$dueMonth"
         return try {
-            val due = SimpleDateFormat(DUE_DATE_FORMAT, Locale.ENGLISH).parse(dueDateStr)
+            val due = formatterDueDate().parse(dueDateStr)
                 ?: throw IllegalArgumentException("Invalid due date format")
-            val payment = SimpleDateFormat(PAYMENT_DATE_FORMAT, Locale.ENGLISH).parse(paymentDate)
+            val payment = formatterPaymentDate().parse(paymentDate)
                 ?: throw IllegalArgumentException("Invalid payment date format")
 
             TimeUnit.MILLISECONDS.toDays(payment.time - due.time).toInt()
@@ -52,7 +64,7 @@ object DateUtils {
     }
 
     fun formatForDisplay(date: Date): String {
-        return SimpleDateFormat(DISPLAY_DATE_FORMAT, Locale.ENGLISH).format(date)
+        return formatterDisplayDate().format(date)
     }
 
     fun daysBetween(startDate: Date, endDate: Date): Long {
@@ -60,12 +72,11 @@ object DateUtils {
     }
 
     fun getCurrentMonthFormatted(): String {
-        val formatter = SimpleDateFormat("MMM-yyyy", Locale.ENGLISH)
-        return formatter.format(Date())
+        return formatterMonthYear().format(Date())
     }
 
     fun generateSelectableDueMonths(monthCount: Int = 12): List<String> {
-        val formatter = SimpleDateFormat("MMM-yyyy", Locale.ENGLISH)
+        val formatter = formatterMonthYear()
         val calendar = Calendar.getInstance()
         val months = mutableListOf<String>()
 

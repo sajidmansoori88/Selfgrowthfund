@@ -6,6 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.selfgrowthfund.sgf.model.enums.DepositStatus
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
+import com.selfgrowthfund.sgf.model.enums.EntrySource
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -77,7 +78,10 @@ data class DepositEntry(
     val isSynced: Boolean = false,
 
     @ColumnInfo(name = "createdAt")
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    @ColumnInfo(name = "entrySource")
+    val entrySource: EntrySource = EntrySource.USER
 ) {
     companion object {
         fun generateNextId(lastId: String?): String {
