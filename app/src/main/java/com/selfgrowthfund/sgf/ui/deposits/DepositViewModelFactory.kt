@@ -8,8 +8,8 @@ import dagger.assisted.AssistedFactory
 interface DepositViewModelFactory {
     fun create(
         @Assisted("role") role: MemberRole,
-        @Assisted("shareholderId") id: String,
-        @Assisted("shareholderName") name: String,
-        @Assisted("lastDepositId") lastId: String?
+        @Assisted("shareholderId") shareholderId: String,
+        @Assisted("shareholderName") shareholderName: String,
+        @Assisted("lastDepositId") lastDepositId: String?
     ): DepositViewModel
 }

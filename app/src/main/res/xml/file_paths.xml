@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- app cache (your current config) -->
+    <cache-path name="cache" path="." />
+
+    <!-- app internal files -->
+    <files-path name="files" path="." />
+
+    <!-- app external files (like Documents/SGF/) -->
+    <external-files-path name="external_files" path="." />
+
+</paths>

@@ -59,4 +59,10 @@ class EnumConverters {
     @TypeConverter
     fun toRole(name: String): MemberRole = MemberRole.valueOf(name)
 
+    @TypeConverter
+    fun fromEntrySource(value: EntrySource): String = value.name
+
+    @TypeConverter
+    fun toEntrySource(value: String): EntrySource = EntrySource.valueOf(value)
+
 }

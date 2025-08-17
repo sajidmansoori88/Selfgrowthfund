@@ -27,12 +27,11 @@ interface DepositEntryDao {
     suspend fun getByStatus(status: DepositStatus): List<DepositEntry>
 
     @Query("SELECT * FROM deposit_entries WHERE status = :status AND dueMonth < :cutoffMonth")
-    suspend fun getOverduePending(status: String, cutoffMonth: String): List<DepositEntry>
+    suspend fun getOverduePending(status: DepositStatus, cutoffMonth: String): List<DepositEntry>
 
     @Query("SELECT depositId FROM deposit_entries ORDER BY createdAt DESC LIMIT 1")
     suspend fun getLastId(): String?
 
     @Query("SELECT * FROM deposit_entries WHERE entrySource = :source")
-    fun getEntriesBySource(source: EntrySource): List<DepositEntry>
-
+    suspend fun getEntriesBySource(source: EntrySource): List<DepositEntry>
 }

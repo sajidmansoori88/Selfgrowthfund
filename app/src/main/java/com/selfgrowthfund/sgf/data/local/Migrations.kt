@@ -4,18 +4,13 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 object Migrations {
-    // Migration from version 1 to 2 (complete schema overhaul)
+
     val MIGRATION_1_2 = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            // 1. First create new tables with proper constraints
             createShareholdersTable(db)
             createBorrowingsTable(db)
             createRepaymentsTable(db)
-
-            // 2. Then migrate existing data if needed
             migrateExistingShareholders(db)
-
-            // 3. Add performance indexes
             createIndexes(db)
         }
 
@@ -75,19 +70,18 @@ object Migrations {
         }
 
         private fun migrateExistingShareholders(db: SupportSQLiteDatabase) {
-            // Example migration if you had an old shareholders table
-            db.execSQL("""
-                INSERT INTO shareholders (shareholderId, fullName, mobileNumber, address, joinDate, status, shareBalance)
-                SELECT 
-                    id, 
-                    name, 
-                    COALESCE(phone, 'Unknown'), 
-                    COALESCE(address, 'Unknown'), 
-                    strftime('%s', 'now') * 1000, 
-                    CASE WHEN active = 1 THEN 'Active' ELSE 'Inactive' END,
-                    COALESCE(shares, 0)
-                FROM old_shareholders
-            """)
+            try {
+                db.execSQL("""
+                    INSERT INTO shareholders (shareholderId, fullName, mobileNumber, address, joinDate, status, shareBalance)
+                    SELECT id, name, COALESCE(phone, 'Unknown'), COALESCE(address, 'Unknown'),
+                           strftime('%s','now')*1000,
+                           CASE WHEN active=1 THEN 'Active' ELSE 'Inactive' END,
+                           COALESCE(shares,0)
+                    FROM old_shareholders
+                """)
+            } catch (e: Exception) {
+                // old_shareholders not present — ignore
+            }
         }
 
         private fun createIndexes(db: SupportSQLiteDatabase) {
@@ -98,22 +92,18 @@ object Migrations {
         }
     }
 
-    // Migration from version 2 to 3 (future changes)
     val MIGRATION_2_3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            // Example: Add email field to shareholders
-            db.execSQL("ALTER TABLE shareholders ADD COLUMN email TEXT")
-
-            // Example: Add loan purpose field to borrowings
+            db.execSQL("ALTER TABLE shareholders ADD COLUMN email TEXT DEFAULT ''")
             db.execSQL("ALTER TABLE borrowings ADD COLUMN purpose TEXT NOT NULL DEFAULT 'General'")
         }
     }
 
     val MIGRATION_3_4 = object : Migration(3, 4) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL(
-                "ALTER TABLE deposit_entries ADD COLUMN entrySource TEXT NOT NULL DEFAULT 'USER'"
-            )
+            db.execSQL("ALTER TABLE deposit_entries ADD COLUMN status TEXT NOT NULL DEFAULT 'Pending'")
+            db.execSQL("ALTER TABLE deposit_entries ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE deposit_entries ADD COLUMN entrySource TEXT NOT NULL DEFAULT 'USER'")
         }
     }
 }

@@ -4,7 +4,10 @@ import com.selfgrowthfund.sgf.data.local.dao.DepositDao
 import com.selfgrowthfund.sgf.data.local.entities.Deposit
 import com.selfgrowthfund.sgf.data.local.entities.DepositEntry
 import com.selfgrowthfund.sgf.data.local.dao.DepositEntryDao
+import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
+import kotlinx.coroutines.flow.Flow
 import com.selfgrowthfund.sgf.utils.Dates
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class DepositRepository @Inject constructor(
@@ -52,6 +55,17 @@ class DepositRepository @Inject constructor(
 
     suspend fun insertDepositEntry(entry: DepositEntry) {
         depositEntryDao.insert(entry)
+        }
+    fun getAllDeposits(): List<Deposit> {
+        return depositDao.getAllDeposits()
     }
+
+    fun getDepositSummaries(): Flow<List<DepositEntrySummaryDTO>> {
+        return depositDao.getDepositEntrySummary()
+    }
+    fun getDepositEntrySummary(): Flow<List<DepositEntrySummaryDTO>> {
+        return depositDao.getDepositEntrySummary()
+    }
+
 
 }

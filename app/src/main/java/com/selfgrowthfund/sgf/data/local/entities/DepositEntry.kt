@@ -1,31 +1,18 @@
 package com.selfgrowthfund.sgf.data.local.entities
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import androidx.room.*
 import com.selfgrowthfund.sgf.model.enums.DepositStatus
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import com.selfgrowthfund.sgf.model.enums.EntrySource
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ✅ Room-safe constants (used in default values and queries)
-const val STATUS_PENDING = "Pending"
-const val STATUS_APPROVED = "Approved"
-const val STATUS_REJECTED = "Rejected"
-const val STATUS_AUTO_REJECTED = "Auto-Rejected"
-
-// Optional: UI-only constants can stay here too if needed globally
-const val PAYMENT_ON_TIME = "On-time"
-const val PAYMENT_LATE = "Late"
-const val MODE_CASH = "Cash"
-const val MODE_ONLINE = "Online"
-
 @Entity(
     tableName = "deposit_entries",
-    indices = [Index(value = ["shareholderId"], name = "index_deposit_entries_shareholderId"),
-    Index(value = ["dueMonth"],name = "index_deposit_entries_dueMonth")]
+    indices = [
+        Index(value = ["shareholderId"], name = "index_deposit_entries_shareholderId"),
+        Index(value = ["dueMonth"], name = "index_deposit_entries_dueMonth")
+    ]
 )
 data class DepositEntry(
     @PrimaryKey
@@ -65,6 +52,7 @@ data class DepositEntry(
     @ColumnInfo(name = "modeOfPayment")
     val modeOfPayment: String,
 
+    // Newly persisted fields
     @ColumnInfo(name = "status")
     val status: DepositStatus = DepositStatus.Pending,
 
@@ -84,6 +72,18 @@ data class DepositEntry(
     val entrySource: EntrySource = EntrySource.USER
 ) {
     companion object {
+        // Status constants
+        const val STATUS_PENDING = "Pending"
+        const val STATUS_APPROVED = "Approved"
+        const val STATUS_REJECTED = "Rejected"
+        const val STATUS_AUTO_REJECTED = "Auto-Rejected"
+
+        // Payment constants
+        const val PAYMENT_ON_TIME = "On-time"
+        const val PAYMENT_LATE = "Late"
+        const val MODE_CASH = "Cash"
+        const val MODE_ONLINE = "Online"
+
         fun generateNextId(lastId: String?): String {
             return lastId?.let {
                 val num = it.removePrefix("D").toIntOrNull() ?: 0
@@ -93,8 +93,8 @@ data class DepositEntry(
 
         fun calculatePenalty(dueMonth: String, paymentDate: String): Double {
             return try {
-                val dueFormatter = SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH)
-                val payFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH)
+                val dueFormatter = SimpleDateFormat("MMM-yyyy", Locale.ENGLISH)
+                val payFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH)
 
                 val dueDate = dueFormatter.parse("10-$dueMonth")
                 val actualDate = payFormatter.parse(paymentDate)

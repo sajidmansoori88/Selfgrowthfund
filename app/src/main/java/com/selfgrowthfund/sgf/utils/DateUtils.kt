@@ -75,7 +75,7 @@ object DateUtils {
         return formatterMonthYear().format(Date())
     }
 
-    fun generateSelectableDueMonths(monthCount: Int = 12): List<String> {
+    fun generateSelectableDueMonths(monthCount: Int = 5): List<String> {
         val formatter = formatterMonthYear()
         val calendar = Calendar.getInstance()
         val months = mutableListOf<String>()
@@ -86,5 +86,15 @@ object DateUtils {
         }
 
         return months
+    }
+
+    fun generateMonthOptions(): List<String> {
+        val formatter = SimpleDateFormat("MM-yyyy", Locale.getDefault())
+        val calendar = Calendar.getInstance()
+        return (0..5).map {
+            val month = formatter.format(calendar.time)
+            calendar.add(Calendar.MONTH, 1)
+            month
+        }
     }
 }

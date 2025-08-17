@@ -7,20 +7,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.selfgrowthfund.sgf.ui.deposits.DepositViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun DepositFormScreen(
-    viewModel: DepositViewModel = viewModel()
+    viewModel: DepositViewModel = hiltViewModel()
 ) {
     val dueMonth by viewModel.dueMonth.collectAsState()
     val paymentDate by viewModel.paymentDate.collectAsState()
     val shareNos by viewModel.shareNos.collectAsState()
     val additionalContribution by viewModel.additionalContribution.collectAsState()
-
     val penalty by viewModel.penalty.collectAsState()
     val totalAmount by viewModel.totalAmount.collectAsState()
     val paymentStatus by viewModel.paymentStatus.collectAsState()
+
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Deposit Form", style = MaterialTheme.typography.titleLarge)
@@ -29,14 +30,14 @@ fun DepositFormScreen(
 
         OutlinedTextField(
             value = dueMonth,
-            onValueChange = { viewModel.dueMonth.value = it },
+            onValueChange = { viewModel.setDueMonth(it)},
             label = { Text("Due Month (e.g., Aug-2025)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = paymentDate,
-            onValueChange = { viewModel.paymentDate.value = it },
+            onValueChange = { viewModel.setPaymentDate(it)},
             label = { Text("Payment Date (ddMMyyyy)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
@@ -45,7 +46,8 @@ fun DepositFormScreen(
         OutlinedTextField(
             value = shareNos.toString(),
             onValueChange = {
-                it.toIntOrNull()?.let { num -> viewModel.shareNos.value = num }
+                it.toIntOrNull()?.let { num -> viewModel.setShareNos(num)
+                }
             },
             label = { Text("Number of Shares") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -55,7 +57,7 @@ fun DepositFormScreen(
         OutlinedTextField(
             value = additionalContribution.toString(),
             onValueChange = {
-                it.toDoubleOrNull()?.let { amt -> viewModel.additionalContribution.value = amt }
+                it.toDoubleOrNull()?.let { amt -> viewModel.setAdditionalContribution(amt)}
             },
             label = { Text("Additional Contribution") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
