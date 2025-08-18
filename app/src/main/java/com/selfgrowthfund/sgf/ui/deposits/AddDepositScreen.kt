@@ -6,8 +6,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.material3.MenuItemDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -54,7 +56,7 @@ fun AddDepositScreen(
     val paymentStatus by viewModel.paymentStatus.collectAsState()
 
     // UI state
-    val monthOptions = remember { getSelectableMonths() }
+    val monthOptions by remember { mutableStateOf(getSelectableMonths()) }
     var selectedMonth by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var sharesText by remember { mutableStateOf("") }
@@ -135,29 +137,31 @@ fun AddDepositScreen(
 ExposedDropdownMenu(
     expanded = expanded,
     onDismissRequest = { expanded = false },
-    modifier = Modifier.width(IntrinsicSize.Max)  // Ensures proper width
+    modifier = Modifier.width(IntrinsicSize.Max)
 ) {
     monthOptions.forEach { month ->
         DropdownMenuItem(
             text = { 
-                Text(
-                    text = month,
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 1
-                ) 
+                @Composable 
+                { 
+                    Text(
+                        text = month,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    ) 
+                } 
             },
             onClick = {
                 selectedMonth = month
                 viewModel.setDueMonth(month)
                 expanded = false
-                // Add any additional state updates here
             },
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = MenuItemDefaults.ContentPadding  // Proper padding
+            contentPadding = MenuItemDefaults.contentPadding
         )
     }
 }
-            }
+
 
             // Payment Date Picker
             Surface(
@@ -379,4 +383,16 @@ fun PaymentDateField(
     }
 }
 
-// ... (keep getSelectableMonths() same)
+private fun getSelectableMonths(): List<String> {
+    val formatter = SimpleDateFormat("MMM-yyyy", Locale.getDefault())
+    val cal = Calendar.getInstance()
+    val months = mutableListOf<String>()
+
+    cal.add(Calendar.MONTH, -3)
+    repeat(5) {
+        months.add(formatter.format(cal.time))
+        cal.add(Calendar.MONTH, 1)
+    }
+
+    return months
+}
