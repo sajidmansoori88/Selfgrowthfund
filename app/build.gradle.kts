@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.compose.tooling.preview)
     implementation(libs.room.testing)
     implementation(libs.androidx.junit.ktx)
+    implementation(libs.androidx.ui.graphics)
     debugImplementation(libs.compose.tooling)
 
     // ✅ AndroidX Core

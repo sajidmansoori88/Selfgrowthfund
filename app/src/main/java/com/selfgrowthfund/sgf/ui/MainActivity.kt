@@ -1,45 +1,63 @@
-        package com.selfgrowthfund.sgf.ui
+package com.selfgrowthfund.sgf.ui
 
-        import android.os.Bundle
-        import androidx.activity.ComponentActivity
-        import androidx.activity.compose.setContent
-        import androidx.compose.foundation.layout.fillMaxSize
-        import androidx.compose.foundation.layout.padding
-        import androidx.compose.material3.Scaffold
-        import androidx.compose.material3.Text
-        import androidx.compose.runtime.Composable
-        import androidx.compose.ui.Modifier
-        import androidx.compose.ui.tooling.preview.Preview
-        import com.selfgrowthfund.selfgrowthfund.sgf.ui.theme.SelfGrowthFundTheme
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.selfgrowthfund.sgf.model.enums.MemberRole
+import com.selfgrowthfund.sgf.ui.deposits.AddDepositScreen
+import com.selfgrowthfund.sgf.ui.deposits.DepositViewModelFactory
+import com.selfgrowthfund.selfgrowthfund.sgf.ui.theme.SelfGrowthFundTheme
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
-        class MainActivity : ComponentActivity() {
-            override fun onCreate(savedInstanceState: Bundle?) {
-                super.onCreate(savedInstanceState)
-                setContent {
-                    SelfGrowthFundTheme {
-                        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                            Greeting(
-                                name = "Android",
-                                modifier = Modifier.padding(innerPadding)
-                            )
-                        }
-                    }
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var depositViewModelFactory: DepositViewModelFactory
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        setContent {
+            SelfGrowthFundTheme {
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    AddDepositScreen(
+                        currentUserRole = MemberRole.MEMBER_ADMIN,
+                        shareholderId = "SH001",
+                        shareholderName = "Ayesha",
+                        lastDepositId = "D0023",
+                        factory = depositViewModelFactory,
+                        onSaveSuccess = { finish() },
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
         }
+    }
+}
 
-        @Composable
-        fun Greeting(name: String, modifier: Modifier = Modifier) {
-            Text(
-                text = "Hello $name!",
-                modifier = modifier
-            )
-        }
+    @Composable
+    fun Greeting(name: String, modifier: Modifier = Modifier) {
+        Text(
+            text = "Hello $name!",
+            modifier = modifier
+        )
+    }
 
-        @Preview(showBackground = true)
-        @Composable
-        fun GreetingPreview() {
-            SelfGrowthFundTheme {
-                Greeting("Android")
-            }
+    @Preview(showBackground = true)
+    @Composable
+    fun GreetingPreview() {
+        SelfGrowthFundTheme {
+            Greeting("Android")
         }
+    }
+
