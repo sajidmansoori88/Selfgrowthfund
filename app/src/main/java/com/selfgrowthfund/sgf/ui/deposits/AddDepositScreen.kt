@@ -10,8 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import java.text.SimpleDateFormat
@@ -50,10 +54,23 @@ fun AddDepositScreen(
 
     // UI state
     val monthOptions = remember { getSelectableMonths() }
-    var selectedMonth by remember { mutableStateOf("") } // Start with no selection
+    var selectedMonth by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var sharesText by remember { mutableStateOf("") }
     var additionalContributionText by remember { mutableStateOf("") }
+
+    // Validation states
+    var isMonthError by remember { mutableStateOf(false) }
+    var isDateError by remember { mutableStateOf(false) }
+    var isSharesError by remember { mutableStateOf(false) }
+
+    // Form validation
+    val isFormValid by derivedStateOf {
+        val monthValid = selectedMonth.isNotBlank().also { isMonthError = !it }
+        val dateValid = paymentDate.isNotBlank().also { isDateError = !it }
+        val sharesValid = sharesText.toIntOrNull()?.let { it > 0 } ?: false.also { isSharesError = !it }
+        monthValid && dateValid && sharesValid
+    }
 
     // Initialize text fields
     LaunchedEffect(additionalContribution) {
@@ -92,8 +109,19 @@ fun AddDepositScreen(
                     value = selectedMonth.ifEmpty { "Select Month" },
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Due Month") },
+                    label = { 
+                        Text(buildAnnotatedString {
+                            append("Due Month ")
+                            withStyle(SpanStyle(color = Color.Red)) { append("*") }
+                        })
+                    },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                    isError = isMonthError,
+                    supportingText = {
+                        if (isMonthError) {
+                            Text("Required", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor()
@@ -121,13 +149,32 @@ fun AddDepositScreen(
             }
 
             // Payment Date Picker
-            PaymentDateField(
-                currentUserRole = currentUserRole,
-                currentValue = paymentDate,
-                onDateSelected = { date ->
-                    viewModel.setPaymentDate(date)
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    PaymentDateField(
+                        currentUserRole = currentUserRole,
+                        currentValue = paymentDate,
+                        isError = isDateError,
+                        onDateSelected = { date ->
+                            viewModel.setPaymentDate(date)
+                        }
+                    )
+                    if (isDateError) {
+                        Text(
+                            text = "Required",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                        )
+                    }
                 }
-            )
+            }
 
             // Shares Field
             OutlinedTextField(
@@ -136,8 +183,22 @@ fun AddDepositScreen(
                     sharesText = it
                     viewModel.setShareNos(it.toIntOrNull() ?: 0)
                 },
-                label = { Text("Shares") },
+                label = { 
+                    Text(buildAnnotatedString {
+                        append("Shares ")
+                        withStyle(SpanStyle(color = Color.Red)) { append("*") }
+                    })
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = isSharesError,
+                supportingText = {
+                    if (isSharesError) {
+                        Text(
+                            "At least 1 share required", 
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .onFocusChanged {
@@ -164,20 +225,46 @@ fun AddDepositScreen(
             )
 
             // Summary Section
-            Column(
-                modifier = Modifier.padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Penalty: ₹${"%.2f".format(penalty)}")
-                Text("Total: ₹${"%.2f".format(totalAmount)}")
-                Text(
-                    text = "Status: ${paymentStatus.ifBlank { "Pending" }}",
-                    color = when (paymentStatus) {
-                        "On-time" -> MaterialTheme.colorScheme.primary
-                        "Late" -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.onSurface
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Summary", style = MaterialTheme.typography.titleSmall)
+                    Divider()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Penalty:")
+                        Text("₹${"%.2f".format(penalty)}")
                     }
-                )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Total:")
+                        Text("₹${"%.2f".format(totalAmount)}")
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Status:")
+                        Text(
+                            text = paymentStatus.ifBlank { "Pending" },
+                            color = when (paymentStatus) {
+                                "On-time" -> MaterialTheme.colorScheme.primary
+                                "Late" -> MaterialTheme.colorScheme.error
+                                else -> MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                    }
+                }
             }
 
             // Action Buttons
@@ -190,14 +277,20 @@ fun AddDepositScreen(
                 }
                 Button(
                     onClick = {
-                        if (selectedMonth.isBlank()) {
-                            Toast.makeText(context, "Please select a due month", Toast.LENGTH_SHORT).show()
+                        if (!isFormValid) {
+                            Toast.makeText(
+                                context,
+                                "Please fill all required fields",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             return@Button
                         }
                         viewModel.submitDeposit()
                         Toast.makeText(context, "Deposit saved", Toast.LENGTH_SHORT).show()
                         onSaveSuccess()
-                    }
+                    },
+                    enabled = isFormValid,
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text("Save Deposit")
                 }
@@ -206,24 +299,12 @@ fun AddDepositScreen(
     }
 }
 
-fun getSelectableMonths(): List<String> {
-    val formatter = SimpleDateFormat("MMM-yyyy", Locale.getDefault())
-    val cal = Calendar.getInstance()
-    val months = mutableListOf<String>()
-
-    cal.add(Calendar.MONTH, -3)
-    repeat(5) {
-        months.add(formatter.format(cal.time))
-        cal.add(Calendar.MONTH, 1)
-    }
-
-    return months
-}
-
+// Update PaymentDateField to support error state
 @Composable
 fun PaymentDateField(
     currentUserRole: MemberRole,
     currentValue: String,
+    isError: Boolean,
     onDateSelected: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -263,16 +344,28 @@ fun PaymentDateField(
     )
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Text("Payment Date", style = MaterialTheme.typography.labelMedium)
+        Text(
+            buildAnnotatedString {
+                append("Payment Date ")
+                withStyle(SpanStyle(color = Color.Red)) { append("*") }
+            },
+            style = MaterialTheme.typography.labelMedium,
+            color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(4.dp))
         Button(
             onClick = { datePickerDialog.show() },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isError) MaterialTheme.colorScheme.errorContainer 
+                else MaterialTheme.colorScheme.primaryContainer
+            )
         ) {
             Text(if (selectedDate.isBlank()) "Select Date" else selectedDate)
         }
     }
 }
+
+// ... (keep getSelectableMonths() same)
