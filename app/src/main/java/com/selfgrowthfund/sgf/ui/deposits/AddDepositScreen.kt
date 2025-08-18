@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.ui.deposits
 
 import android.app.DatePickerDialog
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -131,21 +132,31 @@ fun AddDepositScreen(
                         ) { expanded = true }
                 )
 
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    monthOptions.forEach { month ->
-                        DropdownMenuItem(
-                            text = { Text(month) },
-                            onClick = {
-                                selectedMonth = month
-                                viewModel.setDueMonth(month)
-                                expanded = false
-                            }
-                        )
-                    }
-                }
+ExposedDropdownMenu(
+    expanded = expanded,
+    onDismissRequest = { expanded = false },
+    modifier = Modifier.width(IntrinsicSize.Max)  // Ensures proper width
+) {
+    monthOptions.forEach { month ->
+        DropdownMenuItem(
+            text = { 
+                Text(
+                    text = month,
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 1
+                ) 
+            },
+            onClick = {
+                selectedMonth = month
+                viewModel.setDueMonth(month)
+                expanded = false
+                // Add any additional state updates here
+            },
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = MenuItemDefaults.ContentPadding  // Proper padding
+        )
+    }
+}
             }
 
             // Payment Date Picker
