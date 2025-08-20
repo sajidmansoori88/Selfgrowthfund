@@ -13,6 +13,8 @@ data class Shareholder(
 
     // Core Information
     val fullName: String,           // Member's full name
+    val dob: Date,                  // Member's date of birth
+    val email: String,              // Member's email
     val mobileNumber: String,       // Required contact number
     val address: String,            // Current address
 
@@ -21,14 +23,14 @@ data class Shareholder(
     val sharePrice: Double = 2000.0,// Fixed ₹2000/share
 
     // Membership Dates
-    val joinDate: Date,             // Membership start date
+    val joiningDate: Date,             // Membership start date
     val exitDate: Date? = null,     // Null if active
 
     // Member Roles
     val role: MemberRole,
 
     // Status
-    val status: String = STATUS_ACTIVE,
+    val shareholderStatus: String = STATUS_ACTIVE,
     val lastUpdated: Date = Date(),  // Auto-timestamp
 
     // Audit Fields
@@ -59,8 +61,20 @@ data class Shareholder(
     }
 
     fun isEligibleForLoan(): Boolean {
-        return status == STATUS_ACTIVE &&
+        return shareholderStatus == STATUS_ACTIVE &&
                 shareBalance >= MIN_SHARES
     }
+
+    fun isValid(): Boolean {
+        return fullName.isNotBlank() &&
+                mobileNumber.length == 10 &&
+                shareBalance >= MIN_SHARES &&
+                role != null
+    }
+
+    fun isActive(): Boolean = exitDate == null &&
+            shareholderStatus == STATUS_ACTIVE
+
+
 }
 

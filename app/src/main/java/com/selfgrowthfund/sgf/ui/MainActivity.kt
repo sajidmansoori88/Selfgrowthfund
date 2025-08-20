@@ -3,61 +3,54 @@ package com.selfgrowthfund.sgf.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.selfgrowthfund.sgf.model.enums.MemberRole
-import com.selfgrowthfund.sgf.ui.deposits.AddDepositScreen
-import com.selfgrowthfund.sgf.ui.deposits.DepositViewModelFactory
-import com.selfgrowthfund.selfgrowthfund.sgf.ui.theme.SelfGrowthFundTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.selfgrowthfund.sgf.ui.addshareholders.AddShareholderScreen
+import com.selfgrowthfund.sgf.ui.editshareholders.EditShareholderScreen
+import com.selfgrowthfund.sgf.ui.shareholders.ShareholderListScreen
+import com.selfgrowthfund.sgf.session.UserSessionViewModel
+import com.selfgrowthfund.sgf.ui.theme.SGFTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    @Inject lateinit var depositViewModelFactory: DepositViewModelFactory
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-
         setContent {
-            SelfGrowthFundTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AddDepositScreen(
-                        currentUserRole = MemberRole.MEMBER_ADMIN,
-                        shareholderId = "SH001",
-                        shareholderName = "Ayesha",
-                        lastDepositId = "D0023",
-                        factory = depositViewModelFactory,
-                        onSaveSuccess = { finish() },
-                        modifier = Modifier.padding(innerPadding)
-                    )
+            SGFTheme {
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    val navController = rememberNavController()
+                    val userSession: UserSessionViewModel = hiltViewModel()
+
+                    NavHost(navController = navController, startDestination = "shareholderList") {
+                        composable("shareholderList") {
+                            ShareholderListScreen(navController = navController)
+                        }
+                        composable("addShareholder") {
+                            AddShareholderScreen(
+                                viewModel = hiltViewModel(),
+                                navController = navController
+                            )
+                        }
+                        composable("editShareholder/{id}") { backStackEntry ->
+                            val id = backStackEntry.arguments?.getString("id") ?: return@composable
+                            EditShareholderScreen(
+                                shareholderId = id,
+                                viewModel = hiltViewModel(),
+                                userSession = userSession,
+                                onDone = { navController.popBackStack() }
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
-
-    @Composable
-    fun Greeting(name: String, modifier: Modifier = Modifier) {
-        Text(
-            text = "Hello $name!",
-            modifier = modifier
-        )
-    }
-
-    @Preview(showBackground = true)
-    @Composable
-    fun GreetingPreview() {
-        SelfGrowthFundTheme {
-            Greeting("Android")
-        }
-    }
-

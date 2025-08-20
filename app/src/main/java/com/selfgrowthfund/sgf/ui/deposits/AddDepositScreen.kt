@@ -4,8 +4,8 @@ import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,7 +44,7 @@ fun AddDepositScreen(
 
     val context = LocalContext.current
 
-    // State collection
+    // States
     val dueMonth by viewModel.dueMonth.collectAsState()
     val paymentDate by viewModel.paymentDate.collectAsState()
     val shareNos by viewModel.shareNos.collectAsState()
@@ -53,12 +53,17 @@ fun AddDepositScreen(
     val totalAmount by viewModel.totalAmount.collectAsState()
     val paymentStatus by viewModel.paymentStatus.collectAsState()
 
-    // UI state
     val monthOptions = remember { getSelectableMonths() }
     var selectedMonth by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) }
+    var expandedMonth by remember { mutableStateOf(false) }
     var sharesText by remember { mutableStateOf("") }
     var additionalContributionText by remember { mutableStateOf("") }
+
+    // Mode of Payment
+    val paymentModes = listOf("Cash", "Bank Transfer", "UPI")
+    var selectedPaymentMode by remember { mutableStateOf("") }
+    var expandedPayment by remember { mutableStateOf(false) }
+    var isModeError by remember { mutableStateOf(false) }
 
     // Validation states
     var isMonthError by remember { mutableStateOf(false) }
@@ -66,54 +71,54 @@ fun AddDepositScreen(
     var isSharesError by remember { mutableStateOf(false) }
 
     // Date Picker Dialog
-    val datePickerDialog = remember {
-        DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
-                val selectedCal = Calendar.getInstance().apply {
-                    set(year, month, dayOfMonth)
-                }
-                val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                val formatted = sdf.format(selectedCal.time)
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val selectedCal = Calendar.getInstance().apply { set(year, month, dayOfMonth) }
+            val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+            val formatted = sdf.format(selectedCal.time)
 
+            // Only current month for non-admins
+            if (currentUserRole != MemberRole.MEMBER_ADMIN) {
                 val now = Calendar.getInstance()
-
-                if (currentUserRole != MemberRole.MEMBER_ADMIN) {
-                    val startOfMonth = now.clone() as Calendar
-                    startOfMonth.set(Calendar.DAY_OF_MONTH, 1)
-
-                    val endOfMonth = now.clone() as Calendar
-                    endOfMonth.set(Calendar.DAY_OF_MONTH, now.getActualMaximum(Calendar.DAY_OF_MONTH))
-
-                    if (selectedCal.before(startOfMonth) || selectedCal.after(endOfMonth)) {
-                        Toast.makeText(context, "You can select only within current month", Toast.LENGTH_SHORT).show()
-                        return@DatePickerDialog
-                    }
+                val startOfMonth = now.clone() as Calendar
+                startOfMonth.set(Calendar.DAY_OF_MONTH, 1)
+                val endOfMonth = now.clone() as Calendar
+                endOfMonth.set(Calendar.DAY_OF_MONTH, now.getActualMaximum(Calendar.DAY_OF_MONTH))
+                if (selectedCal.before(startOfMonth) || selectedCal.after(endOfMonth)) {
+                    Toast.makeText(
+                        context,
+                        "You can select only within current month",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@DatePickerDialog
                 }
-                viewModel.setPaymentDate(formatted)
-            },
-            Calendar.getInstance().get(Calendar.YEAR),
-            Calendar.getInstance().get(Calendar.MONTH),
-            Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
-        )
-    }
+            }
+            viewModel.setPaymentDate(formatted)
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     // Form validation
     val isFormValid by remember {
         derivedStateOf {
             val monthValid = selectedMonth.isNotBlank().also { isMonthError = !it }
             val dateValid = paymentDate.isNotBlank().also { isDateError = !it }
-            val sharesValid = sharesText.toIntOrNull()?.let { it > 0 } ?: false.also { isSharesError = !it }
-            monthValid && dateValid && sharesValid
+            val sharesValid =
+                sharesText.toIntOrNull()?.let { it > 0 } ?: false.also { isSharesError = !it }
+            val modeValid = selectedPaymentMode.isNotBlank().also { isModeError = !it }
+            monthValid && dateValid && sharesValid && modeValid
         }
     }
 
-    // Initialize text fields
     LaunchedEffect(additionalContribution) {
-        additionalContributionText = if (additionalContribution == 0.0) "" else "%.2f".format(additionalContribution)
+        additionalContributionText =
+            if (additionalContribution == 0.0) "" else "%.2f".format(additionalContribution)
     }
 
-    // Calculate when inputs change
     LaunchedEffect(dueMonth, paymentDate, shareNos, additionalContribution) {
         viewModel.updateCalculations()
     }
@@ -134,105 +139,94 @@ fun AddDepositScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.Top   // ← uniform, no auto-spacing
         ) {
-            // Month selection dropdown
-            var expanded by remember { mutableStateOf(false) }
-            val monthOptions = remember { getSelectableMonths() }
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it }
+            // Row: Due Month & Payment Date
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),   // ← spacing
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedTextField(
-                    value = selectedMonth,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = {
-                        Text(buildAnnotatedString {
-                            append("Due Month ")
-                            withStyle(SpanStyle(color = Color.Red)) { append("*") }
-                        })
-                    },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.primary,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                        .clickable { expanded = !expanded },
-                    shape = MaterialTheme.shapes.medium
-                )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    monthOptions.forEach { month ->
-                        DropdownMenuItem(
-                            text = { Text(month) },
-                            onClick = {
-                                selectedMonth = month
-                                viewModel.setDueMonth(month)
-                                expanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Payment Date Picker
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        buildAnnotatedString {
-                            append("Payment Date ")
-                            withStyle(SpanStyle(color = Color.Red)) { append("*") }
-                        },
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = { datePickerDialog.show() },
-                        modifier = Modifier.wrapContentWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (paymentDate.isBlank())
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.primary
-                        ),
-                        border = BorderStroke(
-                            1.dp,
-                            if (paymentDate.isBlank())
-                                MaterialTheme.colorScheme.outline
-                            else
-                                Color.Transparent
-                        ),
-                        shape = MaterialTheme.shapes.small
+                // Due Month
+                Column(modifier = Modifier.weight(1f)) {
+                    ExposedDropdownMenuBox(
+                        expanded = expandedMonth,
+                        onExpandedChange = { expandedMonth = it }
                     ) {
-                        Text(paymentDate.ifBlank { "Select Date" })
+                        OutlinedTextField(
+                            value = selectedMonth,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = {
+                                Text(buildAnnotatedString {
+                                    append("Due Month ")
+                                    withStyle(SpanStyle(color = Color.Red)) { append("*") }
+                                })
+                            },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedMonth) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                                .clickable { expandedMonth = !expandedMonth },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                                cursorColor = MaterialTheme.colorScheme.primary
+                            ),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedMonth,
+                            onDismissRequest = { expandedMonth = false }
+                        ) {
+                            monthOptions.forEach { month ->
+                                DropdownMenuItem(
+                                    text = { Text(month) },
+                                    onClick = {
+                                        selectedMonth = month
+                                        viewModel.setDueMonth(month)
+                                        expandedMonth = false
+                                    }
+                                )
+                            }
+                        }
                     }
-                    if (isDateError) {
-                        Text(
-                            text = "Required",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                }
+
+                // Payment Date
+                Column(modifier = Modifier.weight(1f)) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = paymentDate,
+                            onValueChange = {},
+                            readOnly = true,
+                            enabled = true,
+                            label = {
+                                Text(buildAnnotatedString {
+                                    append("Payment Date ")
+                                    withStyle(SpanStyle(color = Color.Red)) { append("*") }
+                                })
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                                cursorColor = MaterialTheme.colorScheme.primary
+                            ),
+                            shape = MaterialTheme.shapes.medium,
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { datePickerDialog.show() }
                         )
                     }
                 }
             }
 
-            // Share Numbers Field
+            // Share Numbers
             OutlinedTextField(
                 value = sharesText,
                 onValueChange = {
@@ -246,23 +240,13 @@ fun AddDepositScreen(
                     })
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.primary,
-                    cursorColor = MaterialTheme.colorScheme.primary,
-                ),
-                supportingText = {
-                    if (isSharesError) {
-                        Text(
-                            "At least 1 share required",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium // ✅ consistent rounding
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),    // ← spacing
+                shape = MaterialTheme.shapes.medium
             )
-/// Additional Contribution
+
+            // Additional Contribution
             OutlinedTextField(
                 value = additionalContributionText,
                 onValueChange = {
@@ -271,33 +255,78 @@ fun AddDepositScreen(
                 },
                 label = { Text("Additional Contribution (₹)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.primary,
-                    cursorColor = MaterialTheme.colorScheme.primary
-                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .onFocusChanged { focusState ->
-                        if (focusState.isFocused && additionalContributionText == "0.00") {
-                            additionalContributionText = ""
-                        }
-                    },
-                shape = MaterialTheme.shapes.medium // ✅ consistent rounding
+                        if (focusState.isFocused && additionalContributionText == "0.00") additionalContributionText =
+                            ""
+                    }
+                    .padding(bottom = 12.dp),    // ← spacing
+                shape = MaterialTheme.shapes.medium
             )
+
+            // Mode of Payment dropdown
+            Column(
+                modifier = Modifier.padding(bottom = 20.dp)   // ← spacing
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = expandedPayment,
+                    onExpandedChange = { expandedPayment = it }
+                ) {
+                    OutlinedTextField(
+                        value = selectedPaymentMode,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = {
+                            Text(buildAnnotatedString {
+                                append("Mode of Payment ")
+                                withStyle(SpanStyle(color = Color.Red)) { append("*") }
+                            })
+                        },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedPayment) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                            .clickable { expandedPayment = !expandedPayment },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = MaterialTheme.shapes.medium
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedPayment,
+                        onDismissRequest = { expandedPayment = false }
+                    ) {
+                        paymentModes.forEach { mode ->
+                            DropdownMenuItem(
+                                text = { Text(mode) },
+                                onClick = {
+                                    selectedPaymentMode = mode
+                                    expandedPayment = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
             // Summary Section
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp)   // ← spacing
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text("Payment Summary:", style = MaterialTheme.typography.titleSmall)
-                    HorizontalDivider()
+                    Divider()
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -337,9 +366,7 @@ fun AddDepositScreen(
                 Button(
                     onClick = onSaveSuccess,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Cancel")
                 }
@@ -361,10 +388,7 @@ fun AddDepositScreen(
                     enabled = isFormValid,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isFormValid)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.surfaceContainerHighest
+                        containerColor = if (isFormValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
                     )
                 ) {
                     Text("Save Deposit")
@@ -375,15 +399,13 @@ fun AddDepositScreen(
 }
 
 private fun getSelectableMonths(): List<String> {
-    val formatter = SimpleDateFormat("MMM-yyyy", Locale.getDefault())
-    val cal = Calendar.getInstance()
-    val months = mutableListOf<String>()
-
+val formatter = SimpleDateFormat("MMM-yyyy", Locale.getDefault())
+val cal = Calendar.getInstance()
+val months = mutableListOf<String>()
     cal.add(Calendar.MONTH, -3)
     repeat(6) {
         months.add(formatter.format(cal.time))
         cal.add(Calendar.MONTH, 1)
     }
-
     return months
 }

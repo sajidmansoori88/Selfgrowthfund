@@ -1,9 +1,9 @@
-package com.selfgrowthfund.sgf.features.addshareholders.ui.presentation
+package com.selfgrowthfund.sgf.ui.addshareholders
 
-import androidx.lifecycle.ViewModel
+import  androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.data.repository.ShareholderRepository
-import com.selfgrowthfund.sgf.features.addshareholders.ui.domain.ShareholderInput
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ class AddShareholderViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    fun addShareholder(input: ShareholderInput, onResult: (Boolean, String?) -> Unit) {
+    fun addShareholder(input: ShareholderEntry, onResult: (Boolean, String?) -> Unit) {
         _isLoading.value = true
         viewModelScope.launch {
             val result = repository.syncShareholderToFirestore(input)

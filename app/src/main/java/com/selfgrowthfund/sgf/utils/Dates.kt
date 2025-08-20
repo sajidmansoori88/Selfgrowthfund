@@ -9,29 +9,30 @@ import javax.inject.Inject
 
 class Dates @Inject constructor() {
 
-    private val fallbackFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private val fallbackFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
 
     fun format(localDate: LocalDate): String {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             localDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
         } else {
-            // Avoid calling LocalDate methods directly on API < 26
             val parts = localDate.toString().split("-")
             val year = parts[0].toInt()
-            val month = parts[1].toInt() - 1 // Calendar months are 0-based
+            val month = parts[1].toInt() - 1
             val day = parts[2].toInt()
-
             val date = GregorianCalendar(year, month, day).time
             fallbackFormatter.format(date)
         }
     }
 
-    fun format(timestamp: Long): String {
-        val date = Date(timestamp) // Convert Long to Date
+    fun format(date: Date): String {
         return fallbackFormatter.format(date)
+    }
+
+    fun format(timestamp: Long): String {
+        return format(Date(timestamp))
     }
 
     fun now(): Long = System.currentTimeMillis()
 
-    fun nowDate(): Date = Date(now()) // ✅ Added for Date-based default values
+    fun nowDate(): Date = Date(now())
 }

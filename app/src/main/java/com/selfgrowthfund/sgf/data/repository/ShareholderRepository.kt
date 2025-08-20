@@ -3,7 +3,7 @@ package com.selfgrowthfund.sgf.data.repository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
-import com.selfgrowthfund.sgf.features.addshareholders.ui.domain.ShareholderInput
+import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.tasks.await
@@ -54,18 +54,18 @@ class ShareholderRepository @Inject constructor(
     suspend fun getLastShareholderId(): String? = dao.getLastId()
 
     // 🔄 Firestore sync
-    suspend fun syncShareholderToFirestore(input: ShareholderInput): Result<Unit> = try {
+    suspend fun syncShareholderToFirestore(input: ShareholderEntry): Result<Unit> = try {
         val now = dates.now()
-        val doc = firestore.collection("shareholders").document()
+        val doc = firestore.collection("shareholder").document()
         val data = mapOf(
-            "name" to input.name,
-            "dateOfBirth" to dates.format(input.dateOfBirth),
+            "name" to input.fullName,
+            "dob" to dates.format(input.dob),
             "joiningDate" to dates.format(input.joiningDate),
             "mobileNumber" to input.mobileNumber,
             "email" to input.email,
             "role" to input.role,
-            "createdAt" to now, // raw timestamp
-            "createdAtFormatted" to dates.format(now), // ✅ formatted string
+            "createdAt" to now,
+            "createdAtFormatted" to dates.format(now),
             "uid" to null
         )
         doc.set(data).await()

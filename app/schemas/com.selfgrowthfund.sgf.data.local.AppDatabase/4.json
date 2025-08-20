@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 4,
-    "identityHash": "10b975c06b75b174c22ae2e804ac20fe",
+    "identityHash": "6b4dcb769c9189178b9e0f297abd7526",
     "entities": [
       {
         "tableName": "shareholders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`shareholderId` TEXT NOT NULL, `fullName` TEXT NOT NULL, `mobileNumber` TEXT NOT NULL, `address` TEXT NOT NULL, `shareBalance` REAL NOT NULL, `sharePrice` REAL NOT NULL, `joinDate` INTEGER NOT NULL, `exitDate` INTEGER, `role` TEXT NOT NULL, `status` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`shareholderId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`shareholderId` TEXT NOT NULL, `fullName` TEXT NOT NULL, `dob` INTEGER NOT NULL, `email` TEXT NOT NULL, `mobileNumber` TEXT NOT NULL, `address` TEXT NOT NULL, `shareBalance` REAL NOT NULL, `sharePrice` REAL NOT NULL, `joiningDate` INTEGER NOT NULL, `exitDate` INTEGER, `role` TEXT NOT NULL, `shareholderStatus` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`shareholderId`))",
         "fields": [
           {
             "fieldPath": "shareholderId",
@@ -17,6 +17,18 @@
           {
             "fieldPath": "fullName",
             "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dob",
+            "columnName": "dob",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -45,8 +57,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "joinDate",
-            "columnName": "joinDate",
+            "fieldPath": "joiningDate",
+            "columnName": "joiningDate",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -62,8 +74,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "status",
-            "columnName": "status",
+            "fieldPath": "shareholderStatus",
+            "columnName": "shareholderStatus",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -205,7 +217,7 @@
       },
       {
         "tableName": "deposit_entries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` TEXT NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `status` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `isSynced` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, PRIMARY KEY(`depositId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` TEXT NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT, `status` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `isSynced` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, PRIMARY KEY(`depositId`))",
         "fields": [
           {
             "fieldPath": "depositId",
@@ -276,8 +288,7 @@
           {
             "fieldPath": "modeOfPayment",
             "columnName": "modeOfPayment",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "status",
@@ -793,7 +804,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '10b975c06b75b174c22ae2e804ac20fe')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6b4dcb769c9189178b9e0f297abd7526')"
     ]
   }
 }

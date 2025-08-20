@@ -151,4 +151,6 @@ dependencies {
     implementation(libs.itext7.kernel)
     implementation(libs.itext7.layout)
     implementation(libs.itext7.core)
+
+    implementation(libs.accompanist.systemuicontroller)
 }

@@ -31,7 +31,7 @@ interface ShareholderDao {
     @Query("""
         SELECT *, (shareBalance * 2000 * 0.9) AS maxBorrowAmount
         FROM shareholders
-        WHERE status = 'Active'
+        WHERE shareholderStatus = 'Active'
         AND shareBalance >= 1
         AND shareholderId = :id
     """)
@@ -60,7 +60,7 @@ interface ShareholderDao {
         SELECT EXISTS(
             SELECT 1 FROM shareholders
             WHERE shareholderId = :id
-            AND status = 'Active'
+            AND shareholderStatus = 'Active'
             AND shareBalance >= 1
         )
     """)
@@ -82,7 +82,7 @@ interface ShareholderDao {
     @Query("""
         UPDATE shareholders
         SET
-            status = :newStatus,
+            shareholderStatus = :newStatus,
             exitDate = CASE WHEN :newStatus = 'Inactive' THEN :exitDate ELSE NULL END,
             lastUpdated = :timestamp
         WHERE shareholderId = :id

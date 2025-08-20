@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import androidx.lifecycle.viewModelScope
+import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -50,6 +51,10 @@ class DepositViewModel @AssistedInject constructor(
 
     private val _paymentStatus = MutableStateFlow("")
     val paymentStatus: StateFlow<String> = _paymentStatus
+
+    private val _modeOfPayment = MutableStateFlow<PaymentMode?>(null)
+    val modeOfPayment: StateFlow<PaymentMode?> = _modeOfPayment
+
 
     // ---------------- SUMMARY STATE ----------------
     val depositSummaries: StateFlow<List<DepositEntrySummaryDTO>> =
@@ -90,6 +95,9 @@ class DepositViewModel @AssistedInject constructor(
         _paymentStatus.value = status
     }
 
+    fun setModeOfPayment(mode: PaymentMode) {
+        _modeOfPayment.value = mode
+    }
     // ---------------- ENTRY HELPERS ----------------
     fun calculatePenalty(dueMonth: String, paymentDate: String): Double {
         if (paymentDate.isBlank()) return 0.0
@@ -191,7 +199,7 @@ class DepositViewModel @AssistedInject constructor(
                 penalty = _penalty.value,
                 totalAmount = _totalAmount.value,
                 paymentStatus = _paymentStatus.value,
-                modeOfPayment = "Cash",
+                modeOfPayment = _modeOfPayment.value,
                 status = DepositStatus.Pending,
                 approvedBy = null,
                 notes = null,

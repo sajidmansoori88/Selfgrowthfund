@@ -4,6 +4,7 @@ import androidx.room.*
 import com.selfgrowthfund.sgf.model.enums.DepositStatus
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import com.selfgrowthfund.sgf.model.enums.EntrySource
+import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -50,7 +51,7 @@ data class DepositEntry(
     val paymentStatus: String,
 
     @ColumnInfo(name = "modeOfPayment")
-    val modeOfPayment: String,
+    val modeOfPayment: PaymentMode?,
 
     // Newly persisted fields
     @ColumnInfo(name = "status")
