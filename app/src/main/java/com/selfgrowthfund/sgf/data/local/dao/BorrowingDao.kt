@@ -3,7 +3,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Borrowing
 import kotlinx.coroutines.flow.Flow
-import java.util.Date
+import org.threeten.bp.LocalDate
 
 @Dao
 interface BorrowingDao {
@@ -35,6 +35,13 @@ interface BorrowingDao {
     @Query("UPDATE borrowings SET status = :newStatus WHERE borrowId = :borrowId")
     suspend fun updateStatus(borrowId: String, newStatus: String)
 
+    @Query("UPDATE borrowings SET status = :status, closedDate = :closedDate WHERE borrowId = :borrowId")
+    suspend fun updateBorrowingStatus(
+        borrowId: String,
+        status: String,
+        closedDate: LocalDate? // ✅ Updated to match entity
+    )
+
     /* Delete Operations */
     @Delete
     suspend fun deleteBorrowing(borrowing: Borrowing)
@@ -50,7 +57,7 @@ interface BorrowingDao {
     suspend fun getTotalActiveLoanAmount(shareholderId: String): Double
 
     @Query("SELECT * FROM borrowings WHERE dueDate < :currentDate AND status = 'Active'")
-    fun getOverdueBorrowings(currentDate: Long): Flow<List<Borrowing>>
+    fun getOverdueBorrowings(currentDate: LocalDate): Flow<List<Borrowing>> // ✅ Updated
 
     /* ID Generation Helper */
     @Query("SELECT borrowId FROM borrowings ORDER BY borrowId DESC LIMIT 1")
@@ -58,13 +65,6 @@ interface BorrowingDao {
 
     @Query("SELECT * FROM borrowings WHERE shareholderId = :shareholderId AND status = :status")
     suspend fun getBorrowingsByShareholder(shareholderId: String, status: String): List<Borrowing>
-
-    @Query("UPDATE borrowings SET status = :status, closedDate = :closedDate WHERE borrowId = :borrowId")
-    suspend fun updateBorrowingStatus(
-        borrowId: String,
-        status: String,
-        closedDate: Date? // ✅ Keep only this version
-    )
 
     @Query("SELECT * FROM borrowings WHERE shareholderId = :shareholderId ORDER BY applicationDate DESC")
     fun getBorrowingsByShareholderFlow(shareholderId: String): Flow<List<Borrowing>>

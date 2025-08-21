@@ -3,9 +3,11 @@ package com.selfgrowthfund.sgf.data.local.dao
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Investment
 import kotlinx.coroutines.flow.Flow
+import org.threeten.bp.LocalDate
 
 @Dao
 interface InvestmentDao {
+
     // CRUD Operations
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(investment: Investment)
@@ -24,28 +26,30 @@ interface InvestmentDao {
     suspend fun getInvestmentById(id: String): Investment?
 
     // Collection Queries
-    @Query("SELECT * FROM investments")
+    @Query("SELECT * FROM investments ORDER BY investmentDate DESC")
     fun getAll(): Flow<List<Investment>>
 
-    @Query("SELECT * FROM investments WHERE status = :status")
+    @Query("SELECT * FROM investments WHERE status = :status ORDER BY investmentDate DESC")
     fun getByStatus(status: String): Flow<List<Investment>>
 
-    @Query("SELECT * FROM investments WHERE investeeType = :type")
+    @Query("SELECT * FROM investments WHERE investeeType = :type ORDER BY investmentDate DESC")
     fun getByInvesteeType(type: String): Flow<List<Investment>>
 
     // Special Queries
     @Query("""
         SELECT * FROM investments 
-        WHERE returnDueDate BETWEEN :startDate AND :endDate
+        WHERE date(returnDueDate) BETWEEN date(:startDate) AND date(:endDate)
         AND status = 'Active'
+        ORDER BY returnDueDate ASC
     """)
-    suspend fun getDueBetween(startDate: Long, endDate: Long): List<Investment>
+    suspend fun getDueBetween(startDate: LocalDate, endDate: LocalDate): List<Investment>
 
     @Query("""
         SELECT * FROM investments 
-        WHERE (investmentId LIKE :query 
-        OR investmentName LIKE :query 
-        OR investeeName LIKE :query)
+        WHERE investmentId LIKE '%' || :query || '%'
+        OR investmentName LIKE '%' || :query || '%'
+        OR investeeName LIKE '%' || :query || '%'
+        ORDER BY investmentDate DESC
     """)
     suspend fun search(query: String): List<Investment>
 

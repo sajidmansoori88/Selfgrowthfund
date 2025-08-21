@@ -7,7 +7,7 @@ import com.selfgrowthfund.sgf.data.local.entities.BorrowingStatus
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
-import java.util.Date
+import org.threeten.bp.LocalDate
 import java.util.Locale
 import javax.inject.Inject
 
@@ -63,8 +63,8 @@ class BorrowingRepository @Inject constructor(
         borrowId: String,
         status: String
     ): Result<Unit> = try {
-        val closedDate: Date? = if (BorrowingStatus.getClosedStatuses().contains(status)) {
-            dates.nowDate()
+        val closedDate: LocalDate? = if (BorrowingStatus.getClosedStatuses().contains(status)) {
+            dates.today()
         } else {
             null
         }
@@ -74,11 +74,10 @@ class BorrowingRepository @Inject constructor(
         Result.Error(e)
     }
 
-
     // ==================== Business Logic ====================
     fun getOverdueBorrowings(): Flow<List<Borrowing>> {
-        val currentTimeMillis = dates.now()
-        return borrowingDao.getOverdueBorrowings(currentTimeMillis)
+        val today = dates.today()
+        return borrowingDao.getOverdueBorrowings(today)
     }
 
     suspend fun getActiveLoanCount(shareholderId: String): Result<Int> = try {

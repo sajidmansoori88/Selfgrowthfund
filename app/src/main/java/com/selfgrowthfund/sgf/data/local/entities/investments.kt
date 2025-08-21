@@ -1,42 +1,42 @@
 package com.selfgrowthfund.sgf.data.local.entities
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import java.util.Date
+import androidx.room.*
+import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import org.threeten.bp.LocalDate
 
 @Entity(tableName = "investments")
+@TypeConverters(AppTypeConverters::class)
 data class Investment(
     @PrimaryKey(autoGenerate = false)
-    val investmentId: String, // Format: IN0001, IN0002, etc.
+    val investmentId: String,
 
-    val investeeType: String, // "Shareholder", "External", or "Group"
-    val investeeName: String?, // Nullable for Group type
+    val investeeType: String,
+    val investeeName: String?,
 
-    val ownershipType: String, // "Individual", "Joint", or "Group-owned"
-    val partnerNames: List<String>?, // Nullable unless OwnershipType = Joint
+    val ownershipType: String,
+    val partnerNames: List<String>?,
 
-    val investmentDate: Date,
-    val investmentType: String, // "Cash", "Property", etc.
+    val investmentDate: LocalDate,
+    val investmentType: String,
     val investmentName: String,
 
     val amount: Double,
     val expectedProfitPercent: Double,
-    val expectedProfitAmount: Double, // Calculated field
-    val expectedReturnPeriod: Int, // in days
-    val returnDueDate: Date, // Calculated field
+    val expectedProfitAmount: Double,
+    val expectedReturnPeriod: Int,
+    val returnDueDate: LocalDate,
 
-    val modeOfPayment: String, // "Cash", "UPI", etc.
-    val status: String, // "Active", "Closed", etc.
-    val remarks: String? = null // Optional
+    val modeOfPayment: String,
+    val status: String,
+    val remarks: String? = null
 ) {
-    // Secondary constructor for auto-generating calculated fields
     constructor(
         investmentId: String,
         investeeType: String,
         investeeName: String?,
         ownershipType: String,
         partnerNames: List<String>?,
-        investmentDate: Date,
+        investmentDate: LocalDate,
         investmentType: String,
         investmentName: String,
         amount: Double,
@@ -58,7 +58,7 @@ data class Investment(
         expectedProfitPercent = expectedProfitPercent,
         expectedProfitAmount = amount * expectedProfitPercent / 100,
         expectedReturnPeriod = expectedReturnPeriod,
-        returnDueDate = Date(investmentDate.time + expectedReturnPeriod * 24 * 60 * 60 * 1000L),
+        returnDueDate = investmentDate.plusDays(expectedReturnPeriod.toLong()),
         modeOfPayment = modeOfPayment,
         status = status,
         remarks = remarks

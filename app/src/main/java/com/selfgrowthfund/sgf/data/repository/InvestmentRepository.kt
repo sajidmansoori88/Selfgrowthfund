@@ -1,4 +1,3 @@
-// app/src/main/java/com/selfgrowthfund/sgf/data/repository/InvestmentRepository.kt
 package com.selfgrowthfund.sgf.data.repository
 
 import com.selfgrowthfund.sgf.data.local.dao.InvestmentDao
@@ -6,6 +5,7 @@ import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
+import org.threeten.bp.LocalDate
 import javax.inject.Inject
 
 class InvestmentRepository @Inject constructor(
@@ -57,15 +57,15 @@ class InvestmentRepository @Inject constructor(
     }
 
     suspend fun getInvestmentsDueSoon(daysThreshold: Int = 7): Result<List<Investment>> = try {
-        val now = dates.now()
-        val threshold = now + (daysThreshold * 24 * 60 * 60 * 1000L)
-        Result.Success(dao.getDueBetween(now, threshold))
+        val today = LocalDate.now()
+        val thresholdDate = today.plusDays(daysThreshold.toLong())
+        Result.Success(dao.getDueBetween(today, thresholdDate))
     } catch (e: Exception) {
         Result.Error(e)
     }
 
     suspend fun searchInvestments(query: String): Result<List<Investment>> = try {
-        Result.Success(dao.search("%$query%"))
+        Result.Success(dao.search(query)) // DAO already handles wildcards
     } catch (e: Exception) {
         Result.Error(e)
     }

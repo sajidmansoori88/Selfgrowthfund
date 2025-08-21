@@ -1,25 +1,21 @@
 package com.selfgrowthfund.sgf.ui.deposits
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import com.selfgrowthfund.sgf.data.local.entities.DepositEntry
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import com.selfgrowthfund.sgf.data.repository.DepositRepository
-import com.selfgrowthfund.sgf.model.enums.DepositStatus
-import com.selfgrowthfund.sgf.model.enums.EntrySource
-import com.selfgrowthfund.sgf.model.enums.MemberRole
-import com.selfgrowthfund.sgf.utils.DateUtils
+import com.selfgrowthfund.sgf.model.enums.*
+import com.selfgrowthfund.sgf.utils.Result
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import androidx.lifecycle.viewModelScope
-import com.selfgrowthfund.sgf.model.enums.PaymentMode
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Calendar
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
+import org.threeten.bp.format.DateTimeParseException
 import java.util.Locale
 
 class DepositViewModel @AssistedInject constructor(
@@ -55,6 +51,14 @@ class DepositViewModel @AssistedInject constructor(
     private val _modeOfPayment = MutableStateFlow<PaymentMode?>(null)
     val modeOfPayment: StateFlow<PaymentMode?> = _modeOfPayment
 
+    // ---------------- VALIDATION STATE ----------------
+    val dueMonthError = MutableStateFlow<String?>(null)
+    val paymentDateError = MutableStateFlow<String?>(null)
+    val isFormValid = MutableStateFlow(false)
+
+    // ---------------- SUBMISSION STATE ----------------
+    val isSubmitting = MutableStateFlow(false)
+    val submissionResult = MutableStateFlow<Result<Unit>?>(null)
 
     // ---------------- SUMMARY STATE ----------------
     val depositSummaries: StateFlow<List<DepositEntrySummaryDTO>> =
@@ -64,15 +68,20 @@ class DepositViewModel @AssistedInject constructor(
     // ---------------- CONSTANTS ----------------
     private val shareAmount = 2000.0
     private val penaltyPerDay = 5.0
+    private val dueMonthFormatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.US)
+    private val paymentDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.US)
 
     // ---------------- ENTRY UPDATE METHODS ----------------
     fun setDueMonth(month: String) {
         _dueMonth.value = month
-        updateCalculations() // Ensure this calls the full calculation
+        validateForm()
+        updateCalculations()
     }
+
     fun setPaymentDate(date: String) {
         _paymentDate.value = date
-        updateCalculations() // Ensure this calls the full calculation
+        validateForm()
+        updateCalculations()
     }
 
     fun setShareNos(nos: Int) {
@@ -81,10 +90,15 @@ class DepositViewModel @AssistedInject constructor(
     }
 
     fun setAdditionalContribution(amount: Double) {
-        _additionalContribution.value = amount
+        _additionalContribution.value = amount.coerceAtLeast(0.0)
         updateCalculations()
     }
 
+    fun setModeOfPayment(mode: PaymentMode) {
+        _modeOfPayment.value = mode
+    }
+
+    // ---------------- CALCULATIONS ----------------
     fun updateCalculations() {
         val calculatedPenalty = calculatePenalty(_dueMonth.value, _paymentDate.value)
         val calculatedTotal = calculateTotalAmount(_shareNos.value, _additionalContribution.value, calculatedPenalty)
@@ -95,160 +109,112 @@ class DepositViewModel @AssistedInject constructor(
         _paymentStatus.value = status
     }
 
-    fun setModeOfPayment(mode: PaymentMode) {
-        _modeOfPayment.value = mode
+    fun updateTotal() {
+        val penalty = calculatePenalty(_dueMonth.value, _paymentDate.value)
+        val total = calculateTotalAmount(_shareNos.value, _additionalContribution.value, penalty)
+        _penalty.value = penalty
+        _totalAmount.value = total
     }
-    // ---------------- ENTRY HELPERS ----------------
-    fun calculatePenalty(dueMonth: String, paymentDate: String): Double {
-        if (paymentDate.isBlank()) return 0.0
 
-        val monthFormat = SimpleDateFormat("MMM-yyyy", Locale.getDefault())
-        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+    // ---------------- VALIDATION ----------------
+    private fun validateForm() {
+        dueMonthError.value = try {
+            LocalDate.parse("01-${_dueMonth.value}", dueMonthFormatter)
+            null
+        } catch (e: DateTimeParseException) {
+            "Invalid due month format"
+        }
 
+        paymentDateError.value = try {
+            LocalDate.parse(_paymentDate.value, paymentDateFormatter)
+            null
+        } catch (e: DateTimeParseException) {
+            "Invalid payment date format"
+        }
+
+        isFormValid.value = dueMonthError.value == null && paymentDateError.value == null
+    }
+
+    // ---------------- LOGIC HELPERS ----------------
+    fun calculatePenalty(dueMonth: String, paymentDateStr: String): Double {
         return try {
-            val dueCal = Calendar.getInstance().apply {
-                time = monthFormat.parse(dueMonth)!!
-                set(Calendar.DAY_OF_MONTH, 10) // Grace ends on 10th
-            }
-
-            val paymentCal = Calendar.getInstance().apply {
-                time = dateFormat.parse(paymentDate)!!
-            }
-
-            if (paymentCal.after(dueCal)) {
-                val millisPerDay = 1000 * 60 * 60 * 24
-                val daysLate = ((paymentCal.timeInMillis - dueCal.timeInMillis) / millisPerDay).toInt()
-                (daysLate.coerceAtLeast(1)) * 5.0 // ₹5 per day
-            } else {
-                0.0
-            }
-        } catch (e: Exception) {
+            val dueDate = LocalDate.parse("01-$dueMonth", dueMonthFormatter).withDayOfMonth(10)
+            val paymentDate = LocalDate.parse(paymentDateStr, paymentDateFormatter)
+            val daysLate = (paymentDate.toEpochDay() - dueDate.toEpochDay()).toInt()
+            if (daysLate > 0) daysLate * penaltyPerDay else 0.0
+        } catch (_: Exception) {
             0.0
         }
     }
 
-    fun updatePenalty() {
-        val penalty = calculatePenalty(_dueMonth.value, _paymentDate.value)
-        _penalty.value = penalty
-    }
-
-    fun updateTotal() {
-        val shares = _shareNos.value
-        val contribution = _additionalContribution.value
-        val penalty = calculatePenalty(_dueMonth.value, _paymentDate.value) // ✅ Fresh calculation
-        val total = calculateTotalAmount(shares, contribution, penalty)
-
-        _penalty.value = penalty // ✅ Update penalty here
-        _totalAmount.value = total
-    }
     fun calculateTotalAmount(shares: Int, contribution: Double, penalty: Double): Double {
-        val base = if (shares <= 0) 0 else shares * 2000
+        val base = if (shares <= 0) 0.0 else shares * shareAmount
         return base + contribution + penalty
     }
-    fun getPaymentStatus(dueMonth: String, paymentDate: String): String {
-        if (dueMonth.isBlank()) return "Pending"
 
-        val monthFormat = SimpleDateFormat("MMM-yyyy", Locale.getDefault())
-        val now = Calendar.getInstance()
-
+    fun getPaymentStatus(dueMonth: String, paymentDateStr: String): String {
         return try {
-            val dueCal = Calendar.getInstance().apply {
-                time = monthFormat.parse(dueMonth)!!
-                set(Calendar.DAY_OF_MONTH, 10) // Grace period ends on 10th
-            }
-
-            // If no payment date, check if current date is past due
-            if (paymentDate.isBlank()) {
-                return if (now.after(dueCal)) "Late" else "Pending"
-            }
-
-            // With payment date, use dateFormat
-            val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-            val paymentCal = Calendar.getInstance().apply {
-                time = dateFormat.parse(paymentDate)!!
-            }
-
-            if (paymentCal.after(dueCal)) "Late" else "On-time"
-        } catch (e: Exception) {
+            val dueDate = LocalDate.parse("01-$dueMonth", dueMonthFormatter).withDayOfMonth(10)
+            val paymentDate = LocalDate.parse(paymentDateStr, paymentDateFormatter)
+            if (paymentDate.isAfter(dueDate)) "Late" else "On-time"
+        } catch (_: Exception) {
             "Pending"
         }
     }
 
-    // ---------------- ENTRY SUBMIT ----------------
+    // ---------------- SUBMIT ----------------
     fun submitDeposit() {
         viewModelScope.launch {
-            val parsedDate = try {
-                DateUtils.formatterPaymentDate().parse(_paymentDate.value)
-            } catch (e: Exception) {
-                null
-            }
-
-            val formattedDate = parsedDate?.let {
-                DateUtils.formatterPaymentDate().format(it)
-            } ?: return@launch
-
-            val depositEntry = DepositEntry(
-                depositId = DepositEntry.generateNextId(lastDepositId),
-                shareholderId = selectedShareholderId,
-                shareholderName = selectedShareholderName,
-                dueMonth = DueMonth(_dueMonth.value),
-                paymentDate = formattedDate,
-                shareNos = _shareNos.value,
-                shareAmount = shareAmount,
-                additionalContribution = _additionalContribution.value,
-                penalty = _penalty.value,
-                totalAmount = _totalAmount.value,
-                paymentStatus = _paymentStatus.value,
-                modeOfPayment = _modeOfPayment.value,
-                status = DepositStatus.Pending,
-                approvedBy = null,
-                notes = null,
-                isSynced = false,
-                createdAt = System.currentTimeMillis(),
-                entrySource = if (currentUserRole == MemberRole.MEMBER_ADMIN)
-                    EntrySource.ADMIN
-                else
-                    EntrySource.USER
-            )
-
-            depositRepository.insertDepositEntry(depositEntry)
-        }
-
-        fun updateStatus() {
-            val dueMonthStr = _dueMonth.value
-            val paymentDateStr = _paymentDate.value
-
-            if (dueMonthStr.isBlank()) {
-                _paymentStatus.value = "Pending"
-                return
-            }
-
-            val monthFormat = SimpleDateFormat("MMM-yyyy", Locale.getDefault())
-            val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+            isSubmitting.value = true
+            submissionResult.value = null
 
             try {
-                val graceCal = Calendar.getInstance().apply {
-                    time = monthFormat.parse(dueMonthStr)!!
-                    set(Calendar.DAY_OF_MONTH, 10)
-                }
+                val parsedPaymentDate = LocalDate.parse(_paymentDate.value, paymentDateFormatter)
 
-                val now = Calendar.getInstance()
+                val depositEntry = DepositEntry(
+                    depositId = DepositEntry.generateNextId(lastDepositId),
+                    shareholderId = selectedShareholderId,
+                    shareholderName = selectedShareholderName,
+                    dueMonth = DueMonth(_dueMonth.value),
+                    paymentDate = parsedPaymentDate,
+                    shareNos = _shareNos.value,
+                    shareAmount = shareAmount,
+                    additionalContribution = _additionalContribution.value,
+                    penalty = _penalty.value,
+                    totalAmount = _totalAmount.value,
+                    paymentStatus = _paymentStatus.value,
+                    modeOfPayment = _modeOfPayment.value,
+                    status = DepositStatus.Pending,
+                    approvedBy = null,
+                    notes = null,
+                    isSynced = false,
+                    createdAt = Instant.now(),
+                    entrySource = if (currentUserRole == MemberRole.MEMBER_ADMIN)
+                        EntrySource.ADMIN else EntrySource.USER
+                )
 
-                if (paymentDateStr.isBlank()) {
-                    // No payment yet
-                    _paymentStatus.value = if (now.after(graceCal)) "Late" else "Pending"
-                    return
-                }
-
-                val paymentCal = Calendar.getInstance().apply {
-                    time = dateFormat.parse(paymentDateStr)!!
-                }
-
-                _paymentStatus.value = if (paymentCal.after(graceCal)) "Late" else "On-time"
-
+                depositRepository.insertDepositEntry(depositEntry)
+                submissionResult.value = Result.Success(Unit)
             } catch (e: Exception) {
-                _paymentStatus.value = "Pending"
+                submissionResult.value = Result.Error(e)
             }
+
+            isSubmitting.value = false
         }
+    }
+
+    fun clearForm() {
+        _dueMonth.value = ""
+        _paymentDate.value = ""
+        _shareNos.value = 0
+        _additionalContribution.value = 0.0
+        _penalty.value = 0.0
+        _totalAmount.value = 0.0
+        _paymentStatus.value = ""
+        _modeOfPayment.value = null
+        dueMonthError.value = null
+        paymentDateError.value = null
+        isFormValid.value = false
+        submissionResult.value = null
     }
 }

@@ -3,34 +3,38 @@ package com.selfgrowthfund.sgf.data.local.entities
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import java.text.SimpleDateFormat
-import java.util.*
+import androidx.room.TypeConverters
+import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
+import org.threeten.bp.temporal.ChronoUnit
+import org.threeten.bp.Instant
 
 @Entity(
     tableName = "deposits",
     indices = [Index(value = ["shareholderId"]), Index(value = ["dueMonth"])]
 )
+@TypeConverters(AppTypeConverters::class)
 data class Deposit(
     @PrimaryKey
-    val depositId: String, // Format: D0001, D0002, etc.
+    val depositId: String,
 
     val shareholderId: String,
     val shareholderName: String,
 
     val dueMonth: String, // Format: MMM-yyyy (e.g., "Aug-2025")
-    val paymentDate: String, // Format: dd/MM/yyyy (e.g., "11/08/2025")
+    val paymentDate: LocalDate, // Actual payment date
 
     val shareNos: Int,
-    val shareAmount: Double = 2000.0, // Fixed Rs.2000/share
+    val shareAmount: Double = 2000.0,
     val additionalContribution: Double = 0.0,
-    val penalty: Double = 0.0, // Rs.5/day after 10th
+    val penalty: Double = 0.0,
 
-    val totalAmount: Double, // Calculated: (shareNos * shareAmount) + penalty + additionalContribution
+    val totalAmount: Double,
+    val paymentStatus: String,
+    val modeOfPayment: String,
 
-    val paymentStatus: String, // "On-time" or "Late"
-    val modeOfPayment: String, // "Cash" or "Online"
-
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Instant = Instant.now()
 ) {
     companion object {
         const val PAYMENT_ON_TIME = "On-time"
@@ -45,23 +49,19 @@ data class Deposit(
             } ?: "D0001"
         }
 
-        fun calculatePenalty(dueMonth: String, paymentDate: String): Double {
+        fun calculatePenalty(dueMonth: String, paymentDate: LocalDate): Double {
             return try {
-                val dueFormatter = SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH)
-                val payFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH)
+                val formatter = DateTimeFormatter.ofPattern("MMM-yyyy")
+                val dueDate = LocalDate.parse(dueMonth, formatter).withDayOfMonth(10)
 
-                val dueDate = dueFormatter.parse("10-$dueMonth")
-                val actualDate = payFormatter.parse(paymentDate)
-
-                if (actualDate != null && dueDate != null && actualDate.after(dueDate)) {
-                    val diffMillis = actualDate.time - dueDate.time
-                    val daysLate = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
+                if (paymentDate.isAfter(dueDate)) {
+                    val daysLate = ChronoUnit.DAYS.between(dueDate, paymentDate).toInt()
                     daysLate * 5.0
                 } else {
                     0.0
                 }
             } catch (e: Exception) {
-                0.0 // Graceful fallback for invalid input
+                0.0
             }
         }
     }

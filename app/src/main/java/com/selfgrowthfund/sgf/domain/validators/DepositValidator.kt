@@ -1,12 +1,16 @@
 package com.selfgrowthfund.sgf.domain.validators
 
-import com.selfgrowthfund.sgf.utils.DateUtils
-import java.text.SimpleDateFormat
-import java.util.*
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
+import org.threeten.bp.format.DateTimeParseException
+import java.util.Locale
 
 class DepositValidator {
 
     companion object {
+        private val dueMonthFormatter = DateTimeFormatter.ofPattern("MMM-yyyy", Locale.US)
+        private val paymentDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.US)
+
         fun validateShareNos(shareNos: Int): ValidationResult {
             return if (shareNos > 0) {
                 ValidationResult.Success
@@ -25,11 +29,11 @@ class DepositValidator {
 
         fun validateDates(dueMonth: String, paymentDate: String): ValidationResult {
             return try {
-                SimpleDateFormat("MMM-yyyy", Locale.US).parse(dueMonth)
-                SimpleDateFormat("ddMMyyyy", Locale.US).parse(paymentDate)
+                LocalDate.parse("01-$dueMonth", DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.US))
+                LocalDate.parse(paymentDate, paymentDateFormatter)
                 ValidationResult.Success
-            } catch (e: Exception) {
-                ValidationResult.Error("Invalid date format. Use DDMMYYYY for payment and MMM-YYYY for due month")
+            } catch (e: DateTimeParseException) {
+                ValidationResult.Error("Invalid date format. Use DD-MM-YYYY for payment and MMM-YYYY for due month")
             }
         }
     }

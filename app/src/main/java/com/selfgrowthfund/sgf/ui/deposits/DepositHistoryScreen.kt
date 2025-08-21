@@ -1,6 +1,7 @@
 package com.selfgrowthfund.sgf.ui.deposits
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +15,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import com.selfgrowthfund.sgf.ui.components.DepositSummaryCard
 import com.selfgrowthfund.sgf.utils.ExportUtils
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +35,7 @@ fun DepositHistoryScreen(viewModel: DepositViewModel = hiltViewModel()) {
             )
         },
         floatingActionButton = {
-            ExportActions(context, summaries)
+            ExportActions(context = context, summaries = summaries)
         }
     ) { padding ->
         if (summaries.isEmpty()) {
@@ -62,18 +65,23 @@ fun DepositHistoryScreen(viewModel: DepositViewModel = hiltViewModel()) {
 fun ExportActions(context: Context, summaries: List<DepositEntrySummaryDTO>) {
     Row(modifier = Modifier.padding(16.dp)) {
         Button(onClick = {
-            val headers = listOf("Shareholder", "Due Month", "Payment Date", "Amount", "Status")
-            val rows = summaries.map {
-                listOf(
-                    it.shareholderName,
-                    it.dueMonth,
-                    it.paymentDate,
-                    it.totalAmount.toString(),
-                    it.paymentStatus
-                )
+            try {
+                val headers = listOf("Shareholder", "Due Month", "Payment Date", "Amount", "Status")
+                val rows = summaries.map {
+                    listOf(
+                        it.shareholderName,
+                        it.dueMonth,
+                        formatDate(it.paymentDate),
+                        "₹%.2f".format(it.totalAmount),
+                        it.paymentStatus
+                    )
+                }
+                val file = ExportUtils.exportToCsv(context, headers, rows, "DepositHistory.csv")
+                ExportUtils.shareFile(context, file, "text/csv")
+                Toast.makeText(context, "CSV exported successfully!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "CSV export failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-            val file = ExportUtils.exportToCsv(context, headers, rows, "DepositHistory.csv")
-            ExportUtils.shareFile(context, file, "text/csv")
         }) {
             Text("Export CSV")
         }
@@ -81,13 +89,23 @@ fun ExportActions(context: Context, summaries: List<DepositEntrySummaryDTO>) {
         Spacer(modifier = Modifier.width(8.dp))
 
         Button(onClick = {
-            val lines = summaries.map {
-                "${it.shareholderName} | ${it.dueMonth} | ₹${it.totalAmount} | ${it.paymentStatus}"
+            try {
+                val lines = summaries.map {
+                    "${it.shareholderName} | ${it.dueMonth} | ${formatDate(it.paymentDate)} | ₹%.2f | ${it.paymentStatus}"
+                        .format(it.totalAmount)
+                }
+                val file = ExportUtils.exportToPdf(context, "Deposit History", lines, "DepositHistory.pdf")
+                ExportUtils.shareFile(context, file, "application/pdf")
+                Toast.makeText(context, "PDF exported successfully!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "PDF export failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-            val file = ExportUtils.exportToPdf(context, "Deposit History", lines, "DepositHistory.pdf")
-            ExportUtils.shareFile(context, file, "application/pdf")
         }) {
             Text("Export PDF")
         }
     }
+}
+
+fun formatDate(date: LocalDate): String {
+    return date.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
 }

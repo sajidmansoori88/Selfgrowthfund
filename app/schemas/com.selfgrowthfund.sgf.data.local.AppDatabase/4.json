@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 4,
-    "identityHash": "6b4dcb769c9189178b9e0f297abd7526",
+    "identityHash": "66f11366bc970e9adf1d51a48c33dc3a",
     "entities": [
       {
         "tableName": "shareholders",
@@ -107,7 +107,7 @@
       },
       {
         "tableName": "deposits",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` TEXT NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`depositId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` INTEGER NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`depositId`))",
         "fields": [
           {
             "fieldPath": "depositId",
@@ -136,7 +136,7 @@
           {
             "fieldPath": "paymentDate",
             "columnName": "paymentDate",
-            "affinity": "TEXT",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -217,7 +217,7 @@
       },
       {
         "tableName": "deposit_entries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` TEXT NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT, `status` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `isSynced` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, PRIMARY KEY(`depositId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` INTEGER NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT, `status` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `isSynced` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, PRIMARY KEY(`depositId`))",
         "fields": [
           {
             "fieldPath": "depositId",
@@ -246,7 +246,7 @@
           {
             "fieldPath": "paymentDate",
             "columnName": "paymentDate",
-            "affinity": "TEXT",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -804,7 +804,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6b4dcb769c9189178b9e0f297abd7526')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '66f11366bc970e9adf1d51a48c33dc3a')"
     ]
   }
 }

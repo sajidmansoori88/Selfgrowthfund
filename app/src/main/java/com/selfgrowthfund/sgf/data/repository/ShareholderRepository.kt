@@ -6,11 +6,10 @@ import com.selfgrowthfund.sgf.data.local.entities.Shareholder
 import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.flow.Flow
-import java.util.Date
+import kotlinx.coroutines.tasks.await
+import org.threeten.bp.Instant
 import javax.inject.Inject
-
 
 class ShareholderRepository @Inject constructor(
     private val dao: ShareholderDao,
@@ -23,8 +22,8 @@ class ShareholderRepository @Inject constructor(
     fun getShareholderByIdStream(id: String): Flow<Shareholder?> = dao.getShareholderByIdFlow(id)
 
     // Direct access
+    suspend fun getLastShareholderId(): String? = dao.getLastShareholderId()
     suspend fun getShareholderById(id: String): Shareholder? = dao.getShareholderById(id)
-
     suspend fun searchShareholders(query: String): List<Shareholder> =
         dao.searchShareholders("%$query%")
 
@@ -36,7 +35,9 @@ class ShareholderRepository @Inject constructor(
     }
 
     suspend fun updateShareholder(shareholder: Shareholder): Result<Unit> = try {
-        dao.updateShareholder(shareholder.copy(updatedAt = Date(dates.now()))) // ✅ Convert Long → Date
+        dao.updateShareholder(
+            shareholder.copy(updatedAt = Instant.ofEpochMilli(dates.now()))
+        )
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
@@ -51,11 +52,9 @@ class ShareholderRepository @Inject constructor(
         Result.Error(e)
     }
 
-    suspend fun getLastShareholderId(): String? = dao.getLastId()
-
     // 🔄 Firestore sync
     suspend fun syncShareholderToFirestore(input: ShareholderEntry): Result<Unit> = try {
-        val now = dates.now()
+        val now = Instant.ofEpochMilli(dates.now())
         val doc = firestore.collection("shareholder").document()
         val data = mapOf(
             "name" to input.fullName,
@@ -64,7 +63,7 @@ class ShareholderRepository @Inject constructor(
             "mobileNumber" to input.mobileNumber,
             "email" to input.email,
             "role" to input.role,
-            "createdAt" to now,
+            "createdAt" to now.toEpochMilli(),
             "createdAtFormatted" to dates.format(now),
             "uid" to null
         )
@@ -76,5 +75,8 @@ class ShareholderRepository @Inject constructor(
 
     // Helper
     private fun Shareholder.withTimestamps(): Shareholder =
-        copy(createdAt = Date(dates.now()), updatedAt = Date(dates.now()))
+        copy(
+            createdAt = Instant.ofEpochMilli(dates.now()),
+            updatedAt = Instant.ofEpochMilli(dates.now())
+        )
 }

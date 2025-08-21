@@ -28,6 +28,9 @@ interface ShareholderDao {
     @Query("SELECT shareholderId FROM shareholders ORDER BY shareholderId DESC LIMIT 1")
     suspend fun getLastId(): String?
 
+    @Query("SELECT shareholderId FROM shareholders ORDER BY shareholderId DESC LIMIT 1")
+    suspend fun getLastShareholderId(): String?
+
     @Query("""
         SELECT *, (shareBalance * 2000 * 0.9) AS maxBorrowAmount
         FROM shareholders

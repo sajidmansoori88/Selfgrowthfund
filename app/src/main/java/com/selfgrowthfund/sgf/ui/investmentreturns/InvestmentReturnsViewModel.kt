@@ -8,9 +8,11 @@ import com.selfgrowthfund.sgf.data.repository.InvestmentReturnsRepository
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
+import org.threeten.bp.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 
@@ -23,6 +25,10 @@ class InvestmentReturnsViewModel @Inject constructor(
     private val _addReturnState = MutableStateFlow<Result<Unit>?>(null)
     val addReturnState: StateFlow<Result<Unit>?> = _addReturnState
 
+    val isSubmitting: StateFlow<Boolean> = _addReturnState
+        .map { it is Result.Loading }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     /**
      * Adds a return for a given investment.
      * Emits Result.Loading, Result.Success, or Result.Error to the UI.
@@ -34,13 +40,17 @@ class InvestmentReturnsViewModel @Inject constructor(
         remarks: String? = null
     ) {
         viewModelScope.launch {
+            if (_addReturnState.value is Result.Loading) return@launch
+
             if (amountReceived <= 0.0) {
                 _addReturnState.value = Result.Error(IllegalArgumentException("Amount must be positive"))
                 return@launch
             }
 
             _addReturnState.value = Result.Loading
+
             val result = repository.addReturn(returnId, investmentId, amountReceived, remarks)
+
             _addReturnState.value = result
         }
     }
@@ -54,11 +64,15 @@ class InvestmentReturnsViewModel @Inject constructor(
         amountReceived: Double,
         remarks: String? = null
     ): InvestmentReturns {
+        val localDate = Instant.ofEpochMilli(dates.now())
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+
         return InvestmentReturns(
             returnId = UUID.randomUUID().toString(),
             investment = investment,
             amountReceived = amountReceived,
-            returnDate = dates.now(),
+            returnDate = localDate,
             remarks = remarks
         )
     }

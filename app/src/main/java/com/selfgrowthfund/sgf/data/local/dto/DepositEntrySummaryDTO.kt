@@ -1,11 +1,14 @@
 package com.selfgrowthfund.sgf.data.local.dto
 
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
+
 data class DepositEntrySummaryDTO(
     val depositId: String,
     val shareholderId: String,
     val shareholderName: String,
     val dueMonth: String,
-    val paymentDate: String,
+    val paymentDate: LocalDate,
     val shareNos: Int,
     val shareAmount: Double,
     val additionalContribution: Double,
@@ -13,5 +16,5 @@ data class DepositEntrySummaryDTO(
     val totalAmount: Double,
     val paymentStatus: String,
     val modeOfPayment: String,
-    val createdAt: Long
+    val createdAt: Instant
 )

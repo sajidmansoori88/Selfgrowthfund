@@ -5,8 +5,11 @@ import com.selfgrowthfund.sgf.model.enums.DepositStatus
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import com.selfgrowthfund.sgf.model.enums.EntrySource
 import com.selfgrowthfund.sgf.model.enums.PaymentMode
-import java.text.SimpleDateFormat
-import java.util.*
+import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
+import org.threeten.bp.temporal.ChronoUnit
 
 @Entity(
     tableName = "deposit_entries",
@@ -15,6 +18,7 @@ import java.util.*
         Index(value = ["dueMonth"], name = "index_deposit_entries_dueMonth")
     ]
 )
+@TypeConverters(AppTypeConverters::class)
 data class DepositEntry(
     @PrimaryKey
     @ColumnInfo(name = "depositId")
@@ -30,7 +34,7 @@ data class DepositEntry(
     val dueMonth: DueMonth,
 
     @ColumnInfo(name = "paymentDate")
-    val paymentDate: String,
+    val paymentDate: LocalDate,
 
     @ColumnInfo(name = "shareNos")
     val shareNos: Int,
@@ -53,7 +57,6 @@ data class DepositEntry(
     @ColumnInfo(name = "modeOfPayment")
     val modeOfPayment: PaymentMode?,
 
-    // Newly persisted fields
     @ColumnInfo(name = "status")
     val status: DepositStatus = DepositStatus.Pending,
 
@@ -67,19 +70,17 @@ data class DepositEntry(
     val isSynced: Boolean = false,
 
     @ColumnInfo(name = "createdAt")
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Instant = Instant.now(),
 
     @ColumnInfo(name = "entrySource")
     val entrySource: EntrySource = EntrySource.USER
 ) {
     companion object {
-        // Status constants
         const val STATUS_PENDING = "Pending"
         const val STATUS_APPROVED = "Approved"
         const val STATUS_REJECTED = "Rejected"
         const val STATUS_AUTO_REJECTED = "Auto-Rejected"
 
-        // Payment constants
         const val PAYMENT_ON_TIME = "On-time"
         const val PAYMENT_LATE = "Late"
         const val MODE_CASH = "Cash"
@@ -92,17 +93,13 @@ data class DepositEntry(
             } ?: "D0001"
         }
 
-        fun calculatePenalty(dueMonth: String, paymentDate: String): Double {
+        fun calculatePenalty(dueMonth: String, paymentDate: LocalDate): Double {
             return try {
-                val dueFormatter = SimpleDateFormat("MMM-yyyy", Locale.ENGLISH)
-                val payFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH)
+                val formatter = DateTimeFormatter.ofPattern("MMM-yyyy")
+                val dueDate = LocalDate.parse(dueMonth, formatter).withDayOfMonth(10)
 
-                val dueDate = dueFormatter.parse("10-$dueMonth")
-                val actualDate = payFormatter.parse(paymentDate)
-
-                if (actualDate != null && dueDate != null && actualDate.after(dueDate)) {
-                    val diffMillis = actualDate.time - dueDate.time
-                    val daysLate = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
+                if (paymentDate.isAfter(dueDate)) {
+                    val daysLate = ChronoUnit.DAYS.between(dueDate, paymentDate).toInt()
                     daysLate * 5.0
                 } else {
                     0.0

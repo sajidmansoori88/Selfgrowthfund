@@ -1,33 +1,19 @@
 package com.selfgrowthfund.sgf.utils
 
-import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.TimeUnit
+import org.threeten.bp.*
+import org.threeten.bp.format.DateTimeFormatter
+import org.threeten.bp.temporal.ChronoUnit
+import java.util.Locale
 
 object DateUtils {
-    private const val DUE_DATE_FORMAT = "dd-MMM-yyyy"       // e.g., "10-Aug-2025"
-    private const val PAYMENT_DATE_FORMAT = "dd-MM-yyyy"    // e.g., "11-08-2025"
-    private const val DISPLAY_DATE_FORMAT = "dd MMM yyyy"
 
-    fun addDays(date: Date, days: Int): Date {
-        val calendar = Calendar.getInstance().apply {
-            time = date
-            add(Calendar.DAY_OF_YEAR, days)
-        }
-        return calendar.time
-    }
+    private val formatterDueDate: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH)       // e.g., "10-Aug-2025"
+    private val formatterPaymentDate: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.getDefault()) // e.g., "11-08-2025"
+    private val formatterDisplayDate: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
+    private val formatterMonthYear: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM-yyyy", Locale.ENGLISH)
+    private val formatterMonthYearNumeric: DateTimeFormatter = DateTimeFormatter.ofPattern("MM-yyyy", Locale.getDefault())
 
-    fun formatterDueDate(): SimpleDateFormat =
-        SimpleDateFormat(DUE_DATE_FORMAT, Locale.ENGLISH)
-
-    fun formatterPaymentDate(): SimpleDateFormat =
-        SimpleDateFormat(PAYMENT_DATE_FORMAT, Locale.getDefault())
-
-    fun formatterDisplayDate(): SimpleDateFormat =
-        SimpleDateFormat(DISPLAY_DATE_FORMAT, Locale.ENGLISH)
-
-    fun formatterMonthYear(): SimpleDateFormat =
-        SimpleDateFormat("MMM-yyyy", Locale.ENGLISH)
+    fun addDays(date: LocalDate, days: Long): LocalDate = date.plusDays(days)
 
     fun parseDueMonth(monthYear: String): Pair<String, Int> {
         val (month, year) = monthYear.split("-")
@@ -36,65 +22,50 @@ object DateUtils {
     }
 
     fun isLatePayment(dueMonth: String, paymentDate: String): Boolean {
-        val dueDateStr = "10-$dueMonth"
         return try {
-            val due = formatterDueDate().parse(dueDateStr)
-                ?: throw IllegalArgumentException("Invalid due date format")
-            val payment = formatterPaymentDate().parse(paymentDate)
-                ?: throw IllegalArgumentException("Invalid payment date format")
-
-            payment.after(due)
+            val dueDate = LocalDate.parse("10-$dueMonth", formatterDueDate)
+            val payment = LocalDate.parse(paymentDate, formatterPaymentDate)
+            payment.isAfter(dueDate)
         } catch (e: Exception) {
             throw IllegalArgumentException("Invalid date format")
         }
     }
 
     fun calculateDaysLate(dueMonth: String, paymentDate: String): Int {
-        val dueDateStr = "10-$dueMonth"
         return try {
-            val due = formatterDueDate().parse(dueDateStr)
-                ?: throw IllegalArgumentException("Invalid due date format")
-            val payment = formatterPaymentDate().parse(paymentDate)
-                ?: throw IllegalArgumentException("Invalid payment date format")
-
-            TimeUnit.MILLISECONDS.toDays(payment.time - due.time).toInt()
+            val dueDate = LocalDate.parse("10-$dueMonth", formatterDueDate)
+            val payment = LocalDate.parse(paymentDate, formatterPaymentDate)
+            ChronoUnit.DAYS.between(dueDate, payment).toInt()
         } catch (e: Exception) {
             throw IllegalArgumentException("Invalid date format")
         }
     }
 
-    fun formatForDisplay(date: Date): String {
-        return formatterDisplayDate().format(date)
+    fun formatForDisplay(date: LocalDate): String {
+        return date.format(formatterDisplayDate)
     }
 
-    fun daysBetween(startDate: Date, endDate: Date): Long {
-        return TimeUnit.MILLISECONDS.toDays(endDate.time - startDate.time)
+    fun daysBetween(startDate: LocalDate, endDate: LocalDate): Long {
+        return ChronoUnit.DAYS.between(startDate, endDate)
     }
 
     fun getCurrentMonthFormatted(): String {
-        return formatterMonthYear().format(Date())
+        return YearMonth.now().format(formatterMonthYear)
     }
 
     fun generateSelectableDueMonths(monthCount: Int = 5): List<String> {
-        val formatter = formatterMonthYear()
-        val calendar = Calendar.getInstance()
-        val months = mutableListOf<String>()
-
-        repeat(monthCount) {
-            months.add(formatter.format(calendar.time))
-            calendar.add(Calendar.MONTH, -1)
+        val now = YearMonth.now()
+        return (0 until monthCount).map { offset ->
+            now.minusMonths(offset.toLong()).format(formatterMonthYear)
         }
-
-        return months
     }
 
     fun generateMonthOptions(): List<String> {
-        val formatter = SimpleDateFormat("MM-yyyy", Locale.getDefault())
-        val calendar = Calendar.getInstance()
-        return (0..5).map {
-            val month = formatter.format(calendar.time)
-            calendar.add(Calendar.MONTH, 1)
-            month
+        val now = YearMonth.now()
+        return (0..5).map { offset ->
+            now.plusMonths(offset.toLong()).format(formatterMonthYearNumeric)
         }
     }
+
+    fun now(): Long = Instant.now().toEpochMilli()
 }

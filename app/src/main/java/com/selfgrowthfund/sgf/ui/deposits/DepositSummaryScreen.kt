@@ -12,6 +12,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import com.selfgrowthfund.sgf.ui.components.DepositSummaryCard
+import com.selfgrowthfund.sgf.ui.deposits.formatDate
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,13 +42,17 @@ fun DepositSummaryScreen(viewModel: DepositViewModel = hiltViewModel()) {
                 Text("No deposit summaries available.")
             }
         } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-                items(summaries) { summary ->
-                    DepositSummaryCard(summary) // ✅ uses shared component
+            Column(modifier = Modifier.padding(padding)) {
+                Text(
+                    text = "Showing ${summaries.size} deposit entries",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(summaries) { summary ->
+                        DepositSummaryCard(summary)
+                    }
                 }
             }
         }
@@ -54,6 +61,8 @@ fun DepositSummaryScreen(viewModel: DepositViewModel = hiltViewModel()) {
 
 @Composable
 fun DepositSummaryCardCompact(summaryDTO: DepositEntrySummaryDTO) {
+    val formattedDate = formatDate(summaryDTO.paymentDate)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -63,10 +72,20 @@ fun DepositSummaryCardCompact(summaryDTO: DepositEntrySummaryDTO) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Shareholder: ${summaryDTO.shareholderName}")
             Text("Due Month: ${summaryDTO.dueMonth}")
-            Text("Payment Date: ${summaryDTO.paymentDate}")
-            Text("Total Amount: ₹${summaryDTO.totalAmount}", fontWeight = FontWeight.Bold)
+            Text("Payment Date: $formattedDate")
+            Text("Total Amount: ₹%.2f".format(summaryDTO.totalAmount), fontWeight = FontWeight.Bold)
             Text("Payment Status: ${summaryDTO.paymentStatus}")
-            Text("Mode: ${summaryDTO.modeOfPayment}")
+            Text("Mode: ${summaryDTO.modeOfPayment ?: "N/A"}")
         }
+    }
+}
+
+private fun formatDate(raw: String?): String {
+    return try {
+        if (raw.isNullOrBlank()) return "—"
+        val parsed = LocalDate.parse(raw, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        parsed.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+    } catch (_: Exception) {
+        raw ?: "—"
     }
 }

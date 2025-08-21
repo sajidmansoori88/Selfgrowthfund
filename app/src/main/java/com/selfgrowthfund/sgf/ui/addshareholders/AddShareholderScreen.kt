@@ -1,217 +1,250 @@
 package com.selfgrowthfund.sgf.ui.addshareholders
 
-import android.app.DatePickerDialog
-import android.widget.Toast
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.model.enums.MemberRole
-import com.selfgrowthfund.sgf.session.UserSessionViewModel
-import java.text.SimpleDateFormat
-import java.util.*
+import com.selfgrowthfund.sgf.ui.components.DatePickerField
+import org.threeten.bp.LocalDate
 
+
+@OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AddShareholderScreen(
-    viewModel: AddShareholderViewModel,
-    navController: NavController
+    onBack: () -> Unit,
+    viewModel: AddShareholderViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
-
     // Form state
     var fullName by remember { mutableStateOf("") }
-    var mobile by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var mobileNumber by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var shareBalance by remember { mutableStateOf("") }
-    var dob by remember { mutableStateOf(Date()) }
-    var joinDate by remember { mutableStateOf(Date()) }
-    var role by remember { mutableStateOf(MemberRole.MEMBER) }
+    var dob by remember { mutableStateOf<LocalDate?>(null) }
+    var joiningDate by remember { mutableStateOf<LocalDate?>(null) }
+    var role by remember { mutableStateOf<MemberRole?>(null) }
 
-    // Error state
-    var fullNameError by remember { mutableStateOf<String?>(null) }
-    var mobileError by remember { mutableStateOf<String?>(null) }
-    var emailError by remember { mutableStateOf<String?>(null) }
-    var addressError by remember { mutableStateOf<String?>(null) }
-    var shareBalanceError by remember { mutableStateOf<String?>(null) }
+    // Dropdown state
+    var expanded by remember { mutableStateOf(false) }
 
-    fun validate(): Boolean {
-        fullNameError = if (fullName.isBlank()) "Required" else null
-        mobileError = if (mobile.length != 10) "Enter valid 10-digit number" else null
-        emailError = if (!email.contains("@")) "Invalid email" else null
-        addressError = if (address.isBlank()) "Required" else null
-        shareBalanceError = when {
-            shareBalance.isBlank() -> "Required"
-            shareBalance.toDoubleOrNull() == null -> "Invalid number"
-            shareBalance.toDouble() <= 0.0 -> "Must be greater than 0"
-            else -> null
+    // Validation errors
+    var errors by remember { mutableStateOf(mapOf<String, String>()) }
+
+    // ViewModel state
+    val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
+    val saveSuccess by viewModel.saveSuccess.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+
+    // Handle success navigation
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess == true) onBack()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Add Shareholder") })
         }
-        return listOf(fullNameError, mobileError, emailError, addressError, shareBalanceError).all { it == null }
-    }
-
-    fun resetForm() {
-        fullName = ""
-        mobile = ""
-        email = ""
-        address = ""
-        shareBalance = ""
-        dob = Date()
-        joinDate = Date()
-        role = MemberRole.MEMBER
-        fullNameError = null
-        mobileError = null
-        emailError = null
-        addressError = null
-        shareBalanceError = null
-    }
-
-    val userSession: UserSessionViewModel = hiltViewModel()
-    val currentUser = userSession.currentUser.value
-
-    if (currentUser.role != MemberRole.MEMBER_ADMIN) {
-        Text("Access Denied: Only admins can add shareholders")
-        return
-    }
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        OutlinedTextField(
-            value = fullName,
-            onValueChange = { fullName = it },
-            label = { Text("Full Name") },
-            isError = fullNameError != null,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next)
-        )
-        fullNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-        OutlinedTextField(
-            value = mobile,
-            onValueChange = { mobile = it },
-            label = { Text("Mobile Number") },
-            isError = mobileError != null,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next)
-        )
-        mobileError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            isError = emailError != null,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
-        )
-        emailError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-        OutlinedTextField(
-            value = address,
-            onValueChange = { address = it },
-            label = { Text("Address") },
-            isError = addressError != null,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next)
-        )
-        addressError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-        OutlinedTextField(
-            value = shareBalance,
-            onValueChange = { shareBalance = it },
-            label = { Text("Share Balance") },
-            isError = shareBalanceError != null,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
-        )
-        shareBalanceError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-        Text("Date of Birth: ${dateFormatter.format(dob)}", modifier = Modifier.padding(vertical = 8.dp))
-        Button(onClick = {
-            val cal = Calendar.getInstance().apply { time = dob }
-            DatePickerDialog(
-                context,
-                { _, year, month, day ->
-                    dob = Calendar.getInstance().apply {
-                        set(year, month, day)
-                    }.time
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // ---- Full Name ----
+            OutlinedTextField(
+                value = fullName,
+                onValueChange = { fullName = it },
+                label = {
+                    Row {
+                        Text("Full Name")
+                        Text("*", color = Color.Red)
+                    }
                 },
-                cal.get(Calendar.YEAR),
-                cal.get(Calendar.MONTH),
-                cal.get(Calendar.DAY_OF_MONTH)
-            ).show()
-        }) {
-            Text("Select DOB")
-        }
+                modifier = Modifier.fillMaxWidth(),
+                isError = errors["fullName"] != null
+            )
+            errors["fullName"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Joining Date: ${dateFormatter.format(joinDate)}", modifier = Modifier.padding(vertical = 8.dp))
-        Button(onClick = {
-            val cal = Calendar.getInstance().apply { time = joinDate }
-            DatePickerDialog(
-                context,
-                { _, year, month, day ->
-                    joinDate = Calendar.getInstance().apply {
-                        set(year, month, day)
-                    }.time
+            // ---- Email ----
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = {
+                    Row {
+                        Text("Email")
+                        Text("*", color = Color.Red)
+                    }
                 },
-                cal.get(Calendar.YEAR),
-                cal.get(Calendar.MONTH),
-                cal.get(Calendar.DAY_OF_MONTH)
-            ).apply {
-                datePicker.maxDate = System.currentTimeMillis()
-            }.show()
-        }) {
-            Text("Select Joining Date")
-        }
+                modifier = Modifier.fillMaxWidth(),
+                isError = errors["email"] != null
+            )
+            errors["email"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            // ---- Mobile ----
+            OutlinedTextField(
+                value = mobileNumber,
+                onValueChange = { mobileNumber = it },
+                label = {
+                    Row {
+                        Text("Mobile Number")
+                        Text("*", color = Color.Red)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                isError = errors["mobileNumber"] != null
+            )
+            errors["mobileNumber"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
 
-        Text("Role: ${role.name}", modifier = Modifier.padding(vertical = 8.dp))
-        Button(onClick = {
-            role = if (role == MemberRole.MEMBER) MemberRole.MEMBER_ADMIN else MemberRole.MEMBER
-        }) {
-            Text("Toggle Role")
-        }
+            // ---- Address ----
+            OutlinedTextField(
+                value = address,
+                onValueChange = { address = it },
+                label = {
+                    Row {
+                        Text("Address")
+                        Text("*", color = Color.Red)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                isError = errors["address"] != null
+            )
+            errors["address"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            // ---- Share Balance ----
+            OutlinedTextField(
+                value = shareBalance,
+                onValueChange = { shareBalance = it },
+                label = {
+                    Row {
+                        Text("Share Balance")
+                        Text("*", color = Color.Red)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                isError = errors["shareBalance"] != null
+            )
+            errors["shareBalance"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
 
-        Button(onClick = {
-            if (validate()) {
-                viewModel.addShareholder(
-                    ShareholderEntry(
-                        fullName = fullName,
-                        mobileNumber = mobile,
-                        email = email,
-                        dob = dob,
-                        address = address,
-                        shareBalance = shareBalance.toDouble(),
-                        joiningDate = joinDate,
-                        role = role
-                    )
-                ) { success, errorMessage ->
-                    if (success) {
-                        Toast.makeText(context, "✅ Shareholder saved!", Toast.LENGTH_SHORT).show()
-                        resetForm()
-                        navController.navigate("shareholderList") {
-                            popUpTo("addShareholder") { inclusive = true }
+            // ---- DOB ----
+            DatePickerField(
+                label = "Date of Birth *",
+                date = dob,
+                onDateChange = { dob = it },
+                modifier = Modifier.fillMaxWidth()
+            )
+            errors["dob"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
+
+            // ---- Joining Date ----
+            DatePickerField(
+                label = "Joining Date *",
+                date = joiningDate,
+                onDateChange = { joiningDate = it },
+                modifier = Modifier.fillMaxWidth()
+            )
+            errors["joiningDate"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
+
+            // ---- Role ----
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = role?.name ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = {
+                        Row {
+                            Text("Role")
+                            Text("*", color = Color.Red)
                         }
-                    } else {
-                        Toast.makeText(context, "❌ Error: $errorMessage", Toast.LENGTH_LONG).show()
+                    },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
+                    isError = errors["role"] != null
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    MemberRole.entries.forEach { item ->
+                        DropdownMenuItem(
+                            text = { Text(item.name) },
+                            onClick = {
+                                role = item
+                                expanded = false
+                            }
+                        )
                     }
                 }
             }
-        }) {
-            Text("Submit")
+            errors["role"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
+
+            // ---- Global error ----
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            // ---- Save Button ----
+            Button(
+                onClick = {
+                    // Validation
+                    val newErrors = mutableMapOf<String, String>()
+                    if (fullName.isBlank()) newErrors["fullName"] = "Full Name is required"
+                    if (email.isBlank()) newErrors["email"] = "Email is required"
+                    if (mobileNumber.isBlank()) newErrors["mobileNumber"] = "Mobile Number is required"
+                    if (address.isBlank()) newErrors["address"] = "Address is required"
+                    if (shareBalance.isBlank()) newErrors["shareBalance"] = "Share Balance is required"
+                    if (dob == null) newErrors["dob"] = "Date of Birth is required"
+                    if (joiningDate == null) newErrors["joiningDate"] = "Joining Date is required"
+                    if (role == null) newErrors["role"] = "Role is required"
+
+                    errors = newErrors
+
+                    if (errors.isEmpty()) {
+                        val entry = ShareholderEntry(
+                            fullName = fullName,
+                            email = email,
+                            mobileNumber = mobileNumber,
+                            address = address,
+                            shareBalance = shareBalance.toDoubleOrNull() ?: 0.0,
+                            dob = dob,
+                            joiningDate = joiningDate,
+                            role = role?.name ?: ""
+                        )
+                        viewModel.addShareholder(entry)
+                    }
+                },
+                enabled = !isSaving,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(end = 8.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Text("Saving...")
+                } else {
+                    Text("Save")
+                }
+            }
         }
     }
 }

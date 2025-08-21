@@ -1,67 +1,52 @@
 package com.selfgrowthfund.sgf.data.local.converters
 
-import android.os.Build
 import androidx.room.TypeConverter
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import com.selfgrowthfund.sgf.model.enums.EntrySource
-import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.util.*
-import java.util.logging.Logger
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
+import org.threeten.bp.ZoneId
+import org.threeten.bp.ZonedDateTime
+import java.util.Date
 
 object AppTypeConverters {
 
-    private val logger = Logger.getLogger("AppTypeConverters")
-    private val fallbackFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-
-    // ===== LocalDateTime ↔ Long =====
+    // ===== org.threeten.bp.LocalDate ↔ Long =====
     @TypeConverter
     @JvmStatic
-    fun fromLocalDateTime(dateTime: LocalDateTime?): Long? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            dateTime?.toEpochSecond(ZoneOffset.UTC)
-        } else {
-            logger.warning("LocalDateTime not supported on API < 26")
-            null
-        }
+    fun fromLocalDate(date: LocalDate?): Long? {
+        return date?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
     }
 
     @TypeConverter
     @JvmStatic
-    fun toLocalDateTime(timestamp: Long?): LocalDateTime? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            timestamp?.let { LocalDateTime.ofEpochSecond(it, 0, ZoneOffset.UTC) }
-        } else {
-            logger.warning("LocalDateTime not supported on API < 26")
-            null
+    fun toLocalDate(timestamp: Long?): LocalDate? {
+        return timestamp?.let {
+            Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
         }
     }
 
-    // ===== LocalDate ↔ String =====
+    // ===== org.threeten.bp.Instant ↔ Long =====
     @TypeConverter
     @JvmStatic
-    fun fromLocalDate(date: LocalDate?): String? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            date?.format(DateTimeFormatter.ISO_LOCAL_DATE)
-        } else {
-            logger.warning("LocalDate not supported on API < 26")
-            null
-        }
+    fun fromInstant(instant: Instant?): Long? {
+        return instant?.toEpochMilli()
     }
 
     @TypeConverter
     @JvmStatic
-    fun toLocalDate(value: String?): LocalDate? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            value?.let { LocalDate.parse(it, DateTimeFormatter.ISO_LOCAL_DATE) }
-        } else {
-            logger.warning("LocalDate not supported on API < 26")
-            null
-        }
+    fun toInstant(timestamp: Long?): Instant? {
+        return timestamp?.let { Instant.ofEpochMilli(it) }
     }
+
+    // ===== java.util.Date ↔ Long =====
+    @TypeConverter
+    @JvmStatic
+    fun fromDate(date: Date?): Long? = date?.time
+
+    @TypeConverter
+    @JvmStatic
+    fun toDate(timestamp: Long?): Date? = timestamp?.let { Date(it) }
 
     // ===== List<String> ↔ String =====
     @TypeConverter
@@ -76,15 +61,6 @@ object AppTypeConverters {
         return data?.split(",")?.map { it.trim() }
     }
 
-    // ===== Date ↔ Long =====
-    @TypeConverter
-    @JvmStatic
-    fun fromDate(date: Date?): Long? = date?.time
-
-    @TypeConverter
-    @JvmStatic
-    fun toDate(timestamp: Long?): Date? = timestamp?.let { Date(it) }
-
     // ===== DueMonth ↔ String =====
     @TypeConverter
     @JvmStatic
@@ -93,15 +69,14 @@ object AppTypeConverters {
     @TypeConverter
     @JvmStatic
     fun toDueMonth(value: String): DueMonth = DueMonth(value)
-}
 
-// ===== EntrySource ↔ String =====
-@TypeConverter
-fun fromEntrySource(source: EntrySource?): String? {
-    return source?.name
-}
+    // ===== EntrySource ↔ String =====
+    @TypeConverter
+    @JvmStatic
+    fun fromEntrySource(source: EntrySource?): String? = source?.name
 
-@TypeConverter
-fun toEntrySource(value: String?): EntrySource? {
-    return value?.let { EntrySource.valueOf(it) }
+    @TypeConverter
+    @JvmStatic
+    fun toEntrySource(value: String?): EntrySource? =
+        value?.let { EntrySource.valueOf(it) }
 }

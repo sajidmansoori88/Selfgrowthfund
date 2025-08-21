@@ -1,11 +1,9 @@
 package com.selfgrowthfund.sgf.data.local.entities
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
-import com.selfgrowthfund.sgf.utils.Dates
-import java.util.*
+import androidx.room.*
+import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import org.threeten.bp.LocalDate
+import org.threeten.bp.temporal.ChronoUnit
 
 @Entity(
     tableName = "investment_returns",
@@ -19,6 +17,7 @@ import java.util.*
     ],
     indices = [Index("investmentId")]
 )
+@TypeConverters(AppTypeConverters::class)
 data class InvestmentReturns(
     @PrimaryKey
     val returnId: String,
@@ -34,15 +33,14 @@ data class InvestmentReturns(
     val actualProfitAmount: Double,
     val profitPercentVariance: Double,
     val profitAmountVariance: Double,
-    val returnDate: Long,
+    val returnDate: LocalDate,
     val remarks: String? = null
 ) {
-    // Secondary constructor with inline calculations
     constructor(
         returnId: String,
         investment: Investment,
         amountReceived: Double,
-        returnDate: Long = Dates().now(),
+        returnDate: LocalDate = LocalDate.now(),
         remarks: String? = null
     ) : this(
         returnId = returnId,
@@ -63,10 +61,8 @@ data class InvestmentReturns(
     )
 
     companion object {
-        // Static calculation methods
-        private fun calculateDaysBetween(startDate: Date, endDate: Long): Int {
-            val diff = endDate - startDate.time
-            return (diff / (1000 * 60 * 60 * 24)).toInt()
+        private fun calculateDaysBetween(startDate: LocalDate, endDate: LocalDate): Int {
+            return ChronoUnit.DAYS.between(startDate, endDate).toInt()
         }
 
         private fun calculateActualProfitPercent(amountInvested: Double, amountReceived: Double): Double {

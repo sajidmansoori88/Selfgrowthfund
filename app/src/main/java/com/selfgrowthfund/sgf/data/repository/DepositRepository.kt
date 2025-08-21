@@ -7,7 +7,7 @@ import com.selfgrowthfund.sgf.data.local.dao.DepositEntryDao
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import kotlinx.coroutines.flow.Flow
 import com.selfgrowthfund.sgf.utils.Dates
-import kotlinx.coroutines.flow.flow
+import org.threeten.bp.LocalDate
 import javax.inject.Inject
 
 class DepositRepository @Inject constructor(
@@ -19,7 +19,8 @@ class DepositRepository @Inject constructor(
         shareholderId: String,
         shareholderName: String,
         dueMonth: String,
-        paymentDate: String,
+        paymentDate: LocalDate
+        ,
         shareNos: Int,
         additionalContribution: Double = 0.0,
         modeOfPayment: String

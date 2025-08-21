@@ -326,7 +326,7 @@ fun AddDepositScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text("Payment Summary:", style = MaterialTheme.typography.titleSmall)
-                    Divider()
+                    HorizontalDivider()
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween

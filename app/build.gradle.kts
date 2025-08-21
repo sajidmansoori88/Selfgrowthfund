@@ -34,7 +34,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
-        dataBinding = true
+        dataBinding = false
     }
 
     composeOptions {
@@ -142,15 +142,16 @@ dependencies {
     // ✅ Optional: Firebase Auth
     implementation(libs.firebase.auth)
 
-    androidTestImplementation ("androidx.room:room-testing:2.7.2") // or your Room version
-    androidTestImplementation ("androidx.test:core:1.7.0")
-    androidTestImplementation ("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation (libs.room.testing) // or your Room version
+    androidTestImplementation (libs.androidx.core)
+    androidTestImplementation (libs.androidx.test.ext.junit)
     androidTestImplementation (libs.junit)
 
-    implementation(libs.itextpdf)
     implementation(libs.itext7.kernel)
     implementation(libs.itext7.layout)
     implementation(libs.itext7.core)
 
     implementation(libs.accompanist.systemuicontroller)
+
+    implementation(libs.threetenabp)
 }

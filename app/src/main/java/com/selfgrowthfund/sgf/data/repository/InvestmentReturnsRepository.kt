@@ -25,8 +25,7 @@ class InvestmentReturnsRepository @Inject constructor(
             ?: throw Exception("Investment not found")
 
         // Using dates.now() instead of currentDateTime()
-        val returnDate = dates.now()
-
+        val returnDate = dates.today()
         returnsDao.insertReturn(
             InvestmentReturns(
                 returnId = returnId,

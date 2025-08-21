@@ -9,17 +9,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.util.Date
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
 import javax.inject.Inject
 
 data class EditShareholderUiState(
     val name: String = "",
     val mobile: String = "",
     val email: String = "",
-    val dob: Date = Date(),
+    val dob: LocalDate = LocalDate.now(),
     val address: String = "",
     val shareBalance: String = "",
-    val joinDate: Date = Date(),
+    val joinDate: LocalDate = LocalDate.now(),
     val role: MemberRole = MemberRole.MEMBER,
     val isLoading: Boolean = false,
     val success: Boolean = false,
@@ -65,10 +66,10 @@ class EditShareholderViewModel @Inject constructor(
     fun updateName(name: String) = update { it.copy(name = name) }
     fun updateMobile(mobile: String) = update { it.copy(mobile = mobile) }
     fun updateEmail(email: String) = update { it.copy(email = email) }
-    fun updateDob(dob: Date) = update { it.copy(dob = dob) }
+    fun updateDob(dob: LocalDate) = update { it.copy(dob = dob) }
     fun updateAddress(address: String) = update { it.copy(address = address) }
     fun updateShareBalance(balance: String) = update { it.copy(shareBalance = balance) }
-    fun updateJoinDate(date: Date) = update { it.copy(joinDate = date) }
+    fun updateJoinDate(date: LocalDate) = update { it.copy(joinDate = date) }
     fun updateRole(role: MemberRole) = update { it.copy(role = role) }
 
     private fun update(transform: (EditShareholderUiState) -> EditShareholderUiState) {
@@ -88,8 +89,8 @@ class EditShareholderViewModel @Inject constructor(
             shareBalance = balance,
             joiningDate = state.joinDate,
             role = state.role,
-            updatedAt = Date(),
-            lastUpdated = Date()
+            updatedAt = Instant.now(),
+            lastUpdated = Instant.now()
         ) ?: return
 
         _uiState.value = _uiState.value.copy(isLoading = true)

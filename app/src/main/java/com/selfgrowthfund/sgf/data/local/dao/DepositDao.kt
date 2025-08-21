@@ -22,11 +22,12 @@ interface DepositDao {
     suspend fun getLastId(): String?
 
     @Query("""
-        SELECT SUM(totalAmount)  
-        FROM deposits  
-        WHERE strftime('%m-%Y', createdAt/1000, 'unixepoch') = :monthYear
-    """)
+    SELECT SUM(totalAmount)
+    FROM deposits
+    WHERE strftime('%Y-%m', createdAt) = :monthYear
+""")
     suspend fun getMonthlyTotal(monthYear: String): Double
+
 
     // ✅ FIXED: Return Deposit instead of DepositEntry
     @Query("SELECT * FROM deposits ORDER BY dueMonth DESC")

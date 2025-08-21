@@ -47,7 +47,7 @@ object AppModule {
     @Provides fun provideInvestmentReturnsDao(db: AppDatabase): InvestmentReturnsDao = db.investmentReturnsDao()
 
     /* Utilities */
-    @Provides @Singleton fun provideDates(): Dates = Dates()
+    @Provides @Singleton fun provideDates(): Dates = Dates
 
     /* Repositories */
     @Provides @Singleton

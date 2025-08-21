@@ -3,19 +3,19 @@ package com.selfgrowthfund.sgf.ui.editshareholders
 import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.session.UserSessionViewModel
-import java.text.SimpleDateFormat
-import java.util.*
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
 
 @Composable
 fun EditShareholderScreen(
@@ -25,9 +25,9 @@ fun EditShareholderScreen(
     onDone: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
-    val currentUser = userSession.currentUser.value
+    val currentUser by userSession.currentUser.collectAsState()
     val context = LocalContext.current
-    val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd MMM yyyy") }
 
     if (currentUser.role != MemberRole.MEMBER_ADMIN) {
         Text("Access Denied: Only admins can edit shareholders", modifier = Modifier.padding(16.dp))
@@ -43,10 +43,7 @@ fun EditShareholderScreen(
         onDone()
     }
 
-    Column(modifier = Modifier
-        .padding(16.dp)
-        .fillMaxWidth()) {
-
+    Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             return@Column
@@ -86,15 +83,15 @@ fun EditShareholderScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text("Date of Birth: ${dateFormatter.format(state.dob)}")
+        Text("Date of Birth: ${state.dob.format(dateFormatter)}")
         Button(onClick = {
-            val cal = Calendar.getInstance().apply { time = state.dob }
+            val dob = state.dob
             DatePickerDialog(
                 context,
-                { _, y, m, d -> viewModel.updateDob(Calendar.getInstance().apply { set(y, m, d) }.time) },
-                cal.get(Calendar.YEAR),
-                cal.get(Calendar.MONTH),
-                cal.get(Calendar.DAY_OF_MONTH)
+                { _, y, m, d -> viewModel.updateDob(LocalDate.of(y, m + 1, d)) },
+                dob.year,
+                dob.monthValue - 1,
+                dob.dayOfMonth
             ).show()
         }) {
             Text("Select DOB")
@@ -121,15 +118,15 @@ fun EditShareholderScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text("Joining Date: ${dateFormatter.format(state.joinDate)}")
+        Text("Joining Date: ${state.joinDate.format(dateFormatter)}")
         Button(onClick = {
-            val cal = Calendar.getInstance().apply { time = state.joinDate }
+            val joinDate = state.joinDate
             DatePickerDialog(
                 context,
-                { _, y, m, d -> viewModel.updateJoinDate(Calendar.getInstance().apply { set(y, m, d) }.time) },
-                cal.get(Calendar.YEAR),
-                cal.get(Calendar.MONTH),
-                cal.get(Calendar.DAY_OF_MONTH)
+                { _, y, m, d -> viewModel.updateJoinDate(LocalDate.of(y, m + 1, d)) },
+                joinDate.year,
+                joinDate.monthValue - 1,
+                joinDate.dayOfMonth
             ).show()
         }) {
             Text("Select Joining Date")

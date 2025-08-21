@@ -21,11 +21,15 @@ fun DepositSummaryCard(summary: DepositEntrySummaryDTO) {
                 text = "Shareholder: ${summary.shareholderName}",
                 style = MaterialTheme.typography.titleMedium
             )
-            Text("Due Month: ${summary.dueMonth}")
-            Text("Payment Date: ${summary.paymentDate}")
-            Text("Total Amount: ₹${summary.totalAmount}", fontWeight = FontWeight.Bold)
-            Text("Payment Status: ${summary.paymentStatus}")
-            Text("Mode: ${summary.modeOfPayment}")
+            Text("Due Month: ${summary.dueMonth}", style = MaterialTheme.typography.bodyMedium)
+            Text("Payment Date: ${summary.paymentDate}", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "Total Amount: ₹${summary.totalAmount}",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text("Payment Status: ${summary.paymentStatus}", style = MaterialTheme.typography.bodyMedium)
+            Text("Mode: ${summary.modeOfPayment}", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

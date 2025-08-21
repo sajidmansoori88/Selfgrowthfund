@@ -1,38 +1,23 @@
 package com.selfgrowthfund.sgf.utils
 
-import android.os.Build
-import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.*
-import javax.inject.Inject
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
+import org.threeten.bp.ZoneId
+import org.threeten.bp.format.DateTimeFormatter
 
-class Dates @Inject constructor() {
+object Dates {
 
-    private val fallbackFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+    private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+    private val timestampFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm")
+        .withZone(ZoneId.systemDefault())
 
-    fun format(localDate: LocalDate): String {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            localDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
-        } else {
-            val parts = localDate.toString().split("-")
-            val year = parts[0].toInt()
-            val month = parts[1].toInt() - 1
-            val day = parts[2].toInt()
-            val date = GregorianCalendar(year, month, day).time
-            fallbackFormatter.format(date)
-        }
-    }
+    fun format(date: LocalDate?): String =
+        date?.format(dateFormatter) ?: ""
 
-    fun format(date: Date): String {
-        return fallbackFormatter.format(date)
-    }
-
-    fun format(timestamp: Long): String {
-        return format(Date(timestamp))
-    }
+    fun format(instant: Instant?): String =
+        instant?.let { timestampFormatter.format(it) } ?: ""
 
     fun now(): Long = System.currentTimeMillis()
 
-    fun nowDate(): Date = Date(now())
+    fun today(): LocalDate = LocalDate.now()
 }

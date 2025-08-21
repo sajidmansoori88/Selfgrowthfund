@@ -7,8 +7,9 @@ import com.selfgrowthfund.sgf.data.repository.DepositRepository
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
+import org.threeten.bp.YearMonth
+import org.threeten.bp.format.DateTimeFormatter
+import java.util.Locale
 
 class DepositHistoryViewModel(
     private val repository: DepositRepository,
@@ -16,9 +17,17 @@ class DepositHistoryViewModel(
     private val currentUserId: String
 ) : ViewModel() {
 
+    // ---------------- UI State ----------------
     private val _visibleMonthLimit = MutableStateFlow(6)
     val visibleMonthLimit: StateFlow<Int> = _visibleMonthLimit
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _loadError = MutableStateFlow<String?>(null)
+    val loadError: StateFlow<String?> = _loadError
+
+    // ---------------- Data State ----------------
     private val _allDeposits = MutableStateFlow<List<Deposit>>(emptyList())
     val allDeposits: StateFlow<List<Deposit>> = _allDeposits
 
@@ -40,6 +49,12 @@ class DepositHistoryViewModel(
         _statusFilter.value = status
     }
 
+    fun resetFilters() {
+        _shareholderFilter.value = "All"
+        _statusFilter.value = "All"
+        _visibleMonthLimit.value = 6
+    }
+
     val filteredDeposits: StateFlow<List<Deposit>> = combine(
         allDeposits,
         visibleMonths,
@@ -58,8 +73,15 @@ class DepositHistoryViewModel(
 
     fun loadDeposits() {
         viewModelScope.launch {
-            val deposits = repository.getAllDeposits()
-            _allDeposits.value = deposits
+            _isLoading.value = true
+            _loadError.value = null
+            try {
+                val deposits = repository.getAllDeposits()
+                _allDeposits.value = deposits
+            } catch (e: Exception) {
+                _loadError.value = e.message
+            }
+            _isLoading.value = false
         }
     }
 
@@ -70,12 +92,10 @@ class DepositHistoryViewModel(
     }
 
     private fun getRecentMonths(limit: Int): List<String> {
-        val formatter = SimpleDateFormat("MMM-yyyy", Locale.getDefault())
-        val cal = Calendar.getInstance()
-        return (0 until limit).map {
-            val month = formatter.format(cal.time)
-            cal.add(Calendar.MONTH, -1)
-            month
+        val formatter = DateTimeFormatter.ofPattern("MMM-yyyy", Locale.getDefault())
+        val now = YearMonth.now()
+        return (0 until limit).map { offset ->
+            now.minusMonths(offset.toLong()).format(formatter)
         }
     }
 }

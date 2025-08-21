@@ -23,13 +23,26 @@ fun InvestmentReturnsEntryScreen(
 
     val addReturnState by viewModel.addReturnState.collectAsState()
 
-    val preview = remember(amountReceived) {
+    val amountError = amountReceived.isNotBlank() && amountReceived.toDoubleOrNull() == null
+    val isValidAmount = amountReceived.toDoubleOrNull()?.let { it > 0.0 } == true
+
+    val preview = remember(amountReceived, remarks) {
         val amount = amountReceived.toDoubleOrNull() ?: 0.0
         viewModel.previewReturn(investment, amount, remarks.ifBlank { null })
     }
 
+    LaunchedEffect(addReturnState) {
+        if (addReturnState is Result.Success) {
+            viewModel.clearState()
+            onReturnAdded()
+        }
+    }
+
     Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Enter Return for ${investment.investmentName}", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = "Enter Return for ${investment.investmentName}",
+            style = MaterialTheme.typography.titleMedium
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -37,6 +50,10 @@ fun InvestmentReturnsEntryScreen(
             value = amountReceived,
             onValueChange = { amountReceived = it },
             label = { Text("Amount Received") },
+            isError = amountError,
+            supportingText = {
+                if (amountError) Text("Enter a valid number", color = MaterialTheme.colorScheme.error)
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
@@ -52,10 +69,10 @@ fun InvestmentReturnsEntryScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Preview:")
-        Text("Return Period: ${preview.actualReturnPeriod} days")
-        Text("Profit Percent: ${formatPercent(preview.actualProfitPercent)}")
-        Text("Profit Variance: ₹${formatAmount(preview.profitAmountVariance)}")
+        Text("Preview:", style = MaterialTheme.typography.titleSmall)
+        Text("Return Period: ${preview.actualReturnPeriod} days", style = MaterialTheme.typography.bodyMedium)
+        Text("Profit Percent: ${formatPercent(preview.actualProfitPercent)}", style = MaterialTheme.typography.bodyMedium)
+        Text("Profit Variance: ₹${formatAmount(preview.profitAmountVariance)}", style = MaterialTheme.typography.bodyMedium)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -70,7 +87,7 @@ fun InvestmentReturnsEntryScreen(
                     )
                 }
             },
-            enabled = addReturnState !is Result.Loading,
+            enabled = isValidAmount && addReturnState !is Result.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Submit Return")
@@ -80,12 +97,6 @@ fun InvestmentReturnsEntryScreen(
 
         when (addReturnState) {
             is Result.Loading -> LoadingIndicator()
-            is Result.Success -> {
-                LaunchedEffect(Unit) {
-                    viewModel.clearState()
-                    onReturnAdded()
-                }
-            }
             is Result.Error -> {
                 Text(
                     text = "Error: ${(addReturnState as Result.Error).exception.message}",

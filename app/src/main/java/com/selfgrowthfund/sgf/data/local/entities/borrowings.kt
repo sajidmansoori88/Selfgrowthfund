@@ -1,36 +1,45 @@
 package com.selfgrowthfund.sgf.data.local.entities
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import java.util.*
+import androidx.room.*
+import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
+import org.threeten.bp.temporal.ChronoUnit
 
 @Entity(tableName = "borrowings")
+@TypeConverters(AppTypeConverters::class)
 data class Borrowing(
     @PrimaryKey
     val borrowId: String,
+
     val shareholderId: String,
     val shareholderName: String,
-    val applicationDate: Date,
+
+    val applicationDate: LocalDate,
     val amountRequested: Double,
+
     val consentingMember1Id: String?,
     val consentingMember1Name: String?,
     val consentingMember2Id: String?,
     val consentingMember2Name: String?,
+
     val borrowEligibility: Double,
     val approvedAmount: Double,
-    val borrowStartDate: Date,
-    val dueDate: Date, // borrowStartDate + 45 days
-    val status: String = "Pending",
-    val closedDate: Date? = null, // Added field to track when borrowing was closed
+
+    val borrowStartDate: LocalDate,
+    val dueDate: LocalDate,
+
+    val status: String = BorrowingStatus.PENDING,
+    val closedDate: LocalDate? = null,
+
     val notes: String? = null,
     val createdBy: String,
-    val createdAt: Date = Date()
+    val createdAt: Instant = Instant.now()
 ) {
-    // Secondary constructor for new entries
     constructor(
         shareholderId: String,
         shareholderName: String,
-        applicationDate: Date,
+        applicationDate: LocalDate,
         amountRequested: Double,
         consentingMember1Id: String?,
         consentingMember1Name: String?,
@@ -38,7 +47,7 @@ data class Borrowing(
         consentingMember2Name: String?,
         borrowEligibility: Double,
         approvedAmount: Double,
-        borrowStartDate: Date,
+        borrowStartDate: LocalDate,
         createdBy: String,
         notes: String? = null
     ) : this(
@@ -54,21 +63,15 @@ data class Borrowing(
         borrowEligibility = borrowEligibility,
         approvedAmount = minOf(approvedAmount, borrowEligibility),
         borrowStartDate = borrowStartDate,
-        dueDate = calculateDueDate(borrowStartDate),
+        dueDate = borrowStartDate.plusDays(45),
         status = BorrowingStatus.PENDING,
-        closedDate = null, // Initially null for new entries
+        closedDate = null,
         notes = notes,
         createdBy = createdBy
     )
 
     companion object {
-        private fun calculateDueDate(startDate: Date): Date {
-            val calendar = Calendar.getInstance().apply {
-                time = startDate
-                add(Calendar.DAY_OF_YEAR, 45)
-            }
-            return calendar.time
-        }
+        fun calculateDueDate(startDate: LocalDate): LocalDate = startDate.plusDays(45)
 
         fun calculateEligibility(
             shareholderAmount: Double,
@@ -87,7 +90,7 @@ data class Borrowing(
     fun validate(): Boolean {
         return approvedAmount <= borrowEligibility &&
                 amountRequested > 0 &&
-                !borrowStartDate.before(applicationDate)
+                !borrowStartDate.isBefore(applicationDate)
     }
 
     fun isActive(): Boolean = status == BorrowingStatus.ACTIVE
