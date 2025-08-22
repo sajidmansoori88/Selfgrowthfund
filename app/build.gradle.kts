@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.google.services)
+
 }
 
 android {
@@ -14,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.selfgrowthfund.sgf"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -152,6 +154,4 @@ dependencies {
     implementation(libs.itext7.core)
 
     implementation(libs.accompanist.systemuicontroller)
-
-    implementation(libs.threetenabp)
 }

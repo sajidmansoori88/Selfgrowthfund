@@ -7,7 +7,7 @@ import com.selfgrowthfund.sgf.data.local.entities.BorrowingStatus
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
-import org.threeten.bp.LocalDate
+import java.time.LocalDate
 import java.util.Locale
 import javax.inject.Inject
 

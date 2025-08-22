@@ -7,7 +7,7 @@ import com.selfgrowthfund.sgf.data.local.dao.DepositEntryDao
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import kotlinx.coroutines.flow.Flow
 import com.selfgrowthfund.sgf.utils.Dates
-import org.threeten.bp.LocalDate
+import java.time.LocalDate
 import javax.inject.Inject
 
 class DepositRepository @Inject constructor(

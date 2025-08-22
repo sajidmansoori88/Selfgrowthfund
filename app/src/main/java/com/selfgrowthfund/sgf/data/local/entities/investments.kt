@@ -2,7 +2,7 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
-import org.threeten.bp.LocalDate
+import java.time.LocalDate
 
 @Entity(tableName = "investments")
 @TypeConverters(AppTypeConverters::class)

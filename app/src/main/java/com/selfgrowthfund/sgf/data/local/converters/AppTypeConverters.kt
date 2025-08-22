@@ -3,15 +3,13 @@ package com.selfgrowthfund.sgf.data.local.converters
 import androidx.room.TypeConverter
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import com.selfgrowthfund.sgf.model.enums.EntrySource
-import org.threeten.bp.Instant
-import org.threeten.bp.LocalDate
-import org.threeten.bp.ZoneId
-import org.threeten.bp.ZonedDateTime
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Date
 
 object AppTypeConverters {
 
-    // ===== org.threeten.bp.LocalDate ↔ Long =====
     @TypeConverter
     @JvmStatic
     fun fromLocalDate(date: LocalDate?): Long? {
@@ -26,7 +24,6 @@ object AppTypeConverters {
         }
     }
 
-    // ===== org.threeten.bp.Instant ↔ Long =====
     @TypeConverter
     @JvmStatic
     fun fromInstant(instant: Instant?): Long? {

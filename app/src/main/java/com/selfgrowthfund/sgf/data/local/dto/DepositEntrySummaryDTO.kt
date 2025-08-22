@@ -1,7 +1,7 @@
 package com.selfgrowthfund.sgf.data.local.dto
 
-import org.threeten.bp.Instant
-import org.threeten.bp.LocalDate
+import java.time.Instant
+import java.time.LocalDate
 
 data class DepositEntrySummaryDTO(
     val depositId: String,

@@ -8,7 +8,7 @@ import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
-import org.threeten.bp.Instant
+import java.time.Instant
 import javax.inject.Inject
 
 class ShareholderRepository @Inject constructor(
@@ -48,6 +48,14 @@ class ShareholderRepository @Inject constructor(
             dao.deleteShareholder(it)
             Result.Success(Unit)
         } ?: Result.Error(Exception("Shareholder not found"))
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
+
+    // Add this method to support deleting by Shareholder object
+    suspend fun deleteShareholder(shareholder: Shareholder): Result<Unit> = try {
+        dao.deleteShareholder(shareholder)
+        Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }

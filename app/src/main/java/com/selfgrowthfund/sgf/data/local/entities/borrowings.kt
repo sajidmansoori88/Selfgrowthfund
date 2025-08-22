@@ -2,9 +2,9 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
-import org.threeten.bp.Instant
-import org.threeten.bp.LocalDate
-import org.threeten.bp.temporal.ChronoUnit
+import java.time.Instant
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @Entity(tableName = "borrowings")
 @TypeConverters(AppTypeConverters::class)

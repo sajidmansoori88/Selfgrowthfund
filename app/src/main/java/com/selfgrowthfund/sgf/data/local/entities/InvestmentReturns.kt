@@ -2,8 +2,8 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
-import org.threeten.bp.LocalDate
-import org.threeten.bp.temporal.ChronoUnit
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @Entity(
     tableName = "investment_returns",

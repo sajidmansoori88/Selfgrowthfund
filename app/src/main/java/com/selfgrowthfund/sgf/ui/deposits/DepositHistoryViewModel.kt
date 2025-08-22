@@ -7,8 +7,8 @@ import com.selfgrowthfund.sgf.data.repository.DepositRepository
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import org.threeten.bp.YearMonth
-import org.threeten.bp.format.DateTimeFormatter
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class DepositHistoryViewModel(

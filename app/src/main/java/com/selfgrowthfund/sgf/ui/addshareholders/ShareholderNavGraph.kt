@@ -1,23 +1,36 @@
+// shareholderNavGraph.kt
 package com.selfgrowthfund.sgf.ui.addshareholders
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.navigation
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.selfgrowthfund.sgf.ui.addshareholders.ShareholderListScreen
-import com.selfgrowthfund.sgf.ui.addshareholders.AddShareholderScreen
+import com.selfgrowthfund.sgf.ui.editshareholders.EditShareholderScreen
 
-@RequiresApi(Build.VERSION_CODES.O)
+// shareholderNavGraph.kt
 fun NavGraphBuilder.shareholderNavGraph(navController: NavController) {
+    // Add Shareholder Screen
     composable("addShareholder") {
-        AddShareholderScreen(onBack = { navController.popBackStack() })
+        AddShareholderScreen(
+            onNavigateBack = { navController.popBackStack() },
+            onNavigateToEdit = { shareholderId ->
+                navController.navigate("editShareholder/$shareholderId")
+            }
+        )
     }
 
+    // Edit Shareholder Screen
+    composable("editShareholder/{shareholderId}") {
+        val shareholderId = it.arguments?.getString("shareholderId") ?: ""
+        EditShareholderScreen(
+            shareholderId = shareholderId,
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
+    // Shareholder List Screen (if you have it)
     composable("shareholderList") {
         ShareholderListScreen(navController = navController)
     }
 }
-
-

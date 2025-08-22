@@ -3,7 +3,7 @@ package com.selfgrowthfund.sgf.utils.mappers
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
 import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
-import org.threeten.bp.LocalDate
+import java.time.LocalDate
 
 // ShareholderEntry → Shareholder
 fun ShareholderEntry.toShareholder(lastId: String?): Shareholder {

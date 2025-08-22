@@ -11,6 +11,7 @@ import com.selfgrowthfund.sgf.data.local.entities.*
 @Database(
     entities = [
         Shareholder::class,
+        ShareholderEntry::class,
         Deposit::class,
         DepositEntry::class,
         Borrowing::class,
@@ -51,6 +52,7 @@ abstract class AppDatabase : RoomDatabase() {
     }
 
     abstract fun shareholderDao(): ShareholderDao
+    abstract fun shareholderEntryDao(): ShareholderEntryDao
     abstract fun depositDao(): DepositDao
     abstract fun depositEntryDao(): DepositEntryDao
     abstract fun borrowingDao(): BorrowingDao
@@ -61,12 +63,10 @@ abstract class AppDatabase : RoomDatabase() {
     internal class DatabaseCallback : RoomDatabase.Callback() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
-            db.execSQL("INSERT INTO shareholders(id, name) VALUES('DEFAULT', 'System Account')")
-        }
+               }
 
         override fun onOpen(db: SupportSQLiteDatabase) {
             super.onOpen(db)
-            db.execSQL("PRAGMA foreign_keys = ON")
         }
     }
 }

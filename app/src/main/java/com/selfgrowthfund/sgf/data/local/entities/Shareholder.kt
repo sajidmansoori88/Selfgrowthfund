@@ -3,8 +3,9 @@ package com.selfgrowthfund.sgf.data.local.entities
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.selfgrowthfund.sgf.model.enums.MemberRole
-import org.threeten.bp.Instant
-import org.threeten.bp.LocalDate
+import com.selfgrowthfund.sgf.model.enums.ShareholderStatus
+import java.time.Instant
+import java.time.LocalDate
 
 @Entity(tableName = "shareholders")
 data class Shareholder(
@@ -29,8 +30,8 @@ data class Shareholder(
     // Member Roles
     val role: MemberRole,
 
-    // Status
-    val shareholderStatus: String = STATUS_ACTIVE,
+    // Status (now enum-based ✅)
+    val shareholderStatus: ShareholderStatus = ShareholderStatus.Active,
     val lastUpdated: Instant = Instant.now(),
 
     // Audit Fields
@@ -38,8 +39,6 @@ data class Shareholder(
     var updatedAt: Instant = Instant.now()
 ) {
     companion object {
-        const val STATUS_ACTIVE = "Active"
-        const val STATUS_INACTIVE = "Inactive"
         const val MIN_SHARES = 1
         const val ELIGIBILITY_PERCENTAGE = 0.90
 
@@ -56,7 +55,7 @@ data class Shareholder(
     }
 
     fun isEligibleForLoan(): Boolean {
-        return shareholderStatus == STATUS_ACTIVE && shareBalance >= MIN_SHARES
+        return shareholderStatus == ShareholderStatus.Active && shareBalance >= MIN_SHARES
     }
 
     fun isValid(): Boolean {
@@ -65,5 +64,6 @@ data class Shareholder(
                 shareBalance >= MIN_SHARES
     }
 
-    fun isActive(): Boolean = exitDate == null && shareholderStatus == STATUS_ACTIVE
+    fun isActive(): Boolean =
+        exitDate == null && shareholderStatus == ShareholderStatus.Active
 }

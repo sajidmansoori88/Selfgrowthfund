@@ -3,8 +3,9 @@ package com.selfgrowthfund.sgf.ui.extensions
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
 import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.model.enums.MemberRole
-import org.threeten.bp.Instant
-import org.threeten.bp.LocalDate
+import com.selfgrowthfund.sgf.model.enums.ShareholderStatus
+import java.time.Instant
+import java.time.LocalDate
 
 fun ShareholderEntry.toShareholder(lastId: String?): Shareholder {
     val newId = Shareholder.generateNextId(lastId)
@@ -19,8 +20,8 @@ fun ShareholderEntry.toShareholder(lastId: String?): Shareholder {
         sharePrice = 2000.0,
         joiningDate = this.joiningDate ?: LocalDate.now(),
         exitDate = null,
-        role = MemberRole.valueOf(this.role),
-        shareholderStatus = Shareholder.STATUS_ACTIVE,
+        role = MemberRole.valueOf(  this.role),
+        shareholderStatus = ShareholderStatus.Active,
         lastUpdated = Instant.now(),
         createdAt = Instant.now(),
         updatedAt = Instant.now()

@@ -2,175 +2,277 @@ package com.selfgrowthfund.sgf.ui.editshareholders
 
 import android.app.DatePickerDialog
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.selfgrowthfund.sgf.model.enums.MemberRole
-import com.selfgrowthfund.sgf.session.UserSessionViewModel
-import org.threeten.bp.LocalDate
-import org.threeten.bp.format.DateTimeFormatter
+import com.selfgrowthfund.sgf.utils.DateUtils
+import java.time.LocalDate
+import java.util.Calendar
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditShareholderScreen(
     shareholderId: String,
-    viewModel: EditShareholderViewModel = hiltViewModel(),
-    userSession: UserSessionViewModel = hiltViewModel(),
-    onDone: () -> Unit
+    onNavigateBack: () -> Unit = {},
+    onBack: () -> Unit = {},
+    viewModel: EditShareholderViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
-    val currentUser by userSession.currentUser.collectAsState()
-    val context = LocalContext.current
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd MMM yyyy") }
-
-    if (currentUser.role != MemberRole.MEMBER_ADMIN) {
-        Text("Access Denied: Only admins can edit shareholders", modifier = Modifier.padding(16.dp))
-        return
+    val actualOnNavigateBack = remember(onNavigateBack, onBack) {
+        if (onNavigateBack != {}) onNavigateBack else onBack
     }
+
+    val uiState by viewModel.uiState.collectAsState()
+
+    val context = LocalContext.current
 
     LaunchedEffect(shareholderId) {
         viewModel.load(shareholderId)
     }
 
-    if (state.success) {
-        Toast.makeText(context, "✅ Changes saved", Toast.LENGTH_SHORT).show()
-        onDone()
+    // ✅ Handle success navigation
+    LaunchedEffect(uiState.success) {
+        if (uiState.success) {
+            actualOnNavigateBack()
+        }
     }
 
-    Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-        if (state.isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-            return@Column
+    // For date pickers
+    val calendar = Calendar.getInstance()
+    val currentYear = calendar.get(Calendar.YEAR)
+    val currentMonth = calendar.get(Calendar.MONTH)
+    val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Edit Shareholder") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
         }
-
-        state.errorMessage?.let {
-            Text("❌ Error: $it", color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        TextField(
-            value = state.name,
-            onValueChange = viewModel::updateName,
-            label = { Text("Full Name") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = state.mobile,
-            onValueChange = viewModel::updateMobile,
-            label = { Text("Mobile Number") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = state.email,
-            onValueChange = viewModel::updateEmail,
-            label = { Text("Email") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Date of Birth: ${state.dob.format(dateFormatter)}")
-        Button(onClick = {
-            val dob = state.dob
-            DatePickerDialog(
-                context,
-                { _, y, m, d -> viewModel.updateDob(LocalDate.of(y, m + 1, d)) },
-                dob.year,
-                dob.monthValue - 1,
-                dob.dayOfMonth
-            ).show()
-        }) {
-            Text("Select DOB")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = state.address,
-            onValueChange = viewModel::updateAddress,
-            label = { Text("Address") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = state.shareBalance,
-            onValueChange = viewModel::updateShareBalance,
-            label = { Text("Share Balance") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Joining Date: ${state.joinDate.format(dateFormatter)}")
-        Button(onClick = {
-            val joinDate = state.joinDate
-            DatePickerDialog(
-                context,
-                { _, y, m, d -> viewModel.updateJoinDate(LocalDate.of(y, m + 1, d)) },
-                joinDate.year,
-                joinDate.monthValue - 1,
-                joinDate.dayOfMonth
-            ).show()
-        }) {
-            Text("Select Joining Date")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        RoleDropdown(
-            selectedRole = state.role,
-            onRoleSelected = viewModel::updateRole
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = { viewModel.save(shareholderId) },
-            enabled = !state.isLoading,
-            modifier = Modifier.fillMaxWidth()
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Save Changes")
-        }
-    }
-}
+            // Full Name
+            OutlinedTextField(
+                value = uiState.name,
+                onValueChange = viewModel::updateName,
+                label = { Text("Full Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-@Composable
-fun RoleDropdown(
-    selectedRole: MemberRole,
-    onRoleSelected: (MemberRole) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        OutlinedButton(onClick = { expanded = true }) {
-            Text(selectedRole.name)
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            MemberRole.entries.forEach { role ->
-                DropdownMenuItem(
-                    text = { Text(role.name) },
-                    onClick = {
-                        onRoleSelected(role)
-                        expanded = false
+            // Mobile Number
+            OutlinedTextField(
+                value = uiState.mobile,
+                onValueChange = { input ->
+                    if (input.all { it.isDigit() } && input.length <= 10) {
+                        viewModel.updateMobile(input)
                     }
+                },
+                label = { Text("Mobile Number") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Email
+            OutlinedTextField(
+                value = uiState.email,
+                onValueChange = viewModel::updateEmail,
+                label = { Text("Email") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // ─────────────── Date of Birth ───────────────
+            val dobText = uiState.dob.format(DateUtils.formatterPaymentDate)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = dobText,
+                    onValueChange = {},
+                    label = { Text("Date of Birth") },
+                    readOnly = true,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Transparent clickable overlay
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable {
+                            val dialog = DatePickerDialog(
+                                context,
+                                { _, year, month, dayOfMonth ->
+                                    val selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+                                    if (selectedDate <= LocalDate.now()) {
+                                        viewModel.updateDob(selectedDate)
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Cannot select future date",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                },
+                                currentYear,
+                                currentMonth,
+                                currentDay
+                            )
+                            dialog.datePicker.maxDate = System.currentTimeMillis()
+                            dialog.show()
+                        }
+                )
+            }
+
+
+            // Address
+            OutlinedTextField(
+                value = uiState.address,
+                onValueChange = viewModel::updateAddress,
+                label = { Text("Address") },
+                singleLine = false,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Share Balance
+            OutlinedTextField(
+                value = uiState.shareBalance,
+                onValueChange = { input ->
+                    if (input.all { it.isDigit() }) {
+                        viewModel.updateShareBalance(input)
+                    }
+                },
+                label = { Text("Share Balance") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // ─────────────── Joining Date (NEW FIELD) ───────────────
+            val joiningText = uiState.joinDate.format(DateUtils.formatterPaymentDate)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = joiningText,
+                    onValueChange = {},
+                    label = { Text("Joining Date") },
+                    readOnly = true,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Transparent clickable overlay
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable {
+                            val dialog = DatePickerDialog(
+                                context,
+                                { _, year, month, dayOfMonth ->
+                                    val selectedDate = java.time.LocalDate.of(year, month + 1, dayOfMonth)
+                                    if (selectedDate <= java.time.LocalDate.now()) {
+                                        viewModel.updateJoinDate(selectedDate)
+                                    } else {
+                                        Toast.makeText(context, "Cannot select future date", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                currentYear,
+                                currentMonth,
+                                currentDay
+                            )
+                            dialog.datePicker.maxDate = System.currentTimeMillis()
+                            dialog.show()
+                        }
+                )
+            }
+
+            // ─────────────── Role Dropdown with Transparent Box ───────────────
+            var dropdownExpanded by remember { mutableStateOf(false) }
+            val roles = MemberRole.entries
+
+            ExposedDropdownMenuBox(
+                expanded = dropdownExpanded,
+                onExpandedChange = { dropdownExpanded = it }
+            ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = uiState.role.label,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Role") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor() // This is required for ExposedDropdownMenuBox
+                    )
+
+                    // Transparent clickable overlay
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { dropdownExpanded = !dropdownExpanded }
+                    )
+                }
+
+                ExposedDropdownMenu(
+                    expanded = dropdownExpanded,
+                    onDismissRequest = { dropdownExpanded = false }
+                ) {
+                    roles.forEach { role ->
+                        DropdownMenuItem(
+                            text = { Text(role.label) },
+                            onClick = {
+                                viewModel.updateRole(role)
+                                dropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { viewModel.save(shareholderId) },
+                enabled = uiState.name.isNotBlank() &&
+                        uiState.mobile.length == 10 &&
+                        uiState.email.isNotBlank() &&
+                        uiState.shareBalance.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Save")
+            }
+
+            if (uiState.errorMessage != null) {
+                Text(
+                    text = uiState.errorMessage ?: "",
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            if (uiState.success) {
+                Text(
+                    text = "Shareholder updated successfully",
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }

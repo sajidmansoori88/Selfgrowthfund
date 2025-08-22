@@ -9,8 +9,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import org.threeten.bp.Instant
-import org.threeten.bp.LocalDate
+import java.time.Instant
+import java.time.LocalDate
 import javax.inject.Inject
 
 data class EditShareholderUiState(
@@ -20,7 +20,7 @@ data class EditShareholderUiState(
     val dob: LocalDate = LocalDate.now(),
     val address: String = "",
     val shareBalance: String = "",
-    val joinDate: LocalDate = LocalDate.now(),
+    val joinDate: LocalDate = LocalDate.now(), // Add this
     val role: MemberRole = MemberRole.MEMBER,
     val isLoading: Boolean = false,
     val success: Boolean = false,
@@ -63,6 +63,7 @@ class EditShareholderViewModel @Inject constructor(
         }
     }
 
+    // Field updates
     fun updateName(name: String) = update { it.copy(name = name) }
     fun updateMobile(mobile: String) = update { it.copy(mobile = mobile) }
     fun updateEmail(email: String) = update { it.copy(email = email) }
@@ -76,6 +77,7 @@ class EditShareholderViewModel @Inject constructor(
         _uiState.value = transform(_uiState.value)
     }
 
+    // Save changes
     fun save(id: String) {
         val state = _uiState.value
         val balance = state.shareBalance.toDoubleOrNull() ?: 0.0
@@ -97,6 +99,23 @@ class EditShareholderViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.updateShareholder(updated)
+                _uiState.value = _uiState.value.copy(success = true, isLoading = false)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = e.message ?: "Unknown error",
+                    isLoading = false
+                )
+            }
+        }
+    }
+
+    // ────── Delete Shareholder ──────
+    fun deleteShareholder() {
+        val shareholder = currentShareholder ?: return
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        viewModelScope.launch {
+            try {
+                repository.deleteShareholder(shareholder)
                 _uiState.value = _uiState.value.copy(success = true, isLoading = false)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

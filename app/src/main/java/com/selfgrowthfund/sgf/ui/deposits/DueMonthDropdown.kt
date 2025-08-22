@@ -12,8 +12,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.selfgrowthfund.sgf.utils.DateUtils.generateSelectableDueMonths
 import com.selfgrowthfund.sgf.utils.DateUtils.getCurrentMonthFormatted
-import org.threeten.bp.YearMonth
-import org.threeten.bp.format.DateTimeFormatter
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable

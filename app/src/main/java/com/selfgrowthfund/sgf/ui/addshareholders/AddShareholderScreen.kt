@@ -1,250 +1,399 @@
 package com.selfgrowthfund.sgf.ui.addshareholders
 
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.app.DatePickerDialog
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.model.enums.MemberRole
-import com.selfgrowthfund.sgf.ui.components.DatePickerField
-import org.threeten.bp.LocalDate
-
+import java.util.*
+import com.selfgrowthfund.sgf.utils.DateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AddShareholderScreen(
-    onBack: () -> Unit,
-    viewModel: AddShareholderViewModel = hiltViewModel()
+    viewModel: AddShareholderViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit = {},
+    onNavigateToEdit: (String) -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
-    // Form state
-    var fullName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var mobileNumber by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var shareBalance by remember { mutableStateOf("") }
-    var dob by remember { mutableStateOf<LocalDate?>(null) }
-    var joiningDate by remember { mutableStateOf<LocalDate?>(null) }
-    var role by remember { mutableStateOf<MemberRole?>(null) }
+    val context = LocalContext.current
+    val actualOnNavigateBack = remember(onNavigateBack, onBack) {
+        if (onNavigateBack != {}) onNavigateBack else onBack
+    }
 
-    // Dropdown state
+    // State Flows
+    val fullName by viewModel.fullName.collectAsState()
+    val mobileNumber by viewModel.mobileNumber.collectAsState()
+    val email by viewModel.email.collectAsState()
+    val dob by viewModel.dob.collectAsState()
+    val address by viewModel.address.collectAsState()
+    val joiningDate by viewModel.joiningDate.collectAsState()
+    val role by viewModel.role.collectAsState()
+    val shareBalance by viewModel.shareBalance.collectAsState()
+
+    val canSave by viewModel.canSave.collectAsState()
+    val isSaving by viewModel.isSaving.collectAsState()
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
     var expanded by remember { mutableStateOf(false) }
-
-    // Validation errors
-    var errors by remember { mutableStateOf(mapOf<String, String>()) }
-
-    // ViewModel state
-    val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
-    val saveSuccess by viewModel.saveSuccess.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val calendar = Calendar.getInstance()
+    val currentYear = calendar.get(Calendar.YEAR)
+    val currentMonth = calendar.get(Calendar.MONTH)
+    val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
 
     // Handle success navigation
     LaunchedEffect(saveSuccess) {
-        if (saveSuccess == true) onBack()
+        saveSuccess?.let { success ->
+            if (success) {
+                Toast.makeText(context, "Shareholder added successfully!", Toast.LENGTH_SHORT).show()
+                viewModel.resetSaveSuccess()
+                // Navigate somewhere after success
+                onNavigateBack() // ← Go back to previous screen
+                // OR navigate to list screen:
+                // onNavigateToList() // If you implement this
+            }
+        }
+    }
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.resetErrorMessage()
+        }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Add Shareholder") })
+            TopAppBar(
+                title = {
+                    Text(
+                        "Add Shareholder",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
+                .fillMaxSize()
                 .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ---- Full Name ----
+            // ─────────────── Full Name ───────────────
             OutlinedTextField(
                 value = fullName,
-                onValueChange = { fullName = it },
-                label = {
-                    Row {
-                        Text("Full Name")
-                        Text("*", color = Color.Red)
+                onValueChange = { input ->
+                    // Auto-capitalize first letter of each word
+                    viewModel.fullName.value = input.split(" ").joinToString(" ") { word ->
+                        word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                isError = errors["fullName"] != null
-            )
-            errors["fullName"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
-
-            // ---- Email ----
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
                 label = {
-                    Row {
-                        Text("Email")
-                        Text("*", color = Color.Red)
-                    }
+                    Text(
+                        buildAnnotatedString {
+                            append("Full Name")
+                            withStyle(style = SpanStyle(color = Color.Red)) {
+                                append("*")
+                            }
+                        }
+                    )
                 },
-                modifier = Modifier.fillMaxWidth(),
-                isError = errors["email"] != null
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
-            errors["email"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
 
-            // ---- Mobile ----
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ─────────────── Mobile Number ───────────────
             OutlinedTextField(
                 value = mobileNumber,
-                onValueChange = { mobileNumber = it },
-                label = {
-                    Row {
-                        Text("Mobile Number")
-                        Text("*", color = Color.Red)
+                onValueChange = { input ->
+                    if (input.all { it.isDigit() } && input.length <= 10) {
+                        viewModel.mobileNumber.value = input
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                isError = errors["mobileNumber"] != null
+                label = {
+                    Text(
+                        buildAnnotatedString {
+                            append("Mobile Number")
+                            withStyle(style = SpanStyle(color = Color.Red)) {
+                                append("*")
+                            }
+                        }
+                    )
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
             )
-            errors["mobileNumber"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
 
-            // ---- Address ----
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ─────────────── Email ───────────────
+            OutlinedTextField(
+                value = email,
+                onValueChange = { viewModel.email.value = it },
+                label = {
+                    Text(
+                        buildAnnotatedString {
+                            append("Email")
+                            withStyle(style = SpanStyle(color = Color.Red)) {
+                                append("*")
+                            }
+                        }
+                    )
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ─────────────── Date of Birth ───────────────
+            val dobText = dob?.format(DateUtils.formatterPaymentDate) ?: "Select Date of Birth"
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = dobText,
+                    onValueChange = {},
+                    label = {
+                        Text(
+                            buildAnnotatedString {
+                                append("Date of Birth")
+                                withStyle(style = SpanStyle(color = Color.Red)) {
+                                    append("*")
+                                }
+                            }
+                        )
+                    },
+                    readOnly = true,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Transparent clickable overlay
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable {
+                            val dialog = DatePickerDialog(
+                                context,
+                                { _, year, month, dayOfMonth ->
+                                    val selectedDate = java.time.LocalDate.of(year, month + 1, dayOfMonth)
+                                    if (selectedDate <= java.time.LocalDate.now()) {
+                                        viewModel.dob.value = selectedDate
+                                    } else {
+                                        Toast.makeText(context, "Cannot select future date", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                currentYear,
+                                currentMonth,
+                                currentDay
+                            )
+                            dialog.datePicker.maxDate = System.currentTimeMillis()
+                            dialog.show()
+                        }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+
+            // ─────────────── Address ───────────────
             OutlinedTextField(
                 value = address,
-                onValueChange = { address = it },
+                onValueChange = { viewModel.address.value = it },
                 label = {
-                    Row {
-                        Text("Address")
-                        Text("*", color = Color.Red)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                isError = errors["address"] != null
-            )
-            errors["address"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
-
-            // ---- Share Balance ----
-            OutlinedTextField(
-                value = shareBalance,
-                onValueChange = { shareBalance = it },
-                label = {
-                    Row {
-                        Text("Share Balance")
-                        Text("*", color = Color.Red)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                isError = errors["shareBalance"] != null
-            )
-            errors["shareBalance"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
-
-            // ---- DOB ----
-            DatePickerField(
-                label = "Date of Birth *",
-                date = dob,
-                onDateChange = { dob = it },
-                modifier = Modifier.fillMaxWidth()
-            )
-            errors["dob"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
-
-            // ---- Joining Date ----
-            DatePickerField(
-                label = "Joining Date *",
-                date = joiningDate,
-                onDateChange = { joiningDate = it },
-                modifier = Modifier.fillMaxWidth()
-            )
-            errors["joiningDate"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
-
-            // ---- Role ----
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
-                OutlinedTextField(
-                    value = role?.name ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = {
-                        Row {
-                            Text("Role")
-                            Text("*", color = Color.Red)
+                    Text(
+                        buildAnnotatedString {
+                            append("Address")
+                            withStyle(style = SpanStyle(color = Color.Red)) {
+                                append("*")
+                            }
                         }
+                    )
+                },
+                singleLine = false,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ─────────────── Date of Joining ───────────────
+            val joiningText = joiningDate?.format(DateUtils.formatterPaymentDate) ?: "Select Joining Date"
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = joiningText,
+                    onValueChange = {},
+                    label = {
+                        Text(
+                            buildAnnotatedString {
+                                append("Joining Date")
+                                withStyle(style = SpanStyle(color = Color.Red)) {
+                                    append("*")
+                                }
+                            }
+                        )
                     },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
-                    isError = errors["role"] != null
+                    readOnly = true,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+
+                // Transparent clickable overlay
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable {
+                            val dialog = DatePickerDialog(
+                                context,
+                                { _, year, month, dayOfMonth ->
+                                    val selectedDate = java.time.LocalDate.of(year, month + 1, dayOfMonth)
+                                    if (selectedDate <= java.time.LocalDate.now()) {
+                                        viewModel.joiningDate.value = selectedDate
+                                    } else {
+                                        Toast.makeText(context, "Cannot select future date", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                currentYear,
+                                currentMonth,
+                                currentDay
+                            )
+                            dialog.datePicker.maxDate = System.currentTimeMillis()
+                            dialog.show()
+                        }
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+// ─────────────── Role Dropdown ───────────────
+            val roles = MemberRole.entries
+            val selectedRoleText = role?.label ?: "Select Role"
+            var dropdownExpanded by remember { mutableStateOf(false) }
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = selectedRoleText,
+                    onValueChange = {},
+                    label = {
+                        Text(
+                            buildAnnotatedString {
+                                append("Role")
+                                withStyle(style = SpanStyle(color = Color.Red)) {
+                                    append("*")
+                                }
+                            }
+                        )
+                    },
+                    readOnly = true,
+                    trailingIcon = {
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Transparent clickable overlay for the entire dropdown field
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { dropdownExpanded = true }
+                )
+
+                DropdownMenu(
+                    expanded = dropdownExpanded,
+                    onDismissRequest = { dropdownExpanded = false },
+                    modifier = Modifier.fillMaxWidth(0.8f)
                 ) {
-                    MemberRole.entries.forEach { item ->
+                    roles.forEach { r ->
                         DropdownMenuItem(
-                            text = { Text(item.name) },
+                            text = { Text(r.label) },
                             onClick = {
-                                role = item
-                                expanded = false
+                                viewModel.role.value = r
+                                dropdownExpanded = false
                             }
                         )
                     }
                 }
             }
-            errors["role"]?.let { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
 
-            // ---- Global error ----
-            if (errorMessage != null) {
-                Text(
-                    text = errorMessage ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // ---- Save Button ----
-            Button(
-                onClick = {
-                    // Validation
-                    val newErrors = mutableMapOf<String, String>()
-                    if (fullName.isBlank()) newErrors["fullName"] = "Full Name is required"
-                    if (email.isBlank()) newErrors["email"] = "Email is required"
-                    if (mobileNumber.isBlank()) newErrors["mobileNumber"] = "Mobile Number is required"
-                    if (address.isBlank()) newErrors["address"] = "Address is required"
-                    if (shareBalance.isBlank()) newErrors["shareBalance"] = "Share Balance is required"
-                    if (dob == null) newErrors["dob"] = "Date of Birth is required"
-                    if (joiningDate == null) newErrors["joiningDate"] = "Joining Date is required"
-                    if (role == null) newErrors["role"] = "Role is required"
-
-                    errors = newErrors
-
-                    if (errors.isEmpty()) {
-                        val entry = ShareholderEntry(
-                            fullName = fullName,
-                            email = email,
-                            mobileNumber = mobileNumber,
-                            address = address,
-                            shareBalance = shareBalance.toDoubleOrNull() ?: 0.0,
-                            dob = dob,
-                            joiningDate = joiningDate,
-                            role = role?.name ?: ""
-                        )
-                        viewModel.addShareholder(entry)
+            // ─────────────── Share Balance ───────────────
+            OutlinedTextField(
+                value = shareBalance,
+                onValueChange = { input ->
+                    if (input.all { it.isDigit() || it == '.' } && input.count { it == '.' } <= 1) {
+                        viewModel.shareBalance.value = input
                     }
                 },
-                enabled = !isSaving,
+                label = { Text("Share Balance") }, // Removed * to make it optional
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ─────────────── Save Button ───────────────
+            Button(
+                onClick = { viewModel.addShareholder() },
+                enabled = canSave && !isSaving,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(end = 8.dp),
-                        strokeWidth = 2.dp
-                    )
-                    Text("Saving...")
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 } else {
                     Text("Save")
                 }
             }
         }
+        // ADD THESE TEMPORARY BUTTONS AT THE BOTTOM OF YOUR COLUMN:
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Test button to navigate to EditScreen
+        Button(
+            onClick = { onNavigateToEdit("SH001") }, // Test with hardcoded ID
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+        ) {
+            Text("TEST: Go to Edit Screen (SH001)")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Test button to navigate back
+        Button(
+            onClick = onNavigateBack,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
+        ) {
+            Text("TEST: Go Back")
+        }
     }
-}
+    }
+

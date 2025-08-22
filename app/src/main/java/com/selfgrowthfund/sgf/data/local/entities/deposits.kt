@@ -5,10 +5,10 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
-import org.threeten.bp.LocalDate
-import org.threeten.bp.format.DateTimeFormatter
-import org.threeten.bp.temporal.ChronoUnit
-import org.threeten.bp.Instant
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.time.Instant
 
 @Entity(
     tableName = "deposits",

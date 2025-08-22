@@ -1,14 +1,16 @@
 package com.selfgrowthfund.sgf.utils
 
-import org.threeten.bp.*
-import org.threeten.bp.format.DateTimeFormatter
-import org.threeten.bp.temporal.ChronoUnit
+import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 object DateUtils {
 
     private val formatterDueDate: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH)       // e.g., "10-Aug-2025"
-    private val formatterPaymentDate: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.getDefault()) // e.g., "11-08-2025"
+    val formatterPaymentDate: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.getDefault()) // e.g., "11-08-2025"
     private val formatterDisplayDate: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
     private val formatterMonthYear: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM-yyyy", Locale.ENGLISH)
     private val formatterMonthYearNumeric: DateTimeFormatter = DateTimeFormatter.ofPattern("MM-yyyy", Locale.getDefault())

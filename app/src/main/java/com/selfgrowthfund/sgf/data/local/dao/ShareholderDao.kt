@@ -3,6 +3,8 @@ package com.selfgrowthfund.sgf.data.local.dao
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
+import java.time.LocalDate
 import java.util.Date
 
 @Dao
@@ -26,9 +28,6 @@ interface ShareholderDao {
     suspend fun getLastShareholder(): Shareholder?
 
     @Query("SELECT shareholderId FROM shareholders ORDER BY shareholderId DESC LIMIT 1")
-    suspend fun getLastId(): String?
-
-    @Query("SELECT shareholderId FROM shareholders ORDER BY shareholderId DESC LIMIT 1")
     suspend fun getLastShareholderId(): String?
 
     @Query("""
@@ -42,7 +41,7 @@ interface ShareholderDao {
 
     @Query("""
         SELECT * FROM shareholders
-        WHERE fullName LIKE :query OR shareholderId LIKE :query
+        WHERE fullName LIKE '%' || :query || '%' OR shareholderId LIKE '%' || :query || '%'
         LIMIT 50
     """)
     suspend fun searchShareholders(query: String): List<Shareholder>
@@ -69,6 +68,9 @@ interface ShareholderDao {
     """)
     suspend fun isEligibleForLoan(id: String): Boolean
 
+    @Query("SELECT * FROM shareholders WHERE role = :role")
+    suspend fun getByRole(role: String): List<Shareholder>
+
     // ─────────────── UPDATE ───────────────
     @Update
     suspend fun updateShareholder(shareholder: Shareholder)
@@ -80,7 +82,7 @@ interface ShareholderDao {
             lastUpdated = :timestamp
         WHERE shareholderId = :id
     """)
-    suspend fun updateShareBalance(id: String, amount: Double, timestamp: Date)
+    suspend fun updateShareBalance(id: String, amount: Double, timestamp: Instant)
 
     @Query("""
         UPDATE shareholders
@@ -93,8 +95,8 @@ interface ShareholderDao {
     suspend fun updateStatus(
         id: String,
         newStatus: String,
-        exitDate: Date?,
-        timestamp: Date
+        exitDate: LocalDate?,
+        timestamp: Instant
     )
 
     // ─────────────── DELETE ───────────────

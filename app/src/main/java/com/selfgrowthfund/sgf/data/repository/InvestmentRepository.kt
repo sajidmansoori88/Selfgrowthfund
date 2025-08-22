@@ -5,7 +5,7 @@ import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
-import org.threeten.bp.LocalDate
+import java.time.LocalDate
 import javax.inject.Inject
 
 class InvestmentRepository @Inject constructor(
