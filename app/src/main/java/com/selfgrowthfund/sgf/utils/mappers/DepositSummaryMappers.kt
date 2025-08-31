@@ -9,5 +9,5 @@ fun DepositEntrySummaryDTO.toDomain(): DepositSummaryModel = DepositSummaryModel
     month = dueMonth,
     amount = totalAmount,
     status = paymentStatus,
-    timestamp = createdAt.toEpochMilli() // ✅ Explicit conversion
+    timestamp = createdAt?.toEpochMilli() ?: 0L
 )

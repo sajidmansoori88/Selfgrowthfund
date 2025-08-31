@@ -2,10 +2,12 @@ package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
+import com.selfgrowthfund.sgf.model.reports.ShareholderBasicInfo
+import com.selfgrowthfund.sgf.model.reports.ShareholderLoanStatus
+import com.selfgrowthfund.sgf.model.reports.ShareholderWithEligibility
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDate
-import java.util.Date
 
 @Dao
 interface ShareholderDao {
@@ -29,6 +31,19 @@ interface ShareholderDao {
 
     @Query("SELECT shareholderId FROM shareholders ORDER BY shareholderId DESC LIMIT 1")
     suspend fun getLastShareholderId(): String?
+
+    @Query("SELECT shareholderId, fullName, shareBalance, joiningDate FROM shareholders")
+    suspend fun getAllShareholders(): List<ShareholderBasicInfo>
+
+    // ❌ FIXED: Removed suspend from Flow-returning method
+    @Query("""
+    SELECT *, (shareBalance * 2000 * 0.9) AS maxBorrowAmount
+    FROM shareholders
+    WHERE shareholderStatus = 'Active'
+    AND shareBalance >= 1
+    AND shareholderId = :id
+""")
+    fun getWithBorrowEligibilityFlow(id: String): Flow<ShareholderWithEligibility?>
 
     @Query("""
         SELECT *, (shareBalance * 2000 * 0.9) AS maxBorrowAmount
@@ -106,16 +121,3 @@ interface ShareholderDao {
     @Query("DELETE FROM shareholders WHERE shareholderId = :id")
     suspend fun deleteById(id: String)
 }
-
-// ─────────────── Custom Result Mappings ───────────────
-
-data class ShareholderWithEligibility(
-    @Embedded val shareholder: Shareholder,
-    val maxBorrowAmount: Double
-)
-
-data class ShareholderLoanStatus(
-    @Embedded val shareholder: Shareholder,
-    val maxBorrowAmount: Double,
-    val currentLoans: Double
-)

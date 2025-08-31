@@ -1,0 +1,110 @@
+package com.selfgrowthfund.sgf.data.local.converters
+
+import androidx.room.TypeConverter
+import com.selfgrowthfund.sgf.model.enums.*
+
+class EnumConverters {
+
+    @TypeConverter
+    fun fromBorrowingStatus(value: BorrowingStatus): String = value.label
+
+    @TypeConverter
+    fun toBorrowingStatus(label: String): BorrowingStatus =
+        BorrowingStatus.fromLabel(label)
+
+    @TypeConverter
+    fun fromDepositStatus(value: DepositStatus): String = value.label
+
+    @TypeConverter
+    fun toDepositStatus(label: String): DepositStatus =
+        DepositStatus.fromLabel(label)
+
+    @TypeConverter
+    fun fromShareholderStatus(value: ShareholderStatus): String = value.label
+
+    @TypeConverter
+    fun toShareholderStatus(label: String): ShareholderStatus =
+        ShareholderStatus.fromLabel(label)
+
+    @TypeConverter
+    fun fromPaymentStatus(value: PaymentStatus): String = value.label
+
+    @TypeConverter
+    fun toPaymentStatus(label: String): PaymentStatus =
+        PaymentStatus.fromLabel(label)
+
+    @TypeConverter
+    fun fromInvesteeType(value: InvesteeType): String = value.label
+
+    @TypeConverter
+    fun toInvesteeType(label: String): InvesteeType =
+        InvesteeType.fromLabel(label)
+
+    @TypeConverter
+    fun fromOwnershipType(value: OwnershipType): String = value.label
+
+    @TypeConverter
+    fun toOwnershipType(label: String): OwnershipType =
+        OwnershipType.fromLabel(label)
+
+    @TypeConverter
+    fun fromInvestmentStatus(value: InvestmentStatus): String = value.label
+
+    @TypeConverter
+    fun toInvestmentStatus(label: String): InvestmentStatus =
+        InvestmentStatus.fromLabel(label)
+
+    @TypeConverter
+    fun fromRole(role: MemberRole): String = role.name
+
+    @TypeConverter
+    fun toMemberRole(value: String): MemberRole = MemberRole.valueOf(value)
+
+    @TypeConverter
+    fun fromPenaltyType(value: PenaltyType): String = value.label
+
+    @TypeConverter
+    fun toPenaltyType(label: String): PenaltyType = PenaltyType.fromLabel(label)
+
+    @TypeConverter
+    fun fromActionType(value: ActionType): String = value.label
+
+    @TypeConverter
+    fun toActionType(label: String): ActionType = ActionType.fromLabel(label)
+
+    @TypeConverter
+    fun fromActionResponse(value: ActionResponse): String = value.label
+
+    @TypeConverter
+    fun toActionResponse(label: String): ActionResponse = ActionResponse.fromLabel(label)
+
+    @TypeConverter
+    fun fromEntrySource(value: EntrySource): String = value.label
+
+    @TypeConverter
+    fun toEntrySource(label: String): EntrySource = EntrySource.fromLabel(label)
+
+    @TypeConverter
+    fun fromTransactionType(value: TransactionType): String = value.label
+
+    @TypeConverter
+    fun toTransactionType(label: String): TransactionType = TransactionType.fromLabel(label)
+
+    @TypeConverter
+    fun fromInvestmentType(value: InvestmentType): String = value.label
+
+    @TypeConverter
+    fun toInvestmentType(label: String): InvestmentType = InvestmentType.fromLabel(label)
+
+    @TypeConverter
+    fun fromReportPeriod(value: ReportPeriod): String = value.label
+
+    @TypeConverter
+    fun toReportPeriod(label: String): ReportPeriod = ReportPeriod.fromLabel(label)
+
+    @TypeConverter
+    fun fromPaymentMode(value: PaymentMode): String = value.label
+
+    @TypeConverter
+    fun toPaymentMode(label: String): PaymentMode = PaymentMode.fromLabel(label)
+}

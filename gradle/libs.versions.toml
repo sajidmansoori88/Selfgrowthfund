@@ -39,12 +39,12 @@
 # ------------------------------------------------------------------------------
 
 [versions]
-androidGradlePlugin = "8.12.1"
+androidGradlePlugin = "8.12.2"
 core = "1.7.0"
 kotlin = "2.2.0"
 ksp = "2.2.0-2.0.2"
 room = "2.7.2"
-lifecycle = "2.9.2"
+lifecycle = "2.9.3"
 coroutines = "1.10.2"
 retrofit = "3.0.0"
 okhttp = "5.1.0"
@@ -77,6 +77,13 @@ itext7 = "9.2.0"
 uiGraphics = "1.9.0"
 accompanist = "0.36.0"
 google-services = "4.4.3"
+google-auth = "21.4.0"
+biometric = "1.1.0"
+security = "1.1.0"
+compose = "1.5.0"
+foundationLayout = "1.9.0"
+
+
 
 [libraries]
 # Core Android
@@ -164,6 +171,16 @@ itext7-core = { group = "com.itextpdf", name = "itext7-core", version.ref = "ite
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
 
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
+
+# Biometric
+androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
+
+google-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "google-auth" }
+
+androidx-security = { module = "androidx.security:security-crypto", version.ref = "security" }
+
+material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "compose" }
+androidx-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 
 
 

@@ -1,15 +1,20 @@
 package com.selfgrowthfund.sgf.ui.deposits
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import com.selfgrowthfund.sgf.data.local.entities.DepositEntry
 import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import com.selfgrowthfund.sgf.data.repository.DepositRepository
 import com.selfgrowthfund.sgf.model.enums.*
+import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -65,6 +70,10 @@ class DepositViewModel @AssistedInject constructor(
         depositRepository.getDepositEntrySummary()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val liveDepositSummaries: StateFlow<List<DepositEntrySummaryDTO>> =
+        getLiveDepositSummaries()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // ---------------- CONSTANTS ----------------
     private val shareAmount = 2000.0
     private val penaltyPerDay = 5.0
@@ -98,24 +107,6 @@ class DepositViewModel @AssistedInject constructor(
         _modeOfPayment.value = mode
     }
 
-    // ---------------- CALCULATIONS ----------------
-    fun updateCalculations() {
-        val calculatedPenalty = calculatePenalty(_dueMonth.value, _paymentDate.value)
-        val calculatedTotal = calculateTotalAmount(_shareNos.value, _additionalContribution.value, calculatedPenalty)
-        val status = getPaymentStatus(_dueMonth.value, _paymentDate.value)
-
-        _penalty.value = calculatedPenalty
-        _totalAmount.value = calculatedTotal
-        _paymentStatus.value = status
-    }
-
-    fun updateTotal() {
-        val penalty = calculatePenalty(_dueMonth.value, _paymentDate.value)
-        val total = calculateTotalAmount(_shareNos.value, _additionalContribution.value, penalty)
-        _penalty.value = penalty
-        _totalAmount.value = total
-    }
-
     // ---------------- VALIDATION ----------------
     private fun validateForm() {
         dueMonthError.value = try {
@@ -133,6 +124,24 @@ class DepositViewModel @AssistedInject constructor(
         }
 
         isFormValid.value = dueMonthError.value == null && paymentDateError.value == null
+    }
+
+    // ---------------- CALCULATIONS ----------------
+    fun updateCalculations() {
+        val calculatedPenalty = calculatePenalty(_dueMonth.value, _paymentDate.value)
+        val calculatedTotal = calculateTotalAmount(_shareNos.value, _additionalContribution.value, calculatedPenalty)
+        val status = getPaymentStatus(_dueMonth.value, _paymentDate.value)
+
+        _penalty.value = calculatedPenalty
+        _totalAmount.value = calculatedTotal
+        _paymentStatus.value = status
+    }
+
+    fun updateTotal() {
+        val penalty = calculatePenalty(_dueMonth.value, _paymentDate.value)
+        val total = calculateTotalAmount(_shareNos.value, _additionalContribution.value, penalty)
+        _penalty.value = penalty
+        _totalAmount.value = total
     }
 
     // ---------------- LOGIC HELPERS ----------------
@@ -163,16 +172,21 @@ class DepositViewModel @AssistedInject constructor(
     }
 
     // ---------------- SUBMIT ----------------
-    fun submitDeposit() {
+    fun submitDeposit(
+        notes: String? = null,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
         viewModelScope.launch {
             isSubmitting.value = true
             submissionResult.value = null
 
             try {
                 val parsedPaymentDate = LocalDate.parse(_paymentDate.value, paymentDateFormatter)
+                val newDepositId = IdGenerator.nextDepositId(lastDepositId)
 
                 val depositEntry = DepositEntry(
-                    depositId = DepositEntry.generateNextId(lastDepositId),
+                    depositId = newDepositId,
                     shareholderId = selectedShareholderId,
                     shareholderName = selectedShareholderName,
                     dueMonth = DueMonth(_dueMonth.value),
@@ -184,25 +198,118 @@ class DepositViewModel @AssistedInject constructor(
                     totalAmount = _totalAmount.value,
                     paymentStatus = _paymentStatus.value,
                     modeOfPayment = _modeOfPayment.value,
-                    status = DepositStatus.Pending,
-                    approvedBy = null,
-                    notes = null,
-                    isSynced = false,
+                    status = if (currentUserRole == MemberRole.MEMBER_ADMIN)
+                        DepositStatus.Approved else DepositStatus.Pending,
+                    approvedBy = if (currentUserRole == MemberRole.MEMBER_ADMIN)
+                        selectedShareholderName else null,
+                    notes = notes.orEmpty(),
+                    isSynced = true,
                     createdAt = Instant.now(),
                     entrySource = if (currentUserRole == MemberRole.MEMBER_ADMIN)
                         EntrySource.ADMIN else EntrySource.USER
                 )
 
                 depositRepository.insertDepositEntry(depositEntry)
+                syncDepositToFirestore(depositEntry)
+
                 submissionResult.value = Result.Success(Unit)
+                onSuccess()
             } catch (e: Exception) {
                 submissionResult.value = Result.Error(e)
+                onError(e.message ?: "Deposit submission failed")
             }
 
             isSubmitting.value = false
         }
     }
 
+    private fun syncDepositToFirestore(deposit: DepositEntry) {
+        val db = Firebase.firestore
+        val isoDate = DateTimeFormatter.ISO_DATE
+
+        val firestoreData = mapOf(
+            "depositId" to deposit.depositId,
+            "shareholderId" to deposit.shareholderId,
+            "shareholderName" to deposit.shareholderName,
+            "dueMonth" to deposit.dueMonth.value,
+            "paymentDate" to deposit.paymentDate.format(isoDate),
+            "shareNos" to deposit.shareNos,
+            "shareAmount" to deposit.shareAmount,
+            "additionalContribution" to deposit.additionalContribution,
+            "penalty" to deposit.penalty,
+            "totalAmount" to deposit.totalAmount,
+            "paymentStatus" to deposit.paymentStatus,
+            "modeOfPayment" to deposit.modeOfPayment?.name,
+            "status" to deposit.status.name,
+            "approvedBy" to deposit.approvedBy,
+            "notes" to deposit.notes,
+            "isSynced" to true,
+            "createdAt" to deposit.createdAt.toString(),
+            "entrySource" to deposit.entrySource.name
+        )
+
+        db.collection("deposits").document(deposit.depositId)
+            .set(firestoreData)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Deposit synced: ${deposit.depositId}")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Deposit sync failed", e)
+            }
+    }
+
+    // ---------------- FIRESTORE LISTENER ----------------
+    private fun getLiveDepositSummaries(): Flow<List<DepositEntrySummaryDTO>> = callbackFlow {
+        val db = Firebase.firestore
+        val listener = db.collection("deposits")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+
+                val summaries = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        DepositEntrySummaryDTO(
+                            depositId = doc.getString("depositId") ?: return@mapNotNull null,
+                            shareholderId = doc.getString("shareholderId") ?: "Unknown",
+                            shareholderName = doc.getString("shareholderName") ?: "Unknown",
+                            shareNos = doc.getLong("shareNos")?.toInt() ?: 0,
+                            shareAmount = doc.getDouble("shareAmount") ?: 0.0,
+                            additionalContribution = doc.getDouble("additionalContribution") ?: 0.0,
+                            penalty = doc.getDouble("penalty") ?: 0.0,
+                            totalAmount = doc.getDouble("totalAmount") ?: 0.0,
+                            paymentStatus = doc.getString("paymentStatus") ?: "Pending",
+                            modeOfPayment = doc.getString("modeOfPayment") ?: "Unknown",
+                            dueMonth = doc.getString("dueMonth") ?: "Unknown",
+                            paymentDate = doc.getString("paymentDate")?.let {
+                                try {
+                                    LocalDate.parse(it)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            } ?: LocalDate.now(),
+                            createdAt = doc.getString("createdAt")?.let {
+                                try {
+                                    Instant.parse(it)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            } ?: Instant.now()
+                        )
+
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                trySend(summaries)
+            }
+
+        awaitClose { listener.remove() }
+    }
+
+    // ---------------- FORM RESET ----------------
     fun clearForm() {
         _dueMonth.value = ""
         _paymentDate.value = ""

@@ -1,111 +1,243 @@
-package com.selfgrowthfund.sgf.model.enums
+    package com.selfgrowthfund.sgf.model.enums
 
-interface LabelledEnum {
-    val label: String
-}
+    import androidx.compose.ui.graphics.Color
 
-enum class DepositStatus(override val label: String) : LabelledEnum {
-    Pending("Pending"),
-    Approved("Approved"),
-    Rejected("Rejected"),
-    AutoRejected("Auto-Rejected")
-}
+    interface LabelledEnum {
+        val label: String
+    }
 
-enum class PaymentMode(override val label: String) : LabelledEnum {
-    CASH("Cash"),
-    BANK_TRANSFER("Bank Transfer"),
-    ONLINE_PAYMENT("Online Payment"),
-    CHEQUE("Cheque"),
-    OTHER("Other Payment Method");
+    enum class DepositStatus(override val label: String) : LabelledEnum {
+        Pending("Pending"),
+        Approved("Approved"),
+        Rejected("Rejected"),
+        AutoRejected("Auto-Rejected");
 
-    companion object {
-        fun fromLabel(label: String): PaymentMode {
-            return entries.firstOrNull { it.label == label } ?: OTHER
+        companion object {
+            fun fromLabel(label: String): DepositStatus =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: Pending
+        }
+    }
+
+    enum class PaymentMode(override val label: String) : LabelledEnum {
+        CASH("Cash"),
+        BANK_TRANSFER("Bank Transfer"),
+        ONLINE_PAYMENT("Online Payment"),
+        CHEQUE("Cheque"),
+        OTHER("Other Payment Method");
+
+        companion object {
+            fun fromLabel(label: String): PaymentMode =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: OTHER
+
+            fun getAllLabels(): List<String> = entries.map { it.label }
+        }
+    }
+
+    enum class BorrowingStatus(override val label: String) : LabelledEnum {
+        PENDING("Pending"),
+        APPROVED("Approved"),
+        REJECTED("Rejected"),
+        ACTIVE("Active"),
+        CLOSED("Closed"),
+        OVERDUE("Overdue");
+
+        companion object {
+            private val closedStatuses: Set<BorrowingStatus> = setOf(CLOSED, REJECTED)
+            private val activeStatuses: Set<BorrowingStatus> = setOf(PENDING, APPROVED, ACTIVE)
+
+            fun fromLabel(label: String): BorrowingStatus =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: PENDING
+
+            fun getAll(): List<BorrowingStatus> = entries.toList()
+            fun getActive(): Set<BorrowingStatus> = activeStatuses
+            fun getClosed(): Set<BorrowingStatus> = closedStatuses
+            fun getClosedStatuses(): Set<BorrowingStatus> = closedStatuses
         }
 
-        fun getAllLabels(): List<String> = entries.map { it.label }
-    }
-}
-enum class BorrowingStatus(override val label: String) : LabelledEnum {
-    PENDING("Pending"),
-    APPROVED("Approved"),
-    REJECTED("Rejected"),
-    ACTIVE("Active"),
-    COMPLETED("Completed");
+        fun isClosed(): Boolean = this in closedStatuses
+        fun getDisplayColor(): Color = when (this) {
+            PENDING -> Color.Yellow
+            APPROVED -> Color.Green
+            ACTIVE -> Color.Blue
+            CLOSED -> Color.Gray
+            REJECTED -> Color.Red
+            OVERDUE -> Color.Magenta
+        }
 
-    companion object {
-        private val closedStatuses: Set<BorrowingStatus> = setOf(COMPLETED, REJECTED)
-        private val activeStatuses: Set<BorrowingStatus> = setOf(PENDING, APPROVED, ACTIVE)
-
-        fun fromLabel(label: String): BorrowingStatus =
-            entries.firstOrNull { it.label == label } ?: PENDING
-
-        fun getAll(): List<BorrowingStatus> = entries.toList()
-        fun getActive(): Set<BorrowingStatus> = activeStatuses
-        fun getClosed(): Set<BorrowingStatus> = closedStatuses
-        fun getClosedStatuses(): Set<BorrowingStatus> = closedStatuses
     }
 
-    fun isClosed(): Boolean = this in closedStatuses
-}
+    enum class ShareholderStatus(override val label: String) : LabelledEnum {
+        Active("Active"),
+        Inactive("Inactive");
 
-enum class ShareholderStatus(override val label: String) : LabelledEnum {
-    Active("Active"),
-    Inactive("Inactive");
-
-    companion object {
-        fun fromString(value: String): ShareholderStatus =
-            entries.firstOrNull { it.label.equals(value, ignoreCase = true) } ?: Inactive
+        companion object {
+            fun fromLabel(label: String): ShareholderStatus =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: Inactive
+        }
     }
-}
 
-enum class PaymentStatus(override val label: String) : LabelledEnum {
-    ON_TIME("On Time"),
-    LATE("Late"),
-    PENDING("Pending");
+    enum class PaymentStatus(override val label: String) : LabelledEnum {
+        ON_TIME("On Time"),
+        LATE("Late"),
+        PENDING("Pending");
 
-    fun toDisplayString(): String = label
+        fun toDisplayString(): String = label
 
-    companion object {
-        fun fromString(value: String): PaymentStatus =
-            entries.firstOrNull { it.label.equals(value, ignoreCase = true) } ?: PENDING
+        companion object {
+            fun fromLabel(label: String): PaymentStatus =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: PENDING
+        }
     }
-}
 
-enum class InvesteeType(override val label: String) : LabelledEnum {
-    Shareholder("Shareholder"),
-    External("External");
-}
+    enum class InvesteeType(override val label: String) : LabelledEnum {
+        Shareholder("Shareholder"),
+        External("External");
 
-enum class OwnershipType(override val label: String) : LabelledEnum {
-    Individual("Individual"),
-    Joint("Joint"),
-    GroupOwned("Group-owned");
-}
-
-enum class InvestmentStatus(override val label: String) : LabelledEnum {
-    Active("Active"),
-    Closed("Closed"),
-    Sold("Sold"),
-    WrittenOff("Written-Off");
-}
-
-enum class MemberRole(override val label: String) : LabelledEnum {
-    MEMBER_ADMIN("Member Admin"),
-    MEMBER_TREASURER("Member Treasurer"),
-    MEMBER("Member");
-
-    companion object {
-        fun fromLabel(label: String): MemberRole =
-            entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: MEMBER
-
-        fun getAllLabels(): List<String> = entries.map { it.label }
+        companion object {
+            fun fromLabel(label: String): InvesteeType =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: External
+        }
     }
-}
 
-enum class EntrySource {
-    USER,        // Regular member entry
-    ADMIN,       // Direct entry by Admin
-    SYSTEM,      // Auto-generated or synced from external source
-    MIGRATION    // Legacy or imported data
-}
+    enum class OwnershipType(override val label: String) : LabelledEnum {
+        Individual("Individual"),
+        Joint("Joint"),
+        GroupOwned("Group-owned");
+
+        companion object {
+            fun fromLabel(label: String): OwnershipType =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: Individual
+        }
+    }
+
+    enum class InvestmentType(override val label: String) : LabelledEnum {
+        Trading("Trading"),
+        Property("Property"),
+        Microenterprise("Microenterprise"),
+        Machinery("Machinery"),
+        Other("Other");
+
+        companion object {
+            fun fromLabel(label: String): InvestmentType =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: Other
+        }
+    }
+
+
+    enum class InvestmentStatus(override val label: String) : LabelledEnum {
+        Active("Active"),
+        Closed("Closed"),
+        Sold("Sold"),
+        WrittenOff("Written-Off");
+
+        companion object {
+            fun fromLabel(label: String): InvestmentStatus =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: Active
+        }
+    }
+
+    enum class MemberRole(override val label: String) : LabelledEnum {
+        MEMBER_ADMIN("Member Admin"),
+        MEMBER_TREASURER("Member Treasurer"),
+        MEMBER("Member");
+
+        companion object {
+            fun fromLabel(label: String): MemberRole =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: MEMBER
+
+            fun getAllLabels(): List<String> = entries.map { it.label }
+        }
+    }
+
+    enum class EntrySource(override val label: String) : LabelledEnum {
+        USER("User"),
+        ADMIN("Admin"),
+        SYSTEM("System"),
+        MIGRATION("Migration");
+
+        companion object {
+            fun fromLabel(label: String): EntrySource =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: USER
+        }
+    }
+
+    enum class TransactionType(override val label: String) : LabelledEnum {
+        Deposit("Deposit"),
+        Borrowing("Borrowing"),
+        Repayment("Repayment"),
+        Investment("Investment"),
+        InvestmentReturn("Investment Return"),
+        Expense("Expense"),
+        Income("Income");
+
+        companion object {
+            fun fromLabel(label: String): TransactionType =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: Expense
+
+            fun getAllLabels(): List<String> = entries.map { it.label }
+        }
+    }
+
+    enum class ActionType(override val label: String) : LabelledEnum {
+        BORROWING_APPROVAL("Borrowing Approval"),
+        INVESTMENT_CONSENT("Investment Consent"),
+        EXPENSE_REVIEW("Expense Review");
+
+        companion object {
+            fun fromLabel(label: String): ActionType =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: BORROWING_APPROVAL
+        }
+
+    }
+
+    enum class ActionResponse(override val label: String) : LabelledEnum {
+        APPROVE("Approve"),
+        REJECT("Reject"),
+        CONSENT("Consent"),
+        DISSENT("Dissent"),
+        PENDING("Pending");
+
+        companion object {
+            fun fromLabel(label: String): ActionResponse =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: PENDING
+        }
+
+    }
+
+    enum class PenaltyType(override val label: String) : LabelledEnum {
+        SHARE_DEPOSIT("Share Deposit"),
+        BORROWING("Borrowing"),
+        INVESTMENT("Investment"),
+        OTHER("Other");
+
+        companion object {
+            fun fromLabel(label: String): PenaltyType =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: OTHER
+
+            fun getAllLabels(): List<String> = entries.map { it.label }
+        }
+
+        fun getDisplayColor(): Color = when (this) {
+            SHARE_DEPOSIT -> Color(0xFF4CAF50)
+            BORROWING -> Color(0xFF2196F3)
+            INVESTMENT -> Color(0xFFFF9800)
+            OTHER -> Color.Gray
+        }
+    }
+
+    enum class ReportPeriod(override val label: String) : LabelledEnum {
+        CURRENT_MONTH("Current Month"),
+        LAST_MONTH("Last Month"),
+        LAST_3_MONTHS("Last 3 Months"),
+        LAST_6_MONTHS("Last 6 Months"),
+        LAST_9_MONTHS("Last 9 Months"),
+        LAST_12_MONTHS("Last 12 Months");
+
+        companion object {
+            fun fromLabel(label: String): ReportPeriod =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: CURRENT_MONTH
+
+            fun getAllLabels(): List<String> = entries.map { it.label }
+        }
+    }
+

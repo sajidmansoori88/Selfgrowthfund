@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturns
+import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturnEntry
 import com.selfgrowthfund.sgf.data.repository.InvestmentReturnsRepository
 import com.selfgrowthfund.sgf.utils.Dates
+import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -13,7 +15,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,57 +30,47 @@ class InvestmentReturnsViewModel @Inject constructor(
         .map { it is Result.Loading }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    /**
-     * Adds a return for a given investment.
-     * Emits Result.Loading, Result.Success, or Result.Error to the UI.
-     */
-    fun addReturn(
-        returnId: String = UUID.randomUUID().toString(),
-        investmentId: String,
-        amountReceived: Double,
-        remarks: String? = null
+    /** Adds a return using a structured entry model */
+    fun submitReturn(
+        entry: InvestmentReturnEntry,
+        lastReturnId: String?,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
     ) {
         viewModelScope.launch {
             if (_addReturnState.value is Result.Loading) return@launch
 
-            if (amountReceived <= 0.0) {
+            if (entry.amountReceived <= 0.0) {
                 _addReturnState.value = Result.Error(IllegalArgumentException("Amount must be positive"))
+                onError("Amount must be positive")
                 return@launch
             }
 
             _addReturnState.value = Result.Loading
 
-            val result = repository.addReturn(returnId, investmentId, amountReceived, remarks)
+            val returnEntity = entry.toInvestmentReturn(lastReturnId)
+            val result = repository.addReturn(returnEntity)
 
             _addReturnState.value = result
+
+            when (result) {
+                is Result.Success -> onSuccess()
+                is Result.Error -> onError(result.exception.message ?: "Submission failed")
+                else -> {}
+            }
         }
     }
 
-    /**
-     * Generates a preview of the return before saving.
-     * Useful for showing calculated fields like profit percent or return period.
-     */
-    fun previewReturn(
-        investment: Investment,
-        amountReceived: Double,
-        remarks: String? = null
-    ): InvestmentReturns {
+    /** Generates a preview of the return before saving */
+    fun previewReturn(entry: InvestmentReturnEntry): InvestmentReturns {
         val localDate = Instant.ofEpochMilli(dates.now())
             .atZone(ZoneId.systemDefault())
             .toLocalDate()
 
-        return InvestmentReturns(
-            returnId = UUID.randomUUID().toString(),
-            investment = investment,
-            amountReceived = amountReceived,
-            returnDate = localDate,
-            remarks = remarks
-        )
+        return entry.copy(returnDate = localDate).toInvestmentReturn(lastReturnId = null)
     }
 
-    /**
-     * Clears the current state, useful after showing a toast or navigating away.
-     */
+    /** Clears the current state */
     fun clearState() {
         _addReturnState.value = null
     }

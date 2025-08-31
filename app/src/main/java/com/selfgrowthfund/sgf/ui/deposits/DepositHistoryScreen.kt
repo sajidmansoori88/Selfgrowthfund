@@ -5,22 +5,28 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import com.selfgrowthfund.sgf.ui.components.DepositSummaryCard
+import com.selfgrowthfund.sgf.ui.theme.SGFTheme
 import com.selfgrowthfund.sgf.utils.ExportUtils
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DepositHistoryScreen(viewModel: DepositViewModel = hiltViewModel()) {
+fun DepositHistoryScreen(navController: NavHostController) {
+    val viewModel: DepositViewModel = hiltViewModel()
     val context = LocalContext.current
     val summaries by viewModel.depositSummaries.collectAsState(initial = emptyList())
 
@@ -35,7 +41,11 @@ fun DepositHistoryScreen(viewModel: DepositViewModel = hiltViewModel()) {
             )
         },
         floatingActionButton = {
-            ExportActions(context = context, summaries = summaries)
+            FloatingActionButton(onClick = {
+                navController.navigate("add_deposit")
+            }) {
+                Icon(Icons.Default.Add, contentDescription = "Add Deposit")
+            }
         }
     ) { padding ->
         if (summaries.isEmpty()) {
@@ -108,4 +118,28 @@ fun ExportActions(context: Context, summaries: List<DepositEntrySummaryDTO>) {
 
 fun formatDate(date: LocalDate): String {
     return date.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DepositHistoryPreview() {
+    val mockSummaries = listOf(
+        DepositEntrySummaryDTO(
+            shareholderName = "John Doe",
+            dueMonth = "August 2025",
+            paymentDate = LocalDate.of(2025, 8, 10),
+            totalAmount = 6000.0,
+            paymentStatus = "Paid"
+        )
+    )
+
+    SGFTheme {
+        Scaffold {
+            LazyColumn(modifier = Modifier.padding(it)) {
+                items(mockSummaries) { summary ->
+                    DepositSummaryCard(summary)
+                }
+            }
+        }
+    }
 }

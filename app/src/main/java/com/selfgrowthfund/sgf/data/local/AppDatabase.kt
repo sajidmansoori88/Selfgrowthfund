@@ -2,27 +2,28 @@ package com.selfgrowthfund.sgf.data.local
 
 import android.content.Context
 import androidx.room.*
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
-import com.selfgrowthfund.sgf.data.local.converters.EnumConverters
 import com.selfgrowthfund.sgf.data.local.dao.*
 import com.selfgrowthfund.sgf.data.local.entities.*
 
 @Database(
     entities = [
         Shareholder::class,
-        ShareholderEntry::class,
         Deposit::class,
         DepositEntry::class,
         Borrowing::class,
         Repayment::class,
         Investment::class,
-        InvestmentReturns::class
+        InvestmentReturns::class,
+        ActionItem::class,
+        Penalty::class,
+        Income::class,
+        Expense::class
     ],
     version = AppDatabase.VERSION,
     exportSchema = true
 )
-@TypeConverters(AppTypeConverters::class, EnumConverters::class)
+@TypeConverters(AppTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     companion object {
@@ -52,21 +53,18 @@ abstract class AppDatabase : RoomDatabase() {
     }
 
     abstract fun shareholderDao(): ShareholderDao
-    abstract fun shareholderEntryDao(): ShareholderEntryDao
     abstract fun depositDao(): DepositDao
     abstract fun depositEntryDao(): DepositEntryDao
     abstract fun borrowingDao(): BorrowingDao
     abstract fun repaymentDao(): RepaymentDao
     abstract fun investmentDao(): InvestmentDao
     abstract fun investmentReturnsDao(): InvestmentReturnsDao
+    abstract fun actionItemDao(): ActionItemDao
+    abstract fun penaltyDao(): PenaltyDao
+    abstract fun incomeDao(): IncomeDao
+    abstract fun expenseDao(): ExpenseDao
 
     internal class DatabaseCallback : RoomDatabase.Callback() {
-        override fun onCreate(db: SupportSQLiteDatabase) {
-            super.onCreate(db)
-               }
-
-        override fun onOpen(db: SupportSQLiteDatabase) {
-            super.onOpen(db)
-        }
+        // Add any database initialization code here if needed
     }
 }

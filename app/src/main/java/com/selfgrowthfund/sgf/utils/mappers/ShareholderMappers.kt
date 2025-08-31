@@ -16,7 +16,7 @@ fun ShareholderEntry.toShareholder(lastId: String?): Shareholder {
         address = address,
         shareBalance = shareBalance,
         joiningDate = joiningDate ?: LocalDate.now(),
-        role = MemberRole.valueOf(role)
+        role = role // ✅ Already a MemberRole
     )
 }
 
@@ -30,6 +30,6 @@ fun Shareholder.toEntry(): ShareholderEntry {
         address = address,
         shareBalance = shareBalance,
         joiningDate = joiningDate,
-        role = role.name
+        role = role // ✅ Already a MemberRole
     )
 }

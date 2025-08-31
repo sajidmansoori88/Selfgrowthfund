@@ -105,4 +105,13 @@ object ExportUtils {
             Intent.createChooser(intent, "Share file via")
         )
     }
+
+    fun exportToCsv(headers: List<String>, rows: List<List<String>>): String {
+        val csvBuilder = StringBuilder()
+        csvBuilder.append(headers.joinToString(",")).append("\n")
+        rows.forEach { row ->
+            csvBuilder.append(row.joinToString(",")).append("\n")
+        }
+        return csvBuilder.toString()
+    }
 }

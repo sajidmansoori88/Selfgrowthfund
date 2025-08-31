@@ -4,8 +4,6 @@ package com.selfgrowthfund.sgf.ui.addshareholders
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import androidx.navigation.navigation
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.selfgrowthfund.sgf.ui.editshareholders.EditShareholderScreen
 
 // shareholderNavGraph.kt

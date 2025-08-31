@@ -1,5 +1,6 @@
 package com.selfgrowthfund.sgf.ui.addshareholders
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,15 +26,6 @@ fun ShareholderListScreen(
 ) {
     val context = LocalContext.current
     val shareholders by viewModel.shareholders.collectAsState(initial = emptyList())
-
-    // Add proper error handling with LaunchedEffect
-    LaunchedEffect(Unit) {
-        try {
-            // You can add any initialization logic here if needed
-        } catch (e: Exception) {
-            Toast.makeText(context, "Error loading shareholders", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -86,9 +78,33 @@ fun ShareholderCard(
     shareholder: Shareholder,
     viewModel: ShareholderListViewModel,
     navController: NavController,
-    context: android.content.Context
+    context: Context
 ) {
+    var showDialog by remember { mutableStateOf(false) }
     val id = shareholder.shareholderId
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Confirm Delete") },
+            text = { Text("Are you sure you want to delete ${shareholder.fullName}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteShareholder(id)
+                    Toast.makeText(context, "Deleted ${shareholder.fullName}", Toast.LENGTH_SHORT).show()
+                    showDialog = false
+                }) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -102,12 +118,13 @@ fun ShareholderCard(
             Text(shareholder.fullName, style = MaterialTheme.typography.titleMedium)
             Text("Mobile: ${shareholder.mobileNumber}")
             Text("Balance: ₹${shareholder.shareBalance}")
+            // ✅ Use the enum's label for readability
+            Text("Role: ${shareholder.role.label}")
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Row {
-                Button(onClick = {
-                    viewModel.deleteShareholder(id)
-                    Toast.makeText(context, "Deleted ${shareholder.fullName}", Toast.LENGTH_SHORT).show()
-                }) {
+                Button(onClick = { showDialog = true }) {
                     Text("Delete")
                 }
                 Spacer(modifier = Modifier.width(8.dp))

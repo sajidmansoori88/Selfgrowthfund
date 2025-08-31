@@ -4,6 +4,8 @@ import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Deposit
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import com.selfgrowthfund.sgf.data.local.entities.DepositEntry
+import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
+import com.selfgrowthfund.sgf.model.reports.ShareholderDepositSummary
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -21,19 +23,15 @@ interface DepositDao {
     @Query("SELECT depositId FROM deposits ORDER BY depositId DESC LIMIT 1")
     suspend fun getLastId(): String?
 
-    @Query("""
-    SELECT SUM(totalAmount)
-    FROM deposits
-    WHERE strftime('%Y-%m', createdAt) = :monthYear
-""")
+    @Query("SELECT SUM(totalAmount) FROM deposits WHERE strftime('%Y-%m', createdAt) = :monthYear")
     suspend fun getMonthlyTotal(monthYear: String): Double
 
+    @Query("SELECT SUM(shareNos) FROM deposits")
+    suspend fun getTotalShareCount(): Int
 
-    // ✅ FIXED: Return Deposit instead of DepositEntry
     @Query("SELECT * FROM deposits ORDER BY dueMonth DESC")
     fun getAllDeposits(): List<Deposit>
 
-    // ✅ Summary query for lightweight UI display
     @Query("""
         SELECT depositId, shareholderId, shareholderName, dueMonth, paymentDate, 
                shareNos, shareAmount, additionalContribution, penalty, totalAmount, 
@@ -41,4 +39,48 @@ interface DepositDao {
         FROM deposits
     """)
     fun getDepositEntrySummary(): Flow<List<DepositEntrySummaryDTO>>
+
+    @Query("SELECT SUM(additionalContribution) FROM deposits")
+    suspend fun getAdditionalContributions(): Double
+
+    @Query("""
+        SELECT strftime('%Y-%m', paymentDate) AS month, SUM(totalamount) AS total
+        FROM deposits
+        GROUP BY month
+        ORDER BY month ASC
+    """)
+    suspend fun getMonthlyDeposits(): List<MonthlyAmount>
+
+    @Query("""
+        SELECT shareholderId, SUM(totalamount) AS totalDeposits, MAX(paymentDate) AS lastDate
+        FROM deposits
+        GROUP BY shareholderId
+    """)
+    suspend fun getShareholderDepositSummary(): List<ShareholderDepositSummary>
+
+    @Query("SELECT SUM(totalamount) FROM deposits")
+    suspend fun getTotalFundDeposit(): Double
+
+    @Query("SELECT SUM(shareAmount * shareNos) FROM deposits")
+    suspend fun getTotalShareAmount(): Double
+
+    @Query("""
+        SELECT DISTINCT strftime('%Y-%m', paymentDate)
+        FROM deposits
+        ORDER BY paymentDate ASC
+    """)
+    suspend fun getActiveMonths(): List<String>
+
+    @Query("""
+        SELECT SUM(totalAmount)
+        FROM deposits
+        WHERE strftime('%Y-%m', paymentDate) = :month
+    """)
+    suspend fun getMonthlyIncome(month: String): Double
+    @Query("""
+    SELECT SUM(shareAmount * shareNos)
+    FROM deposits
+    WHERE strftime('%Y-%m', paymentDate) = :month
+""")
+    suspend fun getMonthlyShareDeposit(month: String): Double
 }

@@ -2,19 +2,22 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.model.enums.ShareholderStatus
+import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
 import java.time.Instant
 import java.time.LocalDate
 
 @Entity(tableName = "shareholders")
+@TypeConverters(AppTypeConverters::class)
 data class Shareholder(
     @PrimaryKey
     val shareholderId: String,      // Format: SH001, SH002 etc.
 
     // Core Information
     val fullName: String,
-    val dob: LocalDate,
+    val dob: LocalDate?,
     val email: String,
     val mobileNumber: String,
     val address: String,
@@ -24,15 +27,20 @@ data class Shareholder(
     val sharePrice: Double = 2000.0,
 
     // Membership Dates
-    val joiningDate: LocalDate,
+    val joiningDate: LocalDate?,
     val exitDate: LocalDate? = null,
 
-    // Member Roles
-    val role: MemberRole,
+    // Member Role (now enum-based ✅)
+    val role: MemberRole = MemberRole.MEMBER,
 
-    // Status (now enum-based ✅)
+    // Status (already enum-based ✅)
     val shareholderStatus: ShareholderStatus = ShareholderStatus.Active,
+
     val lastUpdated: Instant = Instant.now(),
+
+    val roleHistory: List<MemberRole> = emptyList(),
+    val statusHistory: List<ShareholderStatus> = emptyList(),
+
 
     // Audit Fields
     var createdAt: Instant = Instant.now(),

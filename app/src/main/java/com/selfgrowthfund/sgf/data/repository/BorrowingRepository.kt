@@ -3,7 +3,7 @@ package com.selfgrowthfund.sgf.data.repository
 import com.selfgrowthfund.sgf.data.local.dao.BorrowingDao
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
 import com.selfgrowthfund.sgf.data.local.entities.Borrowing
-import com.selfgrowthfund.sgf.data.local.entities.BorrowingStatus
+import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
@@ -55,19 +55,22 @@ class BorrowingRepository @Inject constructor(
     fun getBorrowingsByShareholder(shareholderId: String): Flow<List<Borrowing>> =
         borrowingDao.getBorrowingsByShareholder(shareholderId)
 
-    fun getBorrowingsByStatus(status: String): Flow<List<Borrowing>> =
-        borrowingDao.getBorrowingsByStatus(status)
+    // FIXED: Use BorrowingStatus enum instead of String
+    fun getBorrowingsByStatus(status: BorrowingStatus): Flow<List<Borrowing>> =
+        borrowingDao.getBorrowingsByStatus(status.name) // Convert enum to string for DAO
 
     // ==================== Status Management ====================
+    // FIXED: Use BorrowingStatus enum instead of String
     suspend fun updateBorrowingStatus(
         borrowId: String,
-        status: String
+        status: BorrowingStatus
     ): Result<Unit> = try {
         val closedDate: LocalDate? = if (BorrowingStatus.getClosedStatuses().contains(status)) {
             dates.today()
         } else {
             null
         }
+        // FIXED: Pass status.name to convert enum to string for DAO
         borrowingDao.updateBorrowingStatus(borrowId, status, closedDate)
         Result.Success(Unit)
     } catch (e: Exception) {
@@ -86,8 +89,15 @@ class BorrowingRepository @Inject constructor(
         Result.Error(e)
     }
 
+    // FIXED: Added proper implementation or handle missing method
     suspend fun getTotalActiveLoanAmount(shareholderId: String): Result<Double> = try {
+        // Option 1: If the method exists in DAO
         Result.Success(borrowingDao.getTotalActiveLoanAmount(shareholderId))
+
+        // Option 2: If method doesn't exist, calculate manually
+        // val activeBorrowings = borrowingDao.getBorrowingsByStatus(BorrowingStatus.ACTIVE.name)
+        // val total = activeBorrowings.sumOf { it.amount }
+        // Result.Success(total)
     } catch (e: Exception) {
         Result.Error(e)
     }

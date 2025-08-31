@@ -2,20 +2,28 @@ package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Repayment
+import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
 @Dao
 interface RepaymentDao {
 
-    // ==================== Create ====================
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(repayment: Repayment)
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertAll(repayments: List<Repayment>)
 
-    // ==================== Read ====================
+    @Update
+    suspend fun update(repayment: Repayment)
+
+    @Delete
+    suspend fun delete(repayment: Repayment)
+
+    @Query("DELETE FROM repayments WHERE repaymentId = :repaymentId")
+    suspend fun deleteById(repaymentId: String)
+
     @Query("SELECT * FROM repayments ORDER BY repaymentDate DESC")
     fun getAllRepayments(): Flow<List<Repayment>>
 
@@ -31,21 +39,12 @@ interface RepaymentDao {
     @Query("SELECT * FROM repayments WHERE borrowId = :borrowId ORDER BY repaymentDate DESC LIMIT 1")
     suspend fun getLastRepayment(borrowId: String): Repayment?
 
-    // ==================== Update ====================
-    @Update
-    suspend fun update(repayment: Repayment)
-
     @Query("UPDATE repayments SET borrowingStatus = :status WHERE repaymentId = :repaymentId")
     suspend fun updateStatus(repaymentId: String, status: String)
 
-    // ==================== Delete ====================
-    @Delete
-    suspend fun delete(repayment: Repayment)
+    @Query("SELECT repaymentId FROM repayments ORDER BY repaymentId DESC LIMIT 1")
+    suspend fun getLastRepaymentId(): String?
 
-    @Query("DELETE FROM repayments WHERE repaymentId = :repaymentId")
-    suspend fun deleteById(repaymentId: String)
-
-    // ==================== Aggregates ====================
     @Query("SELECT SUM(principalRepaid) FROM repayments WHERE borrowId = :borrowId")
     suspend fun getTotalPrincipalRepaid(borrowId: String): Double
 
@@ -61,7 +60,6 @@ interface RepaymentDao {
     """)
     suspend fun getBorrowingRepaymentSummary(borrowId: String): BorrowingRepaymentSummary
 
-    // ==================== Late Repayment Detection ====================
     @Query("""
         SELECT r.*
         FROM repayments r
@@ -71,7 +69,6 @@ interface RepaymentDao {
     """)
     suspend fun getLateRepayments(): List<Repayment>
 
-    // ==================== Search ====================
     @Query("""
         SELECT * FROM repayments
         WHERE notes LIKE '%' || :query || '%'
@@ -81,10 +78,30 @@ interface RepaymentDao {
     """)
     suspend fun searchRepayments(query: String): List<Repayment>
 
-    // ==================== DTOs ====================
     data class BorrowingRepaymentSummary(
         @ColumnInfo(name = "count") val count: Int,
         @ColumnInfo(name = "totalPrincipal") val totalPrincipal: Double?,
         @ColumnInfo(name = "totalPenalty") val totalPenalty: Double?
     )
+    // Total repayments received across all borrowings
+    @Query("SELECT SUM(principalRepaid) FROM repayments")
+    suspend fun getTotalPrincipalRepaidAll(): Double
+
+    // Optional: if you consider penalties part of total received
+    @Query("SELECT SUM(principalRepaid + penaltyPaid) FROM repayments")
+    suspend fun getTotalRepaidAll(): Double
+    @Query("""
+    SELECT strftime('%Y-%m', repaymentDate) AS month, SUM(principalRepaid + penaltyPaid) AS total
+    FROM repayments
+    GROUP BY month
+    ORDER BY month ASC
+""")
+    suspend fun getMonthlyRepayments(): List<MonthlyAmount>
+
+    @Query("""
+    SELECT SUM(principalRepaid + penaltyPaid)
+    FROM repayments
+    WHERE strftime('%Y-%m', repaymentDate) = :month
+""")
+    suspend fun getMonthlyRepayments(month: String): Double
 }

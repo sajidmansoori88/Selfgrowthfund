@@ -1,16 +1,21 @@
 package com.selfgrowthfund.sgf.ui.addshareholders
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.data.repository.ShareholderRepository
 import com.selfgrowthfund.sgf.model.enums.MemberRole
+import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
 import com.selfgrowthfund.sgf.utils.mappers.toShareholder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,32 +34,31 @@ class AddShareholderViewModel @Inject constructor(
     val shareBalance = MutableStateFlow("")
 
     // ─────────────── Validation States ───────────────
-    val isFullNameValid: StateFlow<Boolean> = fullName.map { it.trim().split(" ").all { word -> word.firstOrNull()?.isUpperCase() == true } }
+    val isFullNameValid = fullName.map { it.trim().split(" ").all { word -> word.firstOrNull()?.isUpperCase() == true } }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    val isMobileValid: StateFlow<Boolean> = mobileNumber.map { it.matches(Regex("^\\d{10}\$")) }
+    val isMobileValid = mobileNumber.map { it.matches(Regex("^\\d{10}\$")) }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    val isEmailValid: StateFlow<Boolean> = email.map { android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches() }
+    val isEmailValid = email.map { android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches() }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    val isDobValid: StateFlow<Boolean> = dob.map { it != null }
+    val isDobValid = dob.map { it != null }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    val isAddressValid: StateFlow<Boolean> = address.map { it.isNotBlank() }
+    val isAddressValid = address.map { it.isNotBlank() }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    val isJoiningDateValid: StateFlow<Boolean> = joiningDate.map { it != null }
+    val isJoiningDateValid = joiningDate.map { it != null }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    val isRoleValid: StateFlow<Boolean> = role.map { it != null }
+    val isRoleValid = role.map { it != null }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    val isShareBalanceValid: StateFlow<Boolean> = shareBalance.map { it.toDoubleOrNull()?.let { it >= 0 } == true }
+    val isShareBalanceValid = shareBalance.map { it.toDoubleOrNull()?.let { it >= 0 } == true }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    // ─────────────── Combined Save Enable ───────────────
-    val canSave: StateFlow<Boolean> = combine(
+    val canSave = combine(
         isFullNameValid,
         isMobileValid,
         isEmailValid,
@@ -76,6 +80,17 @@ class AddShareholderViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
+    // ─────────────── Show Next ID ───────────────
+    val nextShareholderId = MutableStateFlow<String?>(null)
+
+    fun fetchNextShareholderId() {
+        viewModelScope.launch {
+            val lastId = shareholderRepository.getLastShareholderId()
+            nextShareholderId.value = IdGenerator.nextShareholderId(lastId)
+        }
+    }
+
+
     // ─────────────── Add Shareholder ───────────────
     fun addShareholder() {
         val entry = ShareholderEntry(
@@ -86,8 +101,9 @@ class AddShareholderViewModel @Inject constructor(
             address = address.value.trim(),
             shareBalance = shareBalance.value.toDoubleOrNull() ?: 0.0,
             joiningDate = joiningDate.value ?: LocalDate.now(),
-            role = role.value?.name ?: MemberRole.MEMBER.name
+            role = role.value ?: MemberRole.MEMBER
         )
+
 
         viewModelScope.launch {
             _isSaving.value = true
@@ -100,9 +116,12 @@ class AddShareholderViewModel @Inject constructor(
                 val result = shareholderRepository.addShareholder(shareholder)
 
                 when (result) {
-                    is Result.Success -> _saveSuccess.value = true
+                    is Result.Success -> {
+                        _saveSuccess.value = true
+                        syncShareholderToFirestore(shareholder)
+                    }
                     is Result.Error -> _errorMessage.value = result.exception.message
-                    Result.Loading -> {} // Optional
+                    Result.Loading -> {}
                 }
             } catch (e: Exception) {
                 _errorMessage.value = e.message
@@ -110,6 +129,47 @@ class AddShareholderViewModel @Inject constructor(
                 _isSaving.value = false
             }
         }
+    }
+
+
+    // ─────────────── Firestore Sync ───────────────
+    private fun syncShareholderToFirestore(shareholder: com.selfgrowthfund.sgf.data.local.entities.Shareholder) {
+        val db = Firebase.firestore
+        val formatter = DateTimeFormatter.ISO_DATE
+
+        val firestoreData = mapOf(
+            "shareholderId" to shareholder.shareholderId,
+            "fullName" to shareholder.fullName,
+            "mobileNumber" to shareholder.mobileNumber,
+            "email" to shareholder.email,
+            "dob" to shareholder.dob?.format(formatter),
+            "address" to shareholder.address,
+            "shareBalance" to shareholder.shareBalance,
+            "joiningDate" to shareholder.joiningDate?.format(formatter),
+            "role" to shareholder.role
+        )
+
+        db.collection("shareholders").document(shareholder.shareholderId)
+            .set(firestoreData)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Shareholder synced: ${shareholder.shareholderId}")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Sync failed", e)
+            }
+    }
+
+    // ─────────────── Firestore Ping ───────────────
+    fun testFirestoreConnection() {
+        val db = Firebase.firestore
+        db.collection("test").document("ping")
+            .set(mapOf("status" to "connected"))
+            .addOnSuccessListener {
+                Log.d("Firestore", "Ping successful")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Ping failed", e)
+            }
     }
 
     // ─────────────── Reset Functions ───────────────

@@ -86,13 +86,6 @@ data class DepositEntry(
         const val MODE_CASH = "Cash"
         const val MODE_ONLINE = "Online"
 
-        fun generateNextId(lastId: String?): String {
-            return lastId?.let {
-                val num = it.removePrefix("D").toIntOrNull() ?: 0
-                "D%04d".format(num + 1)
-            } ?: "D0001"
-        }
-
         fun calculatePenalty(dueMonth: String, paymentDate: LocalDate): Double {
             return try {
                 val formatter = DateTimeFormatter.ofPattern("MMM-yyyy")

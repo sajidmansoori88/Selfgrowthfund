@@ -8,7 +8,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.selfgrowthfund.sgf.data.local.entities.Investment
+import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturnEntry
+import com.selfgrowthfund.sgf.model.enums.EntrySource
+import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import com.selfgrowthfund.sgf.ui.components.LoadingIndicator
+import com.selfgrowthfund.sgf.ui.investments.DropdownMenuBox
 import com.selfgrowthfund.sgf.utils.Result
 import java.text.DecimalFormat
 
@@ -16,19 +20,28 @@ import java.text.DecimalFormat
 fun InvestmentReturnsEntryScreen(
     investment: Investment,
     viewModel: InvestmentReturnsViewModel,
-    onReturnAdded: () -> Unit
+    onReturnAdded: () -> Unit,
+    currentUserName: String
 ) {
     var amountReceived by remember { mutableStateOf("") }
     var remarks by remember { mutableStateOf("") }
+    var selectedPaymentMode by remember { mutableStateOf(PaymentMode.CASH) }
 
     val addReturnState by viewModel.addReturnState.collectAsState()
-
-    val amountError = amountReceived.isNotBlank() && amountReceived.toDoubleOrNull() == null
     val isValidAmount = amountReceived.toDoubleOrNull()?.let { it > 0.0 } == true
+    val amountError = amountReceived.isNotBlank() && amountReceived.toDoubleOrNull() == null
 
-    val preview = remember(amountReceived, remarks) {
+    val preview = remember(amountReceived, remarks, selectedPaymentMode) {
         val amount = amountReceived.toDoubleOrNull() ?: 0.0
-        viewModel.previewReturn(investment, amount, remarks.ifBlank { null })
+        val entry = InvestmentReturnEntry(
+            investment = investment,
+            amountReceived = amount,
+            modeOfPayment = selectedPaymentMode,
+            remarks = remarks.ifBlank { null },
+            entrySource = EntrySource.ADMIN,
+            enteredBy = currentUserName
+        )
+        viewModel.previewReturn(entry)
     }
 
     LaunchedEffect(addReturnState) {
@@ -39,11 +52,7 @@ fun InvestmentReturnsEntryScreen(
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = "Enter Return for ${investment.investmentName}",
-            style = MaterialTheme.typography.titleMedium
-        )
-
+        Text("Enter Return for ${investment.investmentName}", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -56,6 +65,15 @@ fun InvestmentReturnsEntryScreen(
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        DropdownMenuBox(
+            label = "Mode of Payment",
+            options = PaymentMode.entries,
+            selected = selectedPaymentMode,
+            onSelected = { selectedPaymentMode = it }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -80,11 +98,17 @@ fun InvestmentReturnsEntryScreen(
             onClick = {
                 val amount = amountReceived.toDoubleOrNull()
                 if (amount != null && amount > 0.0) {
-                    viewModel.addReturn(
-                        investmentId = investment.investmentId,
+                    val entry = InvestmentReturnEntry(
+                        investment = investment,
                         amountReceived = amount,
-                        remarks = remarks.ifBlank { null }
+                        modeOfPayment = selectedPaymentMode,
+                        remarks = remarks.ifBlank { null },
+                        entrySource = EntrySource.ADMIN,
+                        enteredBy = currentUserName
                     )
+                    viewModel.submitReturn(entry, lastReturnId = null, onSuccess = onReturnAdded) {
+                        // Optional: show error toast/snackbar
+                    }
                 }
             },
             enabled = isValidAmount && addReturnState !is Result.Loading,

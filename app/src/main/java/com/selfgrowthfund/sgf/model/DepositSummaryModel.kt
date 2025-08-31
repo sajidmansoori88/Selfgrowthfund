@@ -17,5 +17,5 @@ fun DepositEntrySummaryDTO.toDomain(): DepositSummaryModel = DepositSummaryModel
     month = dueMonth,
     amount = totalAmount,
     status = paymentStatus,
-    timestamp = createdAt.toEpochMilli()
+    timestamp = createdAt?.toEpochMilli() ?: System.currentTimeMillis()
 )

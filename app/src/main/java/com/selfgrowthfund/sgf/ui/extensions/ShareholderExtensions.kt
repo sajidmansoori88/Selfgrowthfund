@@ -3,41 +3,43 @@ package com.selfgrowthfund.sgf.ui.extensions
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
 import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.model.enums.MemberRole
-import com.selfgrowthfund.sgf.model.enums.ShareholderStatus
+import com.selfgrowthfund.sgf.utils.IdGenerator
 import java.time.Instant
-import java.time.LocalDate
 
+// ✅ Friendly label shortcut
+val Shareholder.roleLabel: String
+    get() = this.role.label // Enum has a label property
+
+val ShareholderEntry.roleLabel: String
+    get() = this.role.label
+
+// ✅ Convert ShareholderEntry to Shareholder (safe for enum-based role)
 fun ShareholderEntry.toShareholder(lastId: String?): Shareholder {
-    val newId = Shareholder.generateNextId(lastId)
+    val newId = IdGenerator.nextShareholderId(lastId)
     return Shareholder(
         shareholderId = newId,
-        fullName = this.fullName,
-        dob = this.dob ?: LocalDate.now(),
-        email = this.email,
-        mobileNumber = this.mobileNumber,
-        address = this.address,
-        shareBalance = this.shareBalance,
-        sharePrice = 2000.0,
-        joiningDate = this.joiningDate ?: LocalDate.now(),
-        exitDate = null,
-        role = MemberRole.valueOf(  this.role),
-        shareholderStatus = ShareholderStatus.Active,
-        lastUpdated = Instant.now(),
-        createdAt = Instant.now(),
-        updatedAt = Instant.now()
+        fullName = fullName,
+        mobileNumber = mobileNumber,
+        email = email,
+        dob = dob,
+        address = address,
+        shareBalance = shareBalance,
+        joiningDate = joiningDate,
+        role = role, // ✅ Already a MemberRole
+        createdAt = Instant.now()
     )
 }
 
-// Reverse conversion
-fun Shareholder.toShareholderEntry(): ShareholderEntry {
-    return ShareholderEntry(
-        fullName = this.fullName,
-        mobileNumber = this.mobileNumber,
-        email = this.email,
-        dob = this.dob,
-        address = this.address,
-        shareBalance = this.shareBalance,
-        joiningDate = this.joiningDate,
-        role = this.role.name
-    )
-}
+// ✅ String → Enum helpers for Firestore or legacy data
+fun String.toMemberRoleOrDefault(): MemberRole =
+    try {
+        MemberRole.valueOf(this)
+    } catch (_: IllegalArgumentException) {
+        // If you ever store custom labels instead of .name in Firestore:
+        MemberRole.entries.firstOrNull { it.label.equals(this, ignoreCase = true) }
+            ?: MemberRole.MEMBER
+    }
+
+// ✅ Firestore mapping for backward compatibility
+fun Map<String, Any>.toMemberRole(): MemberRole =
+    (this["role"] as? String)?.toMemberRoleOrDefault() ?: MemberRole.MEMBER

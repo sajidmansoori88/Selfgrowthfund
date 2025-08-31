@@ -43,6 +43,7 @@ fun AddDepositScreen(
     }
 
     val context = LocalContext.current
+    val isSubmitting by viewModel.isSubmitting.collectAsState()
 
     // States
     val dueMonth by viewModel.dueMonth.collectAsState()
@@ -370,7 +371,9 @@ fun AddDepositScreen(
                 ) {
                     Text("Cancel")
                 }
+
                 Spacer(modifier = Modifier.width(16.dp))
+
                 Button(
                     onClick = {
                         if (!isFormValid) {
@@ -381,17 +384,34 @@ fun AddDepositScreen(
                             ).show()
                             return@Button
                         }
-                        viewModel.submitDeposit()
-                        Toast.makeText(context, "Deposit saved", Toast.LENGTH_SHORT).show()
-                        onSaveSuccess()
+
+                        viewModel.submitDeposit(
+                            notes = null, // or pass from a text field
+                            onSuccess = {
+                                Toast.makeText(context, "Deposit saved", Toast.LENGTH_SHORT).show()
+                                onSaveSuccess()
+                            },
+                            onError = { error ->
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            }
+                        )
                     },
-                    enabled = isFormValid,
+                    enabled = isFormValid && !isSubmitting,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isFormValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
+                        containerColor = if (isFormValid) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceContainerHighest
                     )
                 ) {
-                    Text("Save Deposit")
+                    if (isSubmitting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text("Save Deposit")
+                    }
                 }
             }
         }

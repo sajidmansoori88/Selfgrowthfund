@@ -1,4 +1,3 @@
-// app/src/main/java/com/selfgrowthfund/sgf/data/repository/InvestmentReturnsRepository.kt
 package com.selfgrowthfund.sgf.data.repository
 
 import com.selfgrowthfund.sgf.data.local.dao.InvestmentDao
@@ -13,30 +12,24 @@ class InvestmentReturnsRepository @Inject constructor(
     private val investmentDao: InvestmentDao,
     private val dates: Dates
 ) {
-    // ... other functions remain the same ...
-
-    suspend fun addReturn(
-        returnId: String,
-        investmentId: String,
-        amountReceived: Double,
-        remarks: String? = null
-    ): Result<Unit> = try {
-        val investment = investmentDao.getInvestmentById(investmentId)
-            ?: throw Exception("Investment not found")
-
-        // Using dates.now() instead of currentDateTime()
-        val returnDate = dates.today()
-        returnsDao.insertReturn(
-            InvestmentReturns(
-                returnId = returnId,
-                investment = investment,
-                amountReceived = amountReceived,
-                returnDate = returnDate,
-                remarks = remarks
-            )
-        )
+    suspend fun addReturn(returnEntity: InvestmentReturns): Result<Unit> = try {
+        returnsDao.insertReturn(returnEntity)
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
+    }
+
+    suspend fun getReturnsForInvestment(investmentId: String): List<InvestmentReturns> {
+        return returnsDao.getReturnsByInvestmentId(investmentId)
+    }
+
+    suspend fun getTotalProfitForInvestment(investmentId: String): Double {
+        return returnsDao.getReturnsByInvestmentId(investmentId)
+            .sumOf { it.actualProfitAmount }
+    }
+
+    suspend fun getTotalReturnedAmount(investmentId: String): Double {
+        return returnsDao.getReturnsByInvestmentId(investmentId)
+            .sumOf { it.amountReceived }
     }
 }

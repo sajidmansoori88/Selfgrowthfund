@@ -14,7 +14,8 @@ class UserSessionViewModel @Inject constructor() : ViewModel() {
         User(
             id = "U001",
             name = "Admin",
-            role = MemberRole.MEMBER_ADMIN
+            role = MemberRole.MEMBER_ADMIN,
+            shareholderId = "S001"
         )
     )
     val currentUser: StateFlow<User> = _currentUser
@@ -22,4 +23,15 @@ class UserSessionViewModel @Inject constructor() : ViewModel() {
     fun updateUser(user: User) {
         _currentUser.value = user
     }
+
+    fun clearSession() {
+        _currentUser.value = User(
+            id = "",
+            name = "",
+            role = MemberRole.MEMBER,
+            shareholderId = ""
+        )
+
+    }
+
 }

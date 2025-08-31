@@ -104,7 +104,7 @@ fun EditShareholderScreen(
             )
 
             // ─────────────── Date of Birth ───────────────
-            val dobText = uiState.dob.format(DateUtils.formatterPaymentDate)
+            val dobText = uiState.dob?.format(DateUtils.formatterPaymentDate) ?: ""
             Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = dobText,
@@ -169,7 +169,7 @@ fun EditShareholderScreen(
             )
 
             // ─────────────── Joining Date (NEW FIELD) ───────────────
-            val joiningText = uiState.joinDate.format(DateUtils.formatterPaymentDate)
+            val joiningText = uiState.joinDate?.format(DateUtils.formatterPaymentDate) ?: ""
             Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = joiningText,

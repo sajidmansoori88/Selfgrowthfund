@@ -46,38 +46,51 @@ object AppModule {
     @Provides fun provideDepositEntryDao(db: AppDatabase): DepositEntryDao = db.depositEntryDao()
     @Provides fun provideInvestmentReturnsDao(db: AppDatabase): InvestmentReturnsDao = db.investmentReturnsDao()
 
+    // ✅ Newly added DAOs
+    @Provides fun provideActionItemDao(db: AppDatabase): ActionItemDao = db.actionItemDao()
+    @Provides fun providePenaltyDao(db: AppDatabase): PenaltyDao = db.penaltyDao()
+    @Provides fun provideIncomeDao(db: AppDatabase): IncomeDao = db.incomeDao()
+    @Provides fun provideExpenseDao(db: AppDatabase): ExpenseDao = db.expenseDao()
+
     /* Utilities */
-    @Provides @Singleton fun provideDates(): Dates = Dates
+    @Provides
+    @Singleton
+    fun provideDates(): Dates = Dates
 
     /* Repositories */
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideShareholderRepository(
         shareholderDao: ShareholderDao,
         dates: Dates,
         firestore: FirebaseFirestore
     ): ShareholderRepository = ShareholderRepository(shareholderDao, dates, firestore)
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideDepositRepository(
         depositDao: DepositDao,
         depositEntryDao: DepositEntryDao,
         dates: Dates
     ): DepositRepository = DepositRepository(depositDao, depositEntryDao, dates)
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideBorrowingRepository(
         borrowingDao: BorrowingDao,
         shareholderDao: ShareholderDao,
         dates: Dates
     ): BorrowingRepository = BorrowingRepository(borrowingDao, shareholderDao, dates)
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideInvestmentRepository(
         investmentDao: InvestmentDao,
         dates: Dates
     ): InvestmentRepository = InvestmentRepository(investmentDao, dates)
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideInvestmentReturnsRepository(
         returnsDao: InvestmentReturnsDao,
         investmentDao: InvestmentDao,

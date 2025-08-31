@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.google.services)
 
+
 }
 
 android {
@@ -75,6 +76,7 @@ dependencies {
     implementation(libs.room.testing)
     implementation(libs.androidx.junit.ktx)
     implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.foundation.layout)
     debugImplementation(libs.compose.tooling)
 
     // ✅ AndroidX Core
@@ -154,4 +156,14 @@ dependencies {
     implementation(libs.itext7.core)
 
     implementation(libs.accompanist.systemuicontroller)
+
+    implementation(libs.androidx.biometric)
+
+    implementation(libs.google.auth)
+
+    implementation(libs.androidx.security)
+
+    implementation(libs.material.icons.extended)
+
+
 }

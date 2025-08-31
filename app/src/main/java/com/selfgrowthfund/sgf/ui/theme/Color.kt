@@ -2,10 +2,10 @@ package com.selfgrowthfund.sgf.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val SGF1 = Color(0xFF00FB9D)
-val PurpleGrey80 = Color(0xFF1B5E20)
-val Pink80 = Color(0xFFEFB8C8)
-
-val Purple40 = Color(0xFF81C784)
-val PurpleGrey40 = Color(0xFF388E3C)
-val Pink40 = Color(0xFF7D5260)
+// ✅ SGF Theme Colors
+val PrimaryGreen = Color(0xFF00FB9D)   // Main brand green
+val SecondaryCream = Color(0xFFF5F0E6) // Background (cream)
+val TextBlack = Color(0xFF000000)      // Standard text
+val TextWhite = Color(0xFFFFFFFF)      // Text on primary
+val AccentDark = Color(0xFF1B5E20)     // Optional dark green accent
+val AccentLight = Color(0xFF81C784)    // Optional light green accent

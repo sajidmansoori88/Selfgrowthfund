@@ -2,7 +2,6 @@ package com.selfgrowthfund.sgf.ui.addshareholders
 
 import android.app.DatePickerDialog
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -10,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +56,9 @@ fun AddShareholderScreen(
     val currentMonth = calendar.get(Calendar.MONTH)
     val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
 
+    val nextId by viewModel.nextShareholderId.collectAsState()
+    Text("Next Shareholder ID: ${nextId ?: "Loading..."}")
+
     // Handle success navigation
     LaunchedEffect(saveSuccess) {
         saveSuccess?.let { success ->
@@ -77,6 +78,10 @@ fun AddShareholderScreen(
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             viewModel.resetErrorMessage()
         }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.testFirestoreConnection()
     }
 
     Scaffold(

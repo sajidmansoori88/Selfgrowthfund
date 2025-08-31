@@ -2,18 +2,23 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
+import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-@Entity(tableName = "repayments")
+@Entity(
+    tableName = "repayments",
+    indices = [Index(value = ["borrowId"]), Index(value = ["repaymentDate"])]
+)
 @TypeConverters(AppTypeConverters::class)
 data class Repayment(
     @PrimaryKey
     @ColumnInfo(name = "repaymentId")
-    val repaymentId: String = generateRepaymentId(),
+    val repaymentId: String,
 
-    @ColumnInfo(name = "borrowId", index = true)
+    @ColumnInfo(name = "borrowId")
     val borrowId: String,
 
     @ColumnInfo(name = "shareholderName")
@@ -38,13 +43,14 @@ data class Repayment(
     val totalAmountPaid: Double = principalRepaid + penaltyPaid,
 
     @ColumnInfo(name = "modeOfPayment")
-    val modeOfPayment: String,
+    val modeOfPayment: PaymentMode = PaymentMode.OTHER,
 
     @ColumnInfo(name = "finalOutstanding")
     val finalOutstanding: Double = outstandingBefore - principalRepaid,
 
     @ColumnInfo(name = "borrowingStatus")
-    val borrowingStatus: String = if (finalOutstanding <= 0.01) "CLOSED" else "ACTIVE",
+    val borrowingStatus: BorrowingStatus = if (finalOutstanding <= 0.01)
+        BorrowingStatus.CLOSED else BorrowingStatus.ACTIVE,
 
     @ColumnInfo(name = "notes")
     val notes: String? = null,
@@ -53,51 +59,9 @@ data class Repayment(
     val penaltyCalculationNotes: String? = null
 ) {
     companion object {
-        private var lastId = 0
-        private val idFormatter = DateTimeFormatter.ofPattern("ddMMyyyy")
         private val displayFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
-        fun generateRepaymentId(): String {
-            lastId++
-            val today = LocalDate.now()
-            return "RP${today.format(idFormatter)}-${"%04d".format(lastId)}"
-        }
-
-        fun create(
-            borrowId: String,
-            shareholderName: String,
-            outstandingBefore: Double,
-            repaymentDate: LocalDate,
-            principalRepaid: Double,
-            penaltyPaid: Double,
-            modeOfPayment: String,
-            borrowStartDate: LocalDate,
-            dueDate: LocalDate,
-            previousRepayments: List<Repayment>
-        ): Repayment {
-            val (penaltyAmount, notes) = calculatePenalty(
-                borrowStartDate,
-                dueDate,
-                repaymentDate,
-                outstandingBefore,
-                previousRepayments
-            )
-
-            return Repayment(
-                borrowId = borrowId,
-                shareholderName = shareholderName,
-                outstandingBefore = outstandingBefore,
-                penaltyDue = penaltyAmount,
-                repaymentDate = repaymentDate,
-                principalRepaid = principalRepaid,
-                penaltyPaid = penaltyPaid,
-                modeOfPayment = modeOfPayment,
-                notes = "Processed on ${formatDate(LocalDate.now())}",
-                penaltyCalculationNotes = notes
-            )
-        }
-
-        private fun calculatePenalty(
+        fun calculatePenalty(
             borrowStartDate: LocalDate,
             dueDate: LocalDate,
             repaymentDate: LocalDate,
