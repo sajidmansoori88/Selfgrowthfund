@@ -12,26 +12,36 @@ private val LightColors = lightColorScheme(
     primary = PrimaryGreen,
     onPrimary = TextWhite,
 
+    secondary = AccentLight,
+    onSecondary = TextBlack,
+
     background = Color.Transparent, // gradient background
-    onBackground = TextBlack,
+    onBackground = TextPrimary,
 
-    surface = Color.Transparent,
-    onSurface = TextBlack,
+    surface = Surface,
+    onSurface = TextPrimary,
 
-    error = Color(0xFFD32F2F),
+    surfaceVariant = AccentLight,
+
+    error = ErrorRed,
     onError = TextWhite
 )
 
 // 🌙 Dark Theme Colors
 private val DarkColors = darkColorScheme(
     primary = PrimaryGreen,
-    onPrimary = TextBlack,  // Green button → black text for readability
+    onPrimary = TextBlack,
+
+    secondary = AccentDark,
+    onSecondary = TextWhite,
 
     background = Color.Black,
     onBackground = TextWhite,
 
     surface = Color(0xFF121212),
     onSurface = TextWhite,
+
+    surfaceVariant = AccentDark,
 
     error = Color(0xFFCF6679),
     onError = TextBlack
@@ -44,7 +54,7 @@ fun SGFTheme(
 ) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = MaterialTheme.typography,
+        typography = SGFTypography,
         content = content
     )
 }

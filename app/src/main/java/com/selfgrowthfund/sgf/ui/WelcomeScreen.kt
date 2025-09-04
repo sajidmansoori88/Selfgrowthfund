@@ -41,14 +41,14 @@ fun WelcomeScreen(navController: NavHostController) {
             Image(
                 painter = painterResource(id = R.drawable.sgf_logo),
                 contentDescription = "App Logo",
-                modifier = Modifier.size(150.dp)
+                modifier = Modifier.size(400.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "Self Growth Fund",
-                fontSize = 22.sp,
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimary
             )
