@@ -40,40 +40,38 @@ fun WelcomeScreen(navController: NavHostController) {
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
             Image(
                 painter = painterResource(id = R.drawable.sgf_logo),
                 contentDescription = "App Logo",
-                modifier = Modifier.size(280.dp)
+                modifier = Modifier.size(300.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = "Self Growth Fund",
-                fontSize = 32.sp,
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimary
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(180.dp))
 
             Text(
+                text = "Developer - Sajid Mansoori",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
                 text = "Powered by: Copilot & other AIs",
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
             )
-        }
 
-        Text(
-            text = "Developer - Sajid Mansoori",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
-        )
+        }
     }
 }
 @Preview(showBackground = true)

@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class ShareholderSummaryViewModel : ViewModel() {
+class FirebaseShareholderSummaryViewModel : ViewModel() {
 
     private val firestore = FirebaseFirestore.getInstance()
     private val _summary = MutableStateFlow(ShareholderSummary())

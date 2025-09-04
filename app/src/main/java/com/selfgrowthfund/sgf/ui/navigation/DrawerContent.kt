@@ -9,7 +9,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.session.UserSessionViewModel
-import com.selfgrowthfund.sgf.model.ShareholderSummaryViewModel
+import com.selfgrowthfund.sgf.model.reports.ShareholderSummaryViewModel
 import com.selfgrowthfund.sgf.ui.actions.ActionScreenViewModel
 
 @Composable
@@ -21,7 +21,8 @@ fun DrawerContent(
     val user by userSessionViewModel.currentUser.collectAsState()
 
     val summaryViewModel: ShareholderSummaryViewModel = hiltViewModel()
-    val summary by summaryViewModel.summary.collectAsState()
+    val summaries by summaryViewModel.summaries.collectAsState()
+    val userSummary = summaries.find { it.shareholderId == user.shareholderId }
 
     val actionViewModel: ActionScreenViewModel = hiltViewModel()
     val pendingCount by actionViewModel
@@ -165,9 +166,9 @@ fun DrawerContent(
         HorizontalDivider()
 
         Text("Your Summary", style = MaterialTheme.typography.titleSmall, color = textColor)
-        Text("Contribution: ₹${summary.totalShareContribution}", color = textColor)
-        Text("Value: ₹${summary.currentValue}", color = textColor)
-        Text("Growth: ${"%.2f".format(summary.growthPercent)}%", color = textColor)
+        Text("Contribution: ₹${userSummary?.shareAmount ?: "-"}", color = textColor)
+        Text("Value: ₹${userSummary?.shareValue ?: "-"}", color = textColor)
+        Text("Growth: ${"%.2f".format(userSummary?.absoluteReturn ?: 0.0)}%", color = textColor)
 
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()

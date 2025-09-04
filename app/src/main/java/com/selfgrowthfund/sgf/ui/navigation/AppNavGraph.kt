@@ -1,6 +1,7 @@
 package com.selfgrowthfund.sgf.ui.navigation
 
 import android.content.Context
+import androidx.compose.material3.DrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -47,16 +48,24 @@ import com.selfgrowthfund.sgf.ui.transactions.AddIncomeScreen
 import com.selfgrowthfund.sgf.ui.transactions.TransactionForm
 import com.selfgrowthfund.sgf.ui.transactions.TransactionViewModel
 import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.CoroutineScope
 import java.time.LocalDate
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
+fun AppNavGraph(
+    navController: NavHostController,
+    drawerState: DrawerState,
+    scope: CoroutineScope,
+    onDrawerClick: () -> Unit
+)
+
+ {
     val userSessionViewModel: UserSessionViewModel = hiltViewModel()
     val user = userSessionViewModel.currentUser.collectAsState().value
 
     NavHost(navController = navController, startDestination = Screen.Welcome.route) {
 
-        // 🔐 Auth & Onboarding
+        // 🔐 Auth & Onboarding (no drawer)
         composable(Screen.Welcome.route) { WelcomeScreen(navController) }
         composable(Screen.Login.route) { LoginScreen(navController) }
         composable(Screen.CreatePin.route) { CreatePinScreen(navController) }
@@ -64,17 +73,29 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Screen.BiometricSetup.route) { BiometricSetupScreen(navController) }
         composable(Screen.AccessDenied.route) { AccessDeniedScreen(navController) }
 
-        // 🏠 Dashboards
-        composable(Screen.Home.route) { HomeScreen(navController) }
+        // 🏠 Dashboards (drawer-enabled)
+        composable(Screen.Home.route) {
+            HomeScreen(
+                navController = navController,
+                onDrawerClick = onDrawerClick,
+                drawerState = drawerState,
+                scope = scope
+            )
+        }
+
         composable(Screen.AdminDashboard.route) {
             AdminDashboardScreen(navController = navController, role = user.role)
         }
         composable(Screen.TreasurerDashboard.route) {
-        TreasurerDashboardScreen(navController)
+            TreasurerDashboardScreen(navController)
         }
 
         // 💰 Deposits
-        composable(Screen.Deposits.route) { DepositHistoryScreen(navController) }
+        composable(Screen.Deposits.route) {
+            DepositHistoryScreen(navController = navController,
+            drawerState = drawerState,
+            scope = scope)
+        }
         composable("add_deposit") {
             val context = LocalContext.current.applicationContext as Context
             val factory = EntryPointAccessors.fromApplication(
@@ -102,7 +123,6 @@ fun AppNavGraph(navController: NavHostController) {
                 }
             )
         }
-
         composable("addBorrowing") {
             val borrowingViewModel: BorrowingViewModel = hiltViewModel()
             AddBorrowingScreen(
@@ -165,21 +185,20 @@ fun AppNavGraph(navController: NavHostController) {
             val investmentReturnsViewModel: InvestmentReturnsViewModel = hiltViewModel()
 
             val investment = remember {
-                // Use safe enum conversion with fallback values
                 Investment(
                     investmentId = investmentId,
                     investeeType = safeValueOf<InvesteeType>(investeeType) ?: InvesteeType.External,
-                    investeeName = "John Doe", // This should also come from parameters or database
+                    investeeName = "John Doe",
                     ownershipType = safeValueOf<OwnershipType>(ownershipType) ?: OwnershipType.Individual,
-                    partnerNames = null, // This should come from parameters or database
-                    investmentDate = LocalDate.now(), // This should come from parameters or database
+                    partnerNames = null,
+                    investmentDate = LocalDate.now(),
                     investmentType = safeValueOf<InvestmentType>(investmentType) ?: InvestmentType.Other,
-                    investmentName = "Seed Capital", // This should come from parameters or database
-                    amount = 10000.0, // This should come from parameters or database
-                    expectedProfitPercent = 20.0, // This should come from parameters or database
-                    expectedProfitAmount = 2000.0, // This should come from parameters or database
-                    expectedReturnPeriod = 90, // This should come from parameters or database
-                    returnDueDate = LocalDate.now().plusDays(90), // This should come from parameters or database
+                    investmentName = "Seed Capital",
+                    amount = 10000.0,
+                    expectedProfitPercent = 20.0,
+                    expectedProfitAmount = 2000.0,
+                    expectedReturnPeriod = 90,
+                    returnDueDate = LocalDate.now().plusDays(90),
                     modeOfPayment = safeValueOf<PaymentMode>(modeOfPayment) ?: PaymentMode.OTHER,
                     status = safeValueOf<InvestmentStatus>(status) ?: InvestmentStatus.Active,
                     remarks = null
@@ -194,10 +213,15 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
 
-        // ✅ FIXED: ProfileScreen with shareholderId
+        // ✅ Profile
         composable("profile/{shareholderId}") { backStackEntry ->
             val shareholderId = backStackEntry.arguments?.getString("shareholderId") ?: ""
-            ProfileScreen(navController = navController, shareholderId = shareholderId)
+            ProfileScreen(
+                navController = navController,
+                shareholderId = shareholderId,
+                drawerState = drawerState,
+                scope = scope
+            )
         }
 
         // 📊 Reports & Actions

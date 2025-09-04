@@ -83,7 +83,12 @@ fun SGFApp() {
             }
         ) { padding ->
             Surface(modifier = Modifier.padding(padding)) {
-                AppNavGraph(navController = navController)
+                AppNavGraph(
+                    navController = navController,
+                    drawerState = drawerState,
+                    scope = scope,
+                    onDrawerClick = { scope.launch { drawerState.open() } }
+                )
             }
         }
     }

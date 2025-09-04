@@ -3,7 +3,6 @@ package com.selfgrowthfund.sgf.data.local.dao
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Deposit
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
-import com.selfgrowthfund.sgf.data.local.entities.DepositEntry
 import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
 import com.selfgrowthfund.sgf.model.reports.ShareholderDepositSummary
 import kotlinx.coroutines.flow.Flow
@@ -83,4 +82,7 @@ interface DepositDao {
     WHERE strftime('%Y-%m', paymentDate) = :month
 """)
     suspend fun getMonthlyShareDeposit(month: String): Double
+
+    @Query("SELECT * FROM deposits WHERE shareholderId = :id ORDER BY paymentDate LIMIT 1")
+    suspend fun getLastDepositForShareholder(id: String): Deposit?
 }

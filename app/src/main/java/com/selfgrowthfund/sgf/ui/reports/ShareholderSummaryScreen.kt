@@ -7,17 +7,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.selfgrowthfund.sgf.model.reports.ShareholderSummaryViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShareholderSummaryScreen(viewModel: ShareholderSummaryViewModel) {
-    val summaries by viewModel.summary.collectAsState()
+fun ShareholdersSummaryScreen(viewModel: ShareholderSummaryViewModel = hiltViewModel()) {
+    val summaries by viewModel.summaries.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadAllSummaries()
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Shareholder Summary") },
+                title = { Text("Shareholders Summary") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -40,13 +46,13 @@ fun ShareholderSummaryScreen(viewModel: ShareholderSummaryViewModel) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(text = summary.name, style = MaterialTheme.typography.titleMedium)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Shares: ${summary.shares}")
-                        Text(text = "Share Amount: ₹${format(summary.shareAmount)}")
-                        Text(text = "Share Value: ₹${format(summary.shareValue)}")
-                        Text(text = "Contribution: ${format(summary.percentContribution)}%")
-                        Text(text = "Net Profit: ₹${format(summary.netProfit)}")
-                        Text(text = "Absolute Return: ${format(summary.absoluteReturn)}%")
-                        Text(text = "Annualized Return: ${format(summary.annualizedReturn)}%")
+                        Text("Shares: ${summary.shares}")
+                        Text("Share Amount: ₹${format(summary.shareAmount)}")
+                        Text("Share Value: ₹${format(summary.shareValue)}")
+                        Text("Contribution: ${format(summary.percentContribution)}%")
+                        Text("Net Profit: ₹${format(summary.netProfit)}")
+                        Text("Absolute Return: ${format(summary.absoluteReturn)}%")
+                        Text("Annualized Return: ${format(summary.annualizedReturn)}%")
                     }
                 }
             }
@@ -54,4 +60,4 @@ fun ShareholderSummaryScreen(viewModel: ShareholderSummaryViewModel) {
     }
 }
 
-private fun format(value: Double): String = String.format("%,.2f", value)
+private fun format(value: Double): String = String.format(Locale.US, "%,.2f", value)

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.selfgrowthfund.sgf.data.local.dao.DepositDao
 import com.selfgrowthfund.sgf.data.local.dao.PenaltyDao
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
+import com.selfgrowthfund.sgf.model.reports.ShareholderSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,10 +22,10 @@ class ShareholderSummaryViewModel @Inject constructor(
     private val shareholderDao: ShareholderDao
 ) : ViewModel() {
 
-    private val _summary = MutableStateFlow<List<ShareholderSummary>>(emptyList())
-    val summary: StateFlow<List<ShareholderSummary>> = _summary
+    private val _summaries = MutableStateFlow<List<ShareholderSummary>>(emptyList())
+    val summaries: StateFlow<List<ShareholderSummary>> = _summaries
 
-    init {
+    fun loadAllSummaries() {
         viewModelScope.launch {
             val depositSummary = depositDao.getShareholderDepositSummary()
             val penaltySummary = penaltyDao.getShareholderPenaltySummary()
@@ -32,7 +33,7 @@ class ShareholderSummaryViewModel @Inject constructor(
 
             val totalFundDeposit = depositDao.getTotalFundDeposit()
             val fundProfit = 120000.0 // placeholder
-            val navPerShare: Double? = null // optional NAV logic
+            val navPerShare: Double? = null
 
             val penaltyMap = penaltySummary.associateBy { it.shareholderId }
             val today = LocalDate.now()
@@ -46,6 +47,10 @@ class ShareholderSummaryViewModel @Inject constructor(
                 val percentContribution = if (totalFundDeposit > 0) (netDeposit / totalFundDeposit) * 100 else 0.0
                 val netProfit = (percentContribution / 100) * fundProfit
                 val absoluteReturn = if (netDeposit > 0) (netProfit / netDeposit) * 100 else 0.0
+
+                val lastDeposit = depositDao.getLastDepositForShareholder(deposit.shareholderId)
+                val lastAmount = lastDeposit?.let { it.shareAmount * it.shareNos } ?: 0.0
+                val lastDate = lastDeposit?.paymentDate ?: shareholder.joiningDate
 
                 val daysHeld = ChronoUnit.DAYS.between(shareholder.joiningDate, today).coerceAtLeast(1)
                 val yearsHeld = daysHeld / 365.0
@@ -62,11 +67,15 @@ class ShareholderSummaryViewModel @Inject constructor(
                     percentContribution = percentContribution,
                     netProfit = netProfit,
                     absoluteReturn = absoluteReturn,
-                    annualizedReturn = annualizedReturn
+                    annualizedReturn = annualizedReturn,
+                    lastContributionAmount = lastAmount,
+                    lastContributionDate = lastDate,
+                    nextDue = today.plusMonths(1),
+                    outstandingBorrowing = 0.0
                 )
             }
 
-            _summary.value = summaries.sortedByDescending { it.netProfit }
+            _summaries.value = summaries.sortedByDescending { it.netProfit }
         }
     }
 }

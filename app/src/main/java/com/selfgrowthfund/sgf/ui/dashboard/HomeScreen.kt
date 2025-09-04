@@ -1,59 +1,78 @@
 package com.selfgrowthfund.sgf.ui.dashboard
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.selfgrowthfund.sgf.R
 import com.selfgrowthfund.sgf.model.enums.MemberRole
+import com.selfgrowthfund.sgf.model.reports.ShareholderSummary
+import com.selfgrowthfund.sgf.model.reports.ShareholderSummaryViewModel
 import com.selfgrowthfund.sgf.session.UserSessionViewModel
+import com.selfgrowthfund.sgf.ui.components.GradientScaffold
+import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
 import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
 import com.selfgrowthfund.sgf.ui.theme.SGFTheme
-import com.selfgrowthfund.sgf.model.ShareholderSummary
-import com.selfgrowthfund.sgf.model.ShareholderSummaryViewModel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavHostController) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
+fun HomeScreen(
+    navController: NavHostController,
+    drawerState: DrawerState,
+    scope: CoroutineScope,
+    onDrawerClick: () -> Unit
+) {
+    val userSessionViewModel: UserSessionViewModel = hiltViewModel()
+    val user by userSessionViewModel.currentUser.collectAsState()
 
-    ModalNavigationDrawer(
+    val summaryViewModel: ShareholderSummaryViewModel = hiltViewModel()
+    val summaries by summaryViewModel.summaries.collectAsState()
+
+    LaunchedEffect(Unit) {
+        summaryViewModel.loadAllSummaries()
+    }
+
+    val currentSummary = summaries.find { it.shareholderId == user.shareholderId }
+
+    SGFScaffoldWrapper(
+        title = "Self Growth Fund",
         drawerState = drawerState,
+        scope = scope,
         drawerContent = {
             DrawerContent(
                 navController = navController,
                 onItemClick = { scope.launch { drawerState.close() } }
             )
         }
-    ) {
-        HomeScreenContentWrapper(navController = navController)
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            if (currentSummary != null) {
+                HomeScreenContent(
+                    name = user.name,
+                    role = user.role.name,
+                    summary = currentSummary
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
     }
-}
-
-@Composable
-fun HomeScreenContentWrapper(navController: NavHostController) {
-    val userSessionViewModel: UserSessionViewModel = hiltViewModel()
-    val user by userSessionViewModel.currentUser.collectAsState()
-
-    val summaryViewModel: ShareholderSummaryViewModel = hiltViewModel()
-    val summary by summaryViewModel.summary.collectAsState()
-
-    LaunchedEffect(user.id) {
-        summaryViewModel.loadSummary(user)
-    }
-
-    HomeScreenContent(
-        name = user.name,
-        role = user.role.name,
-        summary = summary
-    )
 }
 
 @Composable
@@ -62,6 +81,8 @@ fun HomeScreenContent(
     role: String,
     summary: ShareholderSummary
 ) {
+    val formatter = remember { DateTimeFormatter.ofPattern("dd-MM-yyyy") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -75,23 +96,30 @@ fun HomeScreenContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         Text("Total Share Contribution", style = MaterialTheme.typography.titleMedium)
-        Text("₹${summary.totalShareContribution}", style = MaterialTheme.typography.bodyLarge)
+        Text("₹${summary.shareAmount}", style = MaterialTheme.typography.bodyLarge)
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Current Value", style = MaterialTheme.typography.titleMedium)
-        Text("₹${summary.currentValue}", style = MaterialTheme.typography.bodyLarge)
-        Text("Growth: ${"%.2f".format(summary.growthPercent)}%", color = MaterialTheme.colorScheme.primary)
+        Text("₹${summary.shareValue}", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = "Growth: ${"%.2f".format(summary.absoluteReturn)}%",
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.bodyMedium
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Last Contribution", style = MaterialTheme.typography.titleMedium)
-        Text("₹6,000.00 (${summary.lastContribution.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))})")
+        Text(
+            text = "₹${summary.lastContributionAmount} (${summary.lastContributionDate.format(formatter)})",
+            style = MaterialTheme.typography.bodyLarge
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Next Due Contribution", style = MaterialTheme.typography.titleMedium)
-        Text(summary.nextDue.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))
+        Text(summary.nextDue.format(formatter), style = MaterialTheme.typography.bodyLarge)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -105,23 +133,59 @@ fun HomeScreenContent(
     }
 }
 
-@Preview(showBackground = true)
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, name = "Home Screen Preview")
 @Composable
 fun HomeScreenPreview() {
-    val fakeSummary = ShareholderSummary(
-        totalShareContribution = 30000,
-        currentValue = 250000.0,
-        growthPercent = 733.33,
-        lastContribution = LocalDate.of(2025, 8, 15),
-        nextDue = LocalDate.of(2025, 9, 10),
-        outstandingBorrowing = 7000.0
-    )
-
     SGFTheme {
-        HomeScreenContent(
-            name = "John",
-            role = MemberRole.MEMBER.name,
-            summary = fakeSummary
+        val fakeSummary = ShareholderSummary(
+            shareholderId = "SH001",
+            name = "Sajid Mansoori",
+            shares = 15,
+            shareAmount = 30000.0,
+            shareValue = 250000.0,
+            percentContribution = 12.5,
+            netProfit = 220000.0,
+            absoluteReturn = 733.33,
+            annualizedReturn = 120.0,
+            lastContributionAmount = 6000.0,
+            lastContributionDate = LocalDate.of(2025, 8, 10),
+            nextDue = LocalDate.of(2025, 9, 10),
+            outstandingBorrowing = 7000.0
+        )
+
+        GradientScaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "Self Growth Fund",
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    navigationIcon = {
+                        Image(
+                            painter = painterResource(id = R.drawable.sgf_logo),
+                            contentDescription = "App Logo",
+                            modifier = Modifier
+                                .size(45.dp) // Adjust size as needed
+                                .padding(8.dp),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary))
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            },
+            content = { padding ->
+                Box(modifier = Modifier.padding(padding)) {
+                    HomeScreenContent(
+                        name = "Sajid",
+                        role = MemberRole.MEMBER.name,
+                        summary = fakeSummary
+                    )
+                }
+            }
         )
     }
 }
