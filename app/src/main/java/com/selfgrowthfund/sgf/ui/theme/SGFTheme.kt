@@ -52,9 +52,12 @@ fun SGFTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    val colors = if (darkTheme) SGFDarkColorScheme else SGFLightColorScheme
+
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
+        colorScheme = colors,
         typography = SGFTypography,
+        shapes = AppShapes,
         content = content
     )
 }

@@ -28,95 +28,158 @@ fun DrawerContent(
         .getPendingCountForUser(user.shareholderId)
         .collectAsState()
 
+    val textColor = MaterialTheme.colorScheme.onPrimaryContainer
+
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Self Growth Fund", style = MaterialTheme.typography.titleLarge)
+        Text("Self Growth Fund", style = MaterialTheme.typography.titleLarge, color = textColor)
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Welcome, ${user.name}", style = MaterialTheme.typography.bodyLarge)
-        Text("Role: ${user.role.label}", style = MaterialTheme.typography.bodyMedium)
+        Text("Welcome, ${user.name}", style = MaterialTheme.typography.bodyLarge, color = textColor)
+        Text("Role: ${user.role.label}", style = MaterialTheme.typography.bodyMedium, color = textColor)
 
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()
 
-        DrawerItem("Home") {
-            navController.navigate(Screen.Home.route)
-            onItemClick()
-        }
+        DrawerItem(
+            label = "Home",
+            textColor = textColor,
+            onClick = {
+                navController.navigate(Screen.Home.route)
+                onItemClick()
+            }
+        )
 
-        DrawerItem("Profile") {
-            navController.navigate(Screen.Profile.createRoute(user.shareholderId))
-            onItemClick()
-        }
+        DrawerItem(
+            label = "Profile",
+            textColor = textColor,
+            onClick = {
+                navController.navigate(Screen.Profile.createRoute(user.shareholderId))
+                onItemClick()
+            }
+        )
 
+        DrawerItem(
+            label = "Deposits",
+            textColor = textColor,
+            onClick = {
+                navController.navigate(Screen.Deposits.route)
+                onItemClick()
+            }
+        )
 
-        DrawerItem("Deposits") {
-            navController.navigate(Screen.Deposits.route)
-            onItemClick()
-        }
+        DrawerItem(
+            label = "Borrowings",
+            textColor = textColor,
+            onClick = {
+                navController.navigate(Screen.Borrowings.route)
+                onItemClick()
+            }
+        )
 
-        DrawerItem("Borrowings") {
-            navController.navigate(Screen.Borrowings.route)
-            onItemClick()
-        }
+        DrawerItem(
+            label = "Investments",
+            textColor = textColor,
+            onClick = {
+                navController.navigate(Screen.Investments.route)
+                onItemClick()
+            }
+        )
 
-        DrawerItem("Investments") {
-            navController.navigate(Screen.Investments.route)
-            onItemClick()
-        }
+        DrawerItem(
+            label = "Reports Dashboard",
+            textColor = textColor,
+            onClick = {
+                navController.navigate(Screen.ReportsDashboard.route)
+                onItemClick()
+            }
+        )
 
-        DrawerItem("Reports Dashboard") {
-            navController.navigate(Screen.ReportsDashboard.route)
-            onItemClick()
-        }
+        DrawerItem(
+            label = "Reports",
+            textColor = textColor,
+            onClick = {
+                navController.navigate(Screen.Reports.route)
+                onItemClick()
+            }
+        )
 
-        DrawerItem("Reports") {
-            navController.navigate(Screen.Reports.route)
-            onItemClick()
-        }
-
-        DrawerItem(label = "Actions", badgeCount = pendingCount) {
-            navController.navigate(Screen.Actions.route)
-            onItemClick()
-        }
+        DrawerItem(
+            label = "Actions",
+            badgeCount = pendingCount,
+            textColor = textColor,
+            onClick = {
+                navController.navigate(Screen.Actions.route)
+                onItemClick()
+            }
+        )
 
         if (user.role == MemberRole.MEMBER_ADMIN) {
-            DrawerItem("Admin Dashboard") {
-                navController.navigate(Screen.AdminDashboard.route)
-                onItemClick()
-            }
+            DrawerItem(
+                label = "Admin Dashboard",
+                textColor = textColor,
+                onClick = {
+                    navController.navigate(Screen.AdminDashboard.route)
+                    onItemClick()
+                }
+            )
 
-            DrawerItem("Transaction") {
-                navController.navigate(Screen.TransactionManager.route)
-                onItemClick()
-            }
+            DrawerItem(
+                label = "Transaction",
+                textColor = textColor,
+                onClick = {
+                    navController.navigate(Screen.TransactionManager.route)
+                    onItemClick()
+                }
+            )
         }
 
         if (user.role == MemberRole.MEMBER_TREASURER) {
-            DrawerItem("Record Expense") { navController.navigate(Screen.AddExpense.route) }
-            DrawerItem("Record Income") { navController.navigate(Screen.AddIncome.route) }
+            DrawerItem(
+                label = "Record Expense",
+                textColor = textColor,
+                onClick = {
+                    navController.navigate(Screen.AddExpense.route)
+                    onItemClick()
+                }
+            )
+
+            DrawerItem(
+                label = "Record Income",
+                textColor = textColor,
+                onClick = {
+                    navController.navigate(Screen.AddIncome.route)
+                    onItemClick()
+                }
+            )
+
+            DrawerItem(
+                label = "Record Penalty",
+                textColor = textColor,
+                onClick = {
+                    navController.navigate(Screen.AddPenalty.route)
+                    onItemClick()
+                }
+            )
         }
 
-        if (user.role == MemberRole.MEMBER_TREASURER) {
-            DrawerItem("Record Penalty") {
-                navController.navigate(Screen.AddPenalty.route)
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider()
+
+        Text("Your Summary", style = MaterialTheme.typography.titleSmall, color = textColor)
+        Text("Contribution: ₹${summary.totalShareContribution}", color = textColor)
+        Text("Value: ₹${summary.currentValue}", color = textColor)
+        Text("Growth: ${"%.2f".format(summary.growthPercent)}%", color = textColor)
+
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider()
+
+        DrawerItem(
+            label = "Logout",
+            textColor = textColor,
+            onClick = {
+                userSessionViewModel.clearSession()
+                navController.navigate(Screen.Login.route)
                 onItemClick()
             }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider()
-
-        Text("Your Summary", style = MaterialTheme.typography.titleSmall)
-        Text("Contribution: ₹${summary.totalShareContribution}")
-        Text("Value: ₹${summary.currentValue}")
-        Text("Growth: ${"%.2f".format(summary.growthPercent)}%")
-
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider()
-
-        DrawerItem("Logout") {
-            userSessionViewModel.clearSession()
-            navController.navigate(Screen.Login.route)
-            onItemClick()
-        }
-
+        )
     }
 }
