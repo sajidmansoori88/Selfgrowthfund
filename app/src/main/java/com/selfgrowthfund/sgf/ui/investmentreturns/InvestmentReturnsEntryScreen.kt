@@ -12,7 +12,7 @@ import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturnEntry
 import com.selfgrowthfund.sgf.model.enums.EntrySource
 import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import com.selfgrowthfund.sgf.ui.components.LoadingIndicator
-import com.selfgrowthfund.sgf.ui.investments.DropdownMenuBox
+import com.selfgrowthfund.sgf.ui.components.DropdownMenuBox
 import com.selfgrowthfund.sgf.utils.Result
 import java.text.DecimalFormat
 

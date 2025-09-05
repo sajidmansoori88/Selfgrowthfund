@@ -8,26 +8,38 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.selfgrowthfund.sgf.model.reports.CashFlowReportViewModel
+import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
+import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CashFlowReportScreen(viewModel: CashFlowReportViewModel) {
+fun CashFlowReportScreen(
+    viewModel: CashFlowReportViewModel,
+    navController: NavHostController,
+    drawerState: DrawerState,
+    scope: CoroutineScope
+) {
     val cashFlow by viewModel.cashFlow.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Cash Flow Report") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+    SGFScaffoldWrapper(
+        title = "Cash Flow Report",
+        drawerState = drawerState,
+        scope = scope,
+        drawerContent = {
+            DrawerContent(
+                navController = navController,
+                onItemClick = { scope.launch { drawerState.close() } }
             )
         }
     ) { padding ->
-        Column(modifier = Modifier
-            .padding(padding)
-            .padding(16.dp)
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
         ) {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(cashFlow) { entry ->
@@ -40,9 +52,10 @@ fun CashFlowReportScreen(viewModel: CashFlowReportViewModel) {
                                 MaterialTheme.colorScheme.errorContainer
                         )
                     ) {
-                        Column(modifier = Modifier
-                            .padding(16.dp)
-                            .animateContentSize()
+                        Column(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .animateContentSize()
                         ) {
                             Text(entry.month, style = MaterialTheme.typography.titleMedium)
                             Spacer(modifier = Modifier.height(8.dp))

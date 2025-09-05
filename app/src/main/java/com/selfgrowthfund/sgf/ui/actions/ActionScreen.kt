@@ -5,95 +5,113 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.selfgrowthfund.sgf.data.local.entities.ActionItem
-import com.selfgrowthfund.sgf.model.enums.ActionResponse
+import androidx.navigation.NavHostController
 import com.selfgrowthfund.sgf.ui.components.ActionCard
+import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
+import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
 import com.selfgrowthfund.sgf.utils.Result
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun ActionScreen(
     viewModel: ActionScreenViewModel,
-    currentShareholderId: String
+    currentShareholderId: String,
+    navController: NavHostController,
+    drawerState: DrawerState,
+    scope: CoroutineScope
 ) {
     val pendingActions by viewModel.pendingActions.collectAsState()
     val responseState by viewModel.responseState.collectAsState()
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(0) }
     var selectedFilter by remember { mutableStateOf("All") }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        TabRow(selectedTabIndex = selectedTab) {
-            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }) {
-                Text("Pending")
-            }
-            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }) {
-                Text("History")
-            }
+    SGFScaffoldWrapper(
+        title = "Actions",
+        drawerState = drawerState,
+        scope = scope,
+        drawerContent = {
+            DrawerContent(
+                navController = navController,
+                onItemClick = { scope.launch { drawerState.close() } }
+            )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (selectedTab == 0) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                FilterChip(
-                    selected = selectedFilter == "All",
-                    onClick = { selectedFilter = "All" },
-                    label = { Text("All") }
-                )
-                FilterChip(
-                    selected = selectedFilter == "Unresponded",
-                    onClick = { selectedFilter = "Unresponded" },
-                    label = { Text("Unresponded") }
-                )
-                FilterChip(
-                    selected = selectedFilter == "Responded",
-                    onClick = { selectedFilter = "Responded" },
-                    label = { Text("Responded") }
-                )
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+            TabRow(selectedTabIndex = selectedTab) {
+                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }) {
+                    Text("Pending")
+                }
+                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }) {
+                    Text("History")
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            val filteredActions = when (selectedFilter) {
-                "Unresponded" -> pendingActions.filter { !it.responses.containsKey(currentShareholderId) }
-                "Responded" -> pendingActions.filter { it.responses.containsKey(currentShareholderId) }
-                else -> pendingActions
-            }
-
-            if (filteredActions.isEmpty()) {
-                Text("No actions found", style = MaterialTheme.typography.bodyMedium)
-            } else {
-                filteredActions.forEach { action ->
-                    ActionCard(
-                        action = action,
-                        currentShareholderId = currentShareholderId,
-                        onRespond = { response ->
-                            viewModel.submitResponse(action.actionId, currentShareholderId, response)
-                        }
+            if (selectedTab == 0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    FilterChip(
+                        selected = selectedFilter == "All",
+                        onClick = { selectedFilter = "All" },
+                        label = { Text("All") }
+                    )
+                    FilterChip(
+                        selected = selectedFilter == "Unresponded",
+                        onClick = { selectedFilter = "Unresponded" },
+                        label = { Text("Unresponded") }
+                    )
+                    FilterChip(
+                        selected = selectedFilter == "Responded",
+                        onClick = { selectedFilter = "Responded" },
+                        label = { Text("Responded") }
                     )
                 }
-            }
-        } else {
-            Text("History view coming soon", style = MaterialTheme.typography.bodyMedium)
-        }
 
-        when (responseState) {
-            is Result.Success -> {
-                LaunchedEffect(responseState) {
-                    viewModel.clearState()
-                    // TODO: Show snackbar or toast
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val filteredActions = when (selectedFilter) {
+                    "Unresponded" -> pendingActions.filter { !it.responses.containsKey(currentShareholderId) }
+                    "Responded" -> pendingActions.filter { it.responses.containsKey(currentShareholderId) }
+                    else -> pendingActions
                 }
+
+                if (filteredActions.isEmpty()) {
+                    Text("No actions found", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    filteredActions.forEach { action ->
+                        ActionCard(
+                            action = action,
+                            currentShareholderId = currentShareholderId,
+                            onRespond = { response ->
+                                viewModel.submitResponse(action.actionId, currentShareholderId, response)
+                            }
+                        )
+                    }
+                }
+            } else {
+                Text("History view coming soon", style = MaterialTheme.typography.bodyMedium)
             }
-            is Result.Error -> {
-                Text(
-                    text = "Error: ${(responseState as Result.Error).exception.message}",
-                    color = MaterialTheme.colorScheme.error
-                )
+
+            when (responseState) {
+                is Result.Success -> {
+                    LaunchedEffect(responseState) {
+                        viewModel.clearState()
+                        // TODO: Show snackbar or toast
+                    }
+                }
+                is Result.Error -> {
+                    Text(
+                        text = "Error: ${(responseState as Result.Error).exception.message}",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                else -> {}
             }
-            else -> {}
         }
     }
 }

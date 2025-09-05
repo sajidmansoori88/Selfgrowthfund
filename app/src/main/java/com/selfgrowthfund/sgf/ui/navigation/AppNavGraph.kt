@@ -84,10 +84,18 @@ fun AppNavGraph(
         }
 
         composable(Screen.AdminDashboard.route) {
-            AdminDashboardScreen(navController = navController, role = user.role)
+            AdminDashboardScreen(navController = navController,
+                drawerState = drawerState,
+                scope = scope,
+                role = user.role)
         }
         composable(Screen.TreasurerDashboard.route) {
-            TreasurerDashboardScreen(navController)
+            TreasurerDashboardScreen(
+                navController,
+                drawerState = drawerState,
+                scope = scope
+            )
+
         }
 
         // 💰 Deposits
@@ -159,7 +167,10 @@ fun AppNavGraph(
                 dueDate = borrowing.dueDate,
                 previousRepayments = previousRepayments,
                 viewModel = repaymentViewModel,
-                onSuccess = { navController.popBackStack() }
+                onSuccess = { navController.popBackStack() },
+                navController = navController,
+                drawerState = drawerState,
+                scope = scope
             )
         }
 
@@ -168,7 +179,10 @@ fun AppNavGraph(
             val investmentViewModel: InvestmentViewModel = hiltViewModel()
             AddInvestmentScreen(
                 viewModel = investmentViewModel,
-                onSuccess = { navController.popBackStack() }
+                onSuccess = { navController.popBackStack() },
+                navController = navController,
+                drawerState = drawerState,
+                scope = scope
             )
         }
 
@@ -229,35 +243,54 @@ fun AppNavGraph(
             val viewModel: ActionScreenViewModel = hiltViewModel()
             ActionScreen(
                 viewModel = viewModel,
-                currentShareholderId = user.shareholderId
+                currentShareholderId = user.shareholderId,
+                navController = navController,
+                drawerState = drawerState,
+                scope = scope
             )
         }
 
         composable(Screen.ReportsDashboard.route) {
             ReportsDashboardScreen(
                 navController = navController,
-                viewModel = hiltViewModel()
-            )
+                viewModel = hiltViewModel(),
+                drawerState = drawerState,
+                scope = scope)
         }
 
         composable(Screen.AddExpense.route) {
-            AddExpenseScreen(navController = navController, user = user)
+            AddExpenseScreen(navController = navController,
+                drawerState = drawerState,
+                scope = scope,
+                user = user)
         }
 
         composable(Screen.AddIncome.route) {
-            AddIncomeScreen(navController = navController, user = user)
+            AddIncomeScreen(navController = navController,
+                drawerState = drawerState,
+                scope = scope,
+                user = user)
         }
 
         composable(Screen.AddPenalty.route) {
-            AddPenaltyScreen(navController = navController, user = user)
+            AddPenaltyScreen(navController = navController,
+                drawerState = drawerState,
+                scope = scope,
+                user = user)
         }
 
         composable(Screen.PenaltyReport.route) {
-            PenaltyReportScreen(navController = navController, user = user)
+            PenaltyReportScreen(navController = navController,
+                drawerState = drawerState,
+                scope = scope,
+                user = user)
         }
 
         composable(Screen.CashFlowReport.route) {
-            CashFlowReportScreen(viewModel = hiltViewModel())
+            CashFlowReportScreen(viewModel = hiltViewModel(),
+                navController = navController,
+                drawerState = drawerState,
+                scope = scope)
         }
 
         // 🔁 Transactions

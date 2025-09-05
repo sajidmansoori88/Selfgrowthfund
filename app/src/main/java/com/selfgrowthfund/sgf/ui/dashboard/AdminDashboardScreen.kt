@@ -7,21 +7,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.selfgrowthfund.sgf.model.enums.MemberRole
+import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
+import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
     navController: NavHostController,
-    role: MemberRole
+    role: MemberRole,
+    drawerState: DrawerState,
+    scope: CoroutineScope
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Admin Dashboard") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+    SGFScaffoldWrapper(
+        title = "Admin Dashboard",
+        drawerState = drawerState,
+        scope = scope,
+        drawerContent = {
+            DrawerContent(
+                navController = navController,
+                onItemClick = { scope.launch { drawerState.close() } }
             )
         }
     ) { padding ->

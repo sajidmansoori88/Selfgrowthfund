@@ -11,12 +11,18 @@ import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.model.enums.PenaltyType
 import com.selfgrowthfund.sgf.model.enums.ReportPeriod
 import com.selfgrowthfund.sgf.ui.components.DropdownMenuBox
+import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
+import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun PenaltyReportScreen(
     navController: NavHostController,
-    user: User
+    user: User,
+    drawerState: DrawerState,
+    scope: CoroutineScope
 ) {
     val viewModel: PenaltyReportViewModel = hiltViewModel()
     val penalties by viewModel.penalties.collectAsState()
@@ -28,62 +34,77 @@ fun PenaltyReportScreen(
         viewModel.loadByPeriod(selectedPeriod)
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("Penalty Report", style = MaterialTheme.typography.headlineSmall)
+    SGFScaffoldWrapper(
+        title = "Penalty Report",
+        drawerState = drawerState,
+        scope = scope,
+        drawerContent = {
+            DrawerContent(
+                navController = navController,
+                onItemClick = { scope.launch { drawerState.close() } }
+            )
+        }
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).padding(16.dp)) {
+            Text("Penalty Report", style = MaterialTheme.typography.headlineSmall)
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        DropdownMenuBox(
-            label = "Report Period",
-            options = ReportPeriod.entries.toList(),
-            selected = selectedPeriod,
-            onSelected = {
-                selectedPeriod = it
-                viewModel.loadByPeriod(it)
-            }
-        )
+            DropdownMenuBox(
+                label = "Report Period",
+                options = ReportPeriod.entries.toList(),
+                selected = selectedPeriod,
+                onSelected = {
+                    selectedPeriod = it
+                    viewModel.loadByPeriod(it)
+                }
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        DropdownMenuBox(
-            label = "Filter by Type",
-            options = PenaltyType.entries.toList(),
-            selected = selectedType,
-            onSelected = {
-                selectedType = it
-                viewModel.filterByType(it)
-            }
-        )
+            DropdownMenuBox(
+                label = "Filter by Type",
+                options = PenaltyType.entries.toList(),
+                selected = selectedType,
+                onSelected = {
+                    selectedType = it
+                    viewModel.filterByType(it)
+                }
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        penalties.forEach { penalty ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = penalty.type.getDisplayColor().copy(alpha = 0.1f)
-                )
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("₹${penalty.amount}", style = MaterialTheme.typography.titleMedium)
-                    Text("Type: ${penalty.type.label}")
-                    Text("Reason: ${penalty.reason}")
-                    Text("Date: ${penalty.date}")
-                    Text("Recorded by: ${penalty.recordedBy}")
+            penalties.forEach { penalty ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = penalty.type.getDisplayColor().copy(alpha = 0.1f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("₹${penalty.amount}", style = MaterialTheme.typography.titleMedium)
+                        Text("Type: ${penalty.type.label}")
+                        Text("Reason: ${penalty.reason}")
+                        Text("Date: ${penalty.date}")
+                        Text("Recorded by: ${penalty.recordedBy}")
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            val headers = listOf("Date", "Amount", "Type", "Reason", "Recorded By")
-            val rows = viewModel.getExportRows()
-            // Pass headers + rows to export logic
-        }, modifier = Modifier.fillMaxWidth()) {
-            Text("Export Report")
+            Button(
+                onClick = {
+                    val headers = listOf("Date", "Amount", "Type", "Reason", "Recorded By")
+                    val rows = viewModel.getExportRows()
+                    // Pass headers + rows to export logic
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Export Report")
+            }
         }
     }
 }

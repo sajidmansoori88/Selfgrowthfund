@@ -13,6 +13,7 @@ import java.time.LocalDate
 
 @Composable
 fun TransactionForm(
+    modifier: Modifier = Modifier,
     onSubmit: (TransactionDTO) -> Unit
 ) {
     var selectedType by remember { mutableStateOf(TransactionType.Deposit.label) }
@@ -21,7 +22,7 @@ fun TransactionForm(
     var description by remember { mutableStateOf("") }
     val date = remember { mutableStateOf(LocalDate.now()) }
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(modifier = modifier) {
         EnumDropdown(
             label = "Transaction Type",
             options = TransactionType.getAllLabels(),

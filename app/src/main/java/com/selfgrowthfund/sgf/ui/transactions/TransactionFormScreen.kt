@@ -1,25 +1,26 @@
-package com.selfgrowthfund.sgf.ui.dashboard
+package com.selfgrowthfund.sgf.ui.transactions
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.selfgrowthfund.sgf.data.local.dto.TransactionDTO
 import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
 import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
-fun TreasurerDashboardScreen(
+fun TransactionFormScreen(
     navController: NavHostController,
     drawerState: DrawerState,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    onSubmit: (TransactionDTO) -> Unit
 ) {
     SGFScaffoldWrapper(
-        title = "Treasurer Dashboard",
+        title = "Record Transaction",
         drawerState = drawerState,
         scope = scope,
         drawerContent = {
@@ -29,15 +30,11 @@ fun TreasurerDashboardScreen(
             )
         }
     ) { padding ->
-        Column(
+        TransactionForm(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(padding)
-                .padding(32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Treasurer Dashboard", style = MaterialTheme.typography.headlineMedium)
-        }
+                .padding(16.dp),
+            onSubmit = onSubmit
+        )
     }
 }
