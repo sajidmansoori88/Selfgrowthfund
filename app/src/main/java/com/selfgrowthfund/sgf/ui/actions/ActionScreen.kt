@@ -1,25 +1,23 @@
 package com.selfgrowthfund.sgf.ui.actions
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
+import androidx.compose.ui.unit.sp
 import com.selfgrowthfund.sgf.ui.components.ActionCard
-import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
-import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
 import com.selfgrowthfund.sgf.utils.Result
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 @Composable
 fun ActionScreen(
     viewModel: ActionScreenViewModel,
     currentShareholderId: String,
-    navController: NavHostController,
-    drawerState: DrawerState,
-    scope: CoroutineScope
+    modifier: Modifier = Modifier
 ) {
     val pendingActions by viewModel.pendingActions.collectAsState()
     val responseState by viewModel.responseState.collectAsState()
@@ -27,62 +25,100 @@ fun ActionScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedFilter by remember { mutableStateOf("All") }
 
-    SGFScaffoldWrapper(
-        title = "Actions",
-        drawerState = drawerState,
-        scope = scope,
-        drawerContent = {
-            DrawerContent(
-                navController = navController,
-                onItemClick = { scope.launch { drawerState.close() } }
-            )
+    LaunchedEffect(Unit) {
+        viewModel.pendingActions.collect {}
+    }
+
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        // Tab Row with proper spacing
+        TabRow(
+            selectedTabIndex = selectedTab,
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                modifier = Modifier.padding(vertical = 16.dp) // Added vertical padding
+            ) {
+                Text(
+                    "Pending",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                )
+            }
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                modifier = Modifier.padding(vertical = 16.dp) // Added vertical padding
+            ) {
+                Text(
+                    "History",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                )
+            }
         }
-    ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            TabRow(selectedTabIndex = selectedTab) {
-                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }) {
-                    Text("Pending")
-                }
-                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }) {
-                    Text("History")
-                }
+        if (selectedTab == 0) {
+            // Filter chips for Pending tab
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                FilterChip(
+                    selected = selectedFilter == "All",
+                    onClick = { selectedFilter = "All" },
+                    label = { Text("All") },
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+                FilterChip(
+                    selected = selectedFilter == "Unresponded",
+                    onClick = { selectedFilter = "Unresponded" },
+                    label = { Text("Unresponded") },
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+                FilterChip(
+                    selected = selectedFilter == "Responded",
+                    onClick = { selectedFilter = "Responded" },
+                    label = { Text("Responded") },
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            if (selectedTab == 0) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+            val filteredActions = when (selectedFilter) {
+                "Unresponded" -> pendingActions.filter { !it.responses.containsKey(currentShareholderId) }
+                "Responded" -> pendingActions.filter { it.responses.containsKey(currentShareholderId) }
+                else -> pendingActions
+            }
+
+            if (filteredActions.isEmpty()) {
+                // Centered empty state with proper spacing
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    FilterChip(
-                        selected = selectedFilter == "All",
-                        onClick = { selectedFilter = "All" },
-                        label = { Text("All") }
-                    )
-                    FilterChip(
-                        selected = selectedFilter == "Unresponded",
-                        onClick = { selectedFilter = "Unresponded" },
-                        label = { Text("Unresponded") }
-                    )
-                    FilterChip(
-                        selected = selectedFilter == "Responded",
-                        onClick = { selectedFilter = "Responded" },
-                        label = { Text("Responded") }
+                    Text(
+                        "No actions found",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                val filteredActions = when (selectedFilter) {
-                    "Unresponded" -> pendingActions.filter { !it.responses.containsKey(currentShareholderId) }
-                    "Responded" -> pendingActions.filter { it.responses.containsKey(currentShareholderId) }
-                    else -> pendingActions
-                }
-
-                if (filteredActions.isEmpty()) {
-                    Text("No actions found", style = MaterialTheme.typography.bodyMedium)
-                } else {
+            } else {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
                     filteredActions.forEach { action ->
                         ActionCard(
                             action = action,
@@ -93,25 +129,43 @@ fun ActionScreen(
                         )
                     }
                 }
-            } else {
-                Text("History view coming soon", style = MaterialTheme.typography.bodyMedium)
             }
-
-            when (responseState) {
-                is Result.Success -> {
-                    LaunchedEffect(responseState) {
-                        viewModel.clearState()
-                        // TODO: Show snackbar or toast
-                    }
-                }
-                is Result.Error -> {
-                    Text(
-                        text = "Error: ${(responseState as Result.Error).exception.message}",
-                        color = MaterialTheme.colorScheme.error
+        } else {
+            // History tab content with proper spacing
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "History view coming soon",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-                else -> {}
+                )
             }
         }
+
+        // Handle response states
+        when (responseState) {
+            is Result.Success -> {
+                LaunchedEffect(responseState) {
+                    viewModel.clearState()
+                }
+            }
+            is Result.Error -> {
+                Text(
+                    text = "Error: ${(responseState as Result.Error).exception.message}",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+            else -> {}
+        }
+
+        // Bottom spacer for better scrolling
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }

@@ -17,11 +17,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.session.UserSessionViewModel
-import com.selfgrowthfund.sgf.ui.navigation.Screen
 import com.selfgrowthfund.sgf.ui.theme.PrimaryGreen
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.common.api.ApiException
+import com.selfgrowthfund.sgf.ui.navigation.Screen
 
 @Composable
 fun LoginScreen(

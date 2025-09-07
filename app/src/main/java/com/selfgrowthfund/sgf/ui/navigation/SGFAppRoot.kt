@@ -1,10 +1,10 @@
 package com.selfgrowthfund.sgf.ui.navigation
 
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.navigation.compose.*
+import com.selfgrowthfund.sgf.model.User
+import com.selfgrowthfund.sgf.model.enums.MemberRole
 import kotlinx.coroutines.launch
 
 @Composable
@@ -27,6 +27,16 @@ fun SGFAppRoot() {
 
     val showDrawer = currentRoute !in excludedRoutes
 
+    // Inject mock user for testing
+    val mockUser = User(
+        shareholderId = "SH001",
+        name = "Test User",
+        role = MemberRole.MEMBER_ADMIN,
+        id = "123"
+    )
+
+    val activeUser = mockUser // Replace with session logic when ready
+
     if (showDrawer) {
         ModalNavigationDrawer(
             drawerState = drawerState,
@@ -39,18 +49,15 @@ fun SGFAppRoot() {
         ) {
             AppNavGraph(
                 navController = navController,
-                drawerState = drawerState,
-                scope = scope,
-                onDrawerClick = { scope.launch { drawerState.open() } }
+                onDrawerClick = { scope.launch { drawerState.open() } },
+                currentUser = activeUser
             )
-
         }
     } else {
         AppNavGraph(
             navController = navController,
-            drawerState = drawerState,
-            scope = scope,
-            onDrawerClick = {} // No-op since drawer is hidden
+            onDrawerClick = {}, // No-op since drawer is hidden
+            currentUser = activeUser
         )
     }
 }

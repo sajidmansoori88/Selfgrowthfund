@@ -11,56 +11,38 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import com.selfgrowthfund.sgf.ui.components.DepositSummaryCard
-import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
-import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
 import com.selfgrowthfund.sgf.ui.theme.SGFTheme
 import com.selfgrowthfund.sgf.utils.ExportUtils
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DepositHistoryScreen(
-    navController: NavHostController,
-    drawerState: DrawerState,
-    scope: CoroutineScope
+    modifier: Modifier = Modifier,
+    summaries: List<DepositEntrySummaryDTO>
 ) {
-    val viewModel: DepositViewModel = hiltViewModel()
-    val summaries by viewModel.depositSummaries.collectAsState(initial = emptyList())
-
-    SGFScaffoldWrapper(
-        title = "Deposit History",
-        drawerState = drawerState,
-        scope = scope,
-        drawerContent = {
-            DrawerContent(
-                navController = navController,
-                onItemClick = { scope.launch { drawerState.close() } }
-            )
-        },
-        content = { padding ->
-            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                if (summaries.isEmpty()) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                        Text("No deposit history available.")
-                    }
-                } else {
-                    LazyColumn {
-                        items(summaries) { summary ->
-                            DepositSummaryCard(summary)
-                        }
-                    }
+    Box(modifier = modifier.fillMaxSize()) {
+        if (summaries.isEmpty()) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Text("No deposit history available.")
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(summaries) { summary ->
+                    DepositSummaryCard(summary)
                 }
             }
         }
-    )
+    }
 }
+
 
 @Composable
 fun ExportActions(context: Context, summaries: List<DepositEntrySummaryDTO>) {
@@ -125,12 +107,10 @@ fun DepositHistoryPreview() {
     )
 
     SGFTheme {
-        Scaffold {
-            LazyColumn(modifier = Modifier.padding(it)) {
+            LazyColumn(modifier = Modifier.padding(16.dp)) {
                 items(mockSummaries) { summary ->
                     DepositSummaryCard(summary)
                 }
             }
         }
     }
-}

@@ -6,8 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,23 +25,10 @@ fun ShareholderListScreen(
     val context = LocalContext.current
     val shareholders by viewModel.shareholders.collectAsState(initial = emptyList())
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Shareholders") })
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("addShareholder") }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Shareholder")
-            }
-        }
-    ) { innerPadding ->
-        if (shareholders.isEmpty()) {
+    if (shareholders.isEmpty()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -57,7 +42,6 @@ fun ShareholderListScreen(
         } else {
             LazyColumn(
                 modifier = Modifier
-                    .padding(innerPadding)
                     .padding(16.dp)
             ) {
                 items(shareholders) { shareholder ->
@@ -71,7 +55,6 @@ fun ShareholderListScreen(
             }
         }
     }
-}
 
 @Composable
 fun ShareholderCard(

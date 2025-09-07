@@ -9,104 +9,70 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import com.selfgrowthfund.sgf.data.local.entities.Expense
 import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.model.enums.MemberRole
-import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
-import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 @Composable
 fun AddExpenseScreen(
-    navController: NavHostController,
-    user: User,
-    drawerState: DrawerState,
-    scope: CoroutineScope
+    user: User
 ) {
-    if (user.role != MemberRole.MEMBER_TREASURER) {
-        SGFScaffoldWrapper(
-            title = "Access Denied",
-            drawerState = drawerState,
-            scope = scope,
-            drawerContent = {
-                DrawerContent(
-                    navController = navController,
-                    onItemClick = { scope.launch { drawerState.close() } }
-                )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Access Denied: Only Treasurers can record expenses.")
-            }
-        }
-        return
-    }
-
     val expenseViewModel: ExpenseViewModel = hiltViewModel()
 
     var amount by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
 
-    SGFScaffoldWrapper(
-        title = "Record Expense",
-        drawerState = drawerState,
-        scope = scope,
-        drawerContent = {
-            DrawerContent(
-                navController = navController,
-                onItemClick = { scope.launch { drawerState.close() } }
-            )
+    // ✅ FIXED: Proper early return with Box
+    if (user.role != MemberRole.MEMBER_TREASURER) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Access Denied: Only Treasurers can record expenses.")
         }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding).padding(16.dp)) {
-            OutlinedTextField(
-                value = amount,
-                onValueChange = { amount = it },
-                label = { Text("Amount (₹)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
+        return // ← This should be inside the if block
+    }
 
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth()
-            )
+    Column(modifier = Modifier.padding(16.dp)) {
+        OutlinedTextField(
+            value = amount,
+            onValueChange = { amount = it },
+            label = { Text("Amount (₹)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
 
-            OutlinedTextField(
-                value = category,
-                onValueChange = { category = it },
-                label = { Text("Category (optional)") },
-                modifier = Modifier.fillMaxWidth()
-            )
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Description") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = category,
+            onValueChange = { category = it },
+            label = { Text("Category (optional)") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
-            Button(
-                onClick = {
-                    val expense = Expense(
-                        date = LocalDate.now(),
-                        amount = amount.toDoubleOrNull() ?: 0.0,
-                        remarks = description,
-                        recordedBy = user.shareholderId
-                    )
-                    expenseViewModel.insertExpense(expense)
-                    navController.popBackStack()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Save Expense")
-            }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                val expense = Expense(
+                    date = LocalDate.now(),
+                    amount = amount.toDoubleOrNull() ?: 0.0,
+                    remarks = description,
+                    recordedBy = user.shareholderId
+                )
+                expenseViewModel.insertExpense(expense)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Save Expense")
         }
     }
 }

@@ -24,10 +24,7 @@ fun AddRepaymentScreen(
     dueDate: LocalDate,
     previousRepayments: List<Repayment>,
     viewModel: RepaymentViewModel,
-    onSuccess: () -> Unit,
-    navController: NavHostController,
-    drawerState: DrawerState,
-    scope: CoroutineScope
+    onSuccess: () -> Unit
 ) {
     val nextId by viewModel.nextRepaymentId.collectAsState()
     val isSubmitting by viewModel.isSubmitting.collectAsState()
@@ -43,18 +40,7 @@ fun AddRepaymentScreen(
         viewModel.fetchNextRepaymentId()
     }
 
-    SGFScaffoldWrapper(
-        title = "Add Repayment",
-        drawerState = drawerState,
-        scope = scope,
-        drawerContent = {
-            DrawerContent(
-                navController = navController,
-                onItemClick = { scope.launch { drawerState.close() } }
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding).padding(16.dp)) {
+    Column(modifier = Modifier.padding(16.dp)) {
             Text("Next Repayment ID: ${nextId ?: "Loading..."}", style = MaterialTheme.typography.labelMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -136,4 +122,3 @@ fun AddRepaymentScreen(
             }
         }
     }
-}

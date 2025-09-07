@@ -8,10 +8,11 @@ import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.data.repository.InvestmentRepository
 import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
+@HiltViewModel
 class InvestmentViewModel @Inject constructor(
     private val repository: InvestmentRepository,
     private val firestore: FirebaseFirestore

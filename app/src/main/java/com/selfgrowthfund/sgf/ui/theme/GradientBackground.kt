@@ -17,7 +17,7 @@ fun GradientBackground(content: @Composable () -> Unit) {
                     colorStops = arrayOf(
                         0.0f to SecondaryCream,  // Top
                         0.66f to SecondaryCream, // 2/3 cream
-                        1.0f to PrimaryGreen     // Bottom 1/3 green
+                        1.0f to AccentLight     // Bottom 1/3 green
                     )
                 )
             )

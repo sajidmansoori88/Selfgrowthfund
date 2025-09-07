@@ -6,23 +6,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.model.enums.PenaltyType
 import com.selfgrowthfund.sgf.model.enums.ReportPeriod
 import com.selfgrowthfund.sgf.ui.components.DropdownMenuBox
-import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
-import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 
 @Composable
 fun PenaltyReportScreen(
-    navController: NavHostController,
-    user: User,
-    drawerState: DrawerState,
-    scope: CoroutineScope
+    user: User
 ) {
     val viewModel: PenaltyReportViewModel = hiltViewModel()
     val penalties by viewModel.penalties.collectAsState()
@@ -34,18 +26,7 @@ fun PenaltyReportScreen(
         viewModel.loadByPeriod(selectedPeriod)
     }
 
-    SGFScaffoldWrapper(
-        title = "Penalty Report",
-        drawerState = drawerState,
-        scope = scope,
-        drawerContent = {
-            DrawerContent(
-                navController = navController,
-                onItemClick = { scope.launch { drawerState.close() } }
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding).padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text("Penalty Report", style = MaterialTheme.typography.headlineSmall)
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -107,4 +88,3 @@ fun PenaltyReportScreen(
             }
         }
     }
-}

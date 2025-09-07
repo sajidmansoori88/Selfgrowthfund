@@ -3,8 +3,6 @@ package com.selfgrowthfund.sgf.ui.transactions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,21 +26,8 @@ fun TransactionManagerScreen(navController: NavHostController) {
     val filtered = if (selectedType == "All") transactions
     else transactions.filter { it.type.label == selectedType }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Transaction Manager") })
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                navController.navigate("addTransaction")
-            }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Transaction")
-            }
-        }
-    ) { padding ->
         Column(modifier = Modifier
             .fillMaxSize()
-            .padding(padding)
             .padding(16.dp)) {
 
             EnumDropdown(
@@ -69,7 +54,6 @@ fun TransactionManagerScreen(navController: NavHostController) {
             }
         }
     }
-}
 
 @Composable
 fun TransactionCard(txn: TransactionDTO) {

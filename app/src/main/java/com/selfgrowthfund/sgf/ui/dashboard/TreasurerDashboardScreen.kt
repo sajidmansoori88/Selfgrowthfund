@@ -6,38 +6,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
-import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 @Composable
-fun TreasurerDashboardScreen(
-    navController: NavHostController,
-    drawerState: DrawerState,
-    scope: CoroutineScope
-) {
-    SGFScaffoldWrapper(
-        title = "Treasurer Dashboard",
-        drawerState = drawerState,
-        scope = scope,
-        drawerContent = {
-            DrawerContent(
-                navController = navController,
-                onItemClick = { scope.launch { drawerState.close() } }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Treasurer Dashboard", style = MaterialTheme.typography.headlineMedium)
-        }
+fun TreasurerDashboardScreen() { // ← No parameters!
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Treasurer Dashboard", style = MaterialTheme.typography.headlineMedium)
     }
 }

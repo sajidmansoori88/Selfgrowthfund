@@ -82,6 +82,7 @@ biometric = "1.1.0"
 security = "1.1.0"
 compose = "1.7.8"
 foundationLayout = "1.9.0"
+lifecycleViewmodelSavedstate = "2.9.3"
 
 
 
@@ -181,6 +182,7 @@ androidx-security = { module = "androidx.security:security-crypto", version.ref 
 
 material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "compose" }
 androidx-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
+androidx-lifecycle-viewmodel-savedstate = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-savedstate", version.ref = "lifecycleViewmodelSavedstate" }
 
 
 

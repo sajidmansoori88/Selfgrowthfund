@@ -84,26 +84,8 @@ fun AddShareholderScreen(
         viewModel.testFirestoreConnection()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Add Shareholder",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
-                colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    ) { padding ->
         Column(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
@@ -399,6 +381,5 @@ fun AddShareholderScreen(
         ) {
             Text("TEST: Go Back")
         }
-    }
     }
 

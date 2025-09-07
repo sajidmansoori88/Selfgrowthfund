@@ -1,6 +1,7 @@
 package com.selfgrowthfund.sgf.ui.deposits
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Firebase
@@ -12,8 +13,7 @@ import com.selfgrowthfund.sgf.data.repository.DepositRepository
 import com.selfgrowthfund.sgf.model.enums.*
 import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -22,14 +22,23 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
+import javax.inject.Inject
 
-class DepositViewModel @AssistedInject constructor(
+@HiltViewModel
+class DepositViewModel @Inject constructor(
     private val depositRepository: DepositRepository,
-    @Assisted("role") private val currentUserRole: MemberRole,
-    @Assisted("shareholderId") private val selectedShareholderId: String,
-    @Assisted("shareholderName") private val selectedShareholderName: String,
-    @Assisted("lastDepositId") private val lastDepositId: String?
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    // Extract navigation arguments from SavedStateHandle
+    val shareholderId: String = savedStateHandle["shareholderId"] ?: ""
+    val shareholderName: String = savedStateHandle["shareholderName"] ?: ""
+    val role: MemberRole = (savedStateHandle["role"] as? String)?.let {
+        MemberRole.fromLabel(it)
+    } ?: MemberRole.MEMBER
+    val lastDepositId: String? = savedStateHandle["lastDepositId"]
+
+
 
     // ---------------- ENTRY STATE ----------------
     private val _dueMonth = MutableStateFlow("")
@@ -171,7 +180,6 @@ class DepositViewModel @AssistedInject constructor(
         }
     }
 
-    // ---------------- SUBMIT ----------------
     fun submitDeposit(
         notes: String? = null,
         onSuccess: () -> Unit = {},
@@ -187,8 +195,8 @@ class DepositViewModel @AssistedInject constructor(
 
                 val depositEntry = DepositEntry(
                     depositId = newDepositId,
-                    shareholderId = selectedShareholderId,
-                    shareholderName = selectedShareholderName,
+                    shareholderId = shareholderId,
+                    shareholderName = shareholderName,
                     dueMonth = DueMonth(_dueMonth.value),
                     paymentDate = parsedPaymentDate,
                     shareNos = _shareNos.value,
@@ -198,14 +206,14 @@ class DepositViewModel @AssistedInject constructor(
                     totalAmount = _totalAmount.value,
                     paymentStatus = _paymentStatus.value,
                     modeOfPayment = _modeOfPayment.value,
-                    status = if (currentUserRole == MemberRole.MEMBER_ADMIN)
+                    status = if (role == MemberRole.MEMBER_ADMIN)
                         DepositStatus.Approved else DepositStatus.Pending,
-                    approvedBy = if (currentUserRole == MemberRole.MEMBER_ADMIN)
-                        selectedShareholderName else null,
+                    approvedBy = if (role == MemberRole.MEMBER_ADMIN)
+                        shareholderName else null,
                     notes = notes.orEmpty(),
                     isSynced = true,
                     createdAt = Instant.now(),
-                    entrySource = if (currentUserRole == MemberRole.MEMBER_ADMIN)
+                    entrySource = if (role == MemberRole.MEMBER_ADMIN)
                         EntrySource.ADMIN else EntrySource.USER
                 )
 

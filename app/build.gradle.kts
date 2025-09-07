@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.androidx.junit.ktx)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.foundation.layout)
+    implementation(libs.androidx.lifecycle.viewmodel.savedstate)
     debugImplementation(libs.compose.tooling)
 
     // ✅ AndroidX Core

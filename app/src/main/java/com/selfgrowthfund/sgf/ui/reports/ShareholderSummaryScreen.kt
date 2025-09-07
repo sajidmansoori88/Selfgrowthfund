@@ -19,20 +19,8 @@ fun ShareholdersSummaryScreen(viewModel: ShareholderSummaryViewModel = hiltViewM
     LaunchedEffect(Unit) {
         viewModel.loadAllSummaries()
     }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Shareholders Summary") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
-    ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .padding(padding)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -58,6 +46,5 @@ fun ShareholdersSummaryScreen(viewModel: ShareholderSummaryViewModel = hiltViewM
             }
         }
     }
-}
 
 private fun format(value: Double): String = String.format(Locale.US, "%,.2f", value)

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.selfgrowthfund.sgf.data.local.dao.DepositDao
 import com.selfgrowthfund.sgf.data.local.dao.PenaltyDao
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
-import com.selfgrowthfund.sgf.model.reports.ShareholderSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,9 +26,17 @@ class ShareholderSummaryViewModel @Inject constructor(
 
     fun loadAllSummaries() {
         viewModelScope.launch {
+            println("DEBUG: Loading summaries...")
+
             val depositSummary = depositDao.getShareholderDepositSummary()
             val penaltySummary = penaltyDao.getShareholderPenaltySummary()
             val shareholders = shareholderDao.getAllShareholders()
+
+            println("DEBUG: Deposit summaries: ${depositSummary.size}")
+            println("DEBUG: Penalty summaries: ${penaltySummary.size}")
+            println("DEBUG: Shareholders: ${shareholders.size}")
+            println("DEBUG: First shareholder: ${shareholders.firstOrNull()?.fullName}")
+
 
             val totalFundDeposit = depositDao.getTotalFundDeposit()
             val fundProfit = 120000.0 // placeholder
@@ -74,7 +81,7 @@ class ShareholderSummaryViewModel @Inject constructor(
                     outstandingBorrowing = 0.0
                 )
             }
-
+            println("DEBUG: Final summaries: ${summaries.size}")
             _summaries.value = summaries.sortedByDescending { it.netProfit }
         }
     }

@@ -8,70 +8,49 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import com.selfgrowthfund.sgf.model.reports.CashFlowReportViewModel
-import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
-import com.selfgrowthfund.sgf.ui.navigation.DrawerContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CashFlowReportScreen(
-    viewModel: CashFlowReportViewModel,
-    navController: NavHostController,
-    drawerState: DrawerState,
-    scope: CoroutineScope
+    viewModel: CashFlowReportViewModel
 ) {
     val cashFlow by viewModel.cashFlow.collectAsState()
 
-    SGFScaffoldWrapper(
-        title = "Cash Flow Report",
-        drawerState = drawerState,
-        scope = scope,
-        drawerContent = {
-            DrawerContent(
-                navController = navController,
-                onItemClick = { scope.launch { drawerState.close() } }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(cashFlow) { entry ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (entry.income - entry.expenses >= 0)
-                                MaterialTheme.colorScheme.primaryContainer
-                            else
-                                MaterialTheme.colorScheme.errorContainer
-                        )
+    Column( // Fixed indentation - removed extra indentation
+        modifier = Modifier
+            .padding(16.dp)
+    ) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(cashFlow) { entry ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (entry.income - entry.expenses >= 0)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .animateContentSize()
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .animateContentSize()
-                        ) {
-                            Text(entry.month, style = MaterialTheme.typography.titleMedium)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Opening Balance: ₹${entry.openingBalance.format()}")
-                            Text("Income: ₹${entry.income.format()}")
-                            Text("Expenses: ₹${entry.expenses.format()}")
-                            Text(
-                                "Net Cash Flow: ₹${(entry.income - entry.expenses).format()}",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (entry.income - entry.expenses >= 0)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.error
-                            )
-                            Text("Closing Balance: ₹${entry.closingBalance.format()}")
-                        }
+                        Text(entry.month, style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Opening Balance: ₹${entry.openingBalance.format()}")
+                        Text("Income: ₹${entry.income.format()}")
+                        Text("Expenses: ₹${entry.expenses.format()}")
+                        Text(
+                            "Net Cash Flow: ₹${(entry.income - entry.expenses).format()}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (entry.income - entry.expenses >= 0)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.error
+                        )
+                        Text("Closing Balance: ₹${entry.closingBalance.format()}")
                     }
                 }
             }

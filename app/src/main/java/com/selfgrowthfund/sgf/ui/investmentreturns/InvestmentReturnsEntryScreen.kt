@@ -1,6 +1,8 @@
 package com.selfgrowthfund.sgf.ui.investmentreturns
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +23,8 @@ fun InvestmentReturnsEntryScreen(
     investment: Investment,
     viewModel: InvestmentReturnsViewModel,
     onReturnAdded: () -> Unit,
-    currentUserName: String
+    currentUserName: String,
+    modifier: Modifier = Modifier // ✅ Add modifier parameter
 ) {
     var amountReceived by remember { mutableStateOf("") }
     var remarks by remember { mutableStateOf("") }
@@ -51,8 +54,15 @@ fun InvestmentReturnsEntryScreen(
         }
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("Enter Return for ${investment.investmentName}", style = MaterialTheme.typography.titleMedium)
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState()) // ✅ Make it scrollable
+            .padding(16.dp)
+    ) {
+        Text(
+            "Enter Return for ${investment.investmentName}",
+            style = MaterialTheme.typography.titleMedium
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -67,7 +77,7 @@ fun InvestmentReturnsEntryScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         DropdownMenuBox(
             label = "Mode of Payment",
@@ -76,7 +86,7 @@ fun InvestmentReturnsEntryScreen(
             onSelected = { selectedPaymentMode = it }
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = remarks,
@@ -85,12 +95,44 @@ fun InvestmentReturnsEntryScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        Text("Preview:", style = MaterialTheme.typography.titleSmall)
-        Text("Return Period: ${preview.actualReturnPeriod} days", style = MaterialTheme.typography.bodyMedium)
-        Text("Profit Percent: ${formatPercent(preview.actualProfitPercent)}", style = MaterialTheme.typography.bodyMedium)
-        Text("Profit Variance: ₹${formatAmount(preview.profitAmountVariance)}", style = MaterialTheme.typography.bodyMedium)
+        // Preview Section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Preview:", style = MaterialTheme.typography.titleSmall)
+                Divider()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Return Period:", style = MaterialTheme.typography.bodyMedium)
+                    Text("${preview.actualReturnPeriod} days", style = MaterialTheme.typography.bodyMedium)
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Profit Percent:", style = MaterialTheme.typography.bodyMedium)
+                    Text(formatPercent(preview.actualProfitPercent), style = MaterialTheme.typography.bodyMedium)
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Profit Variance:", style = MaterialTheme.typography.bodyMedium)
+                    Text("₹${formatAmount(preview.profitAmountVariance)}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -106,29 +148,41 @@ fun InvestmentReturnsEntryScreen(
                         entrySource = EntrySource.ADMIN,
                         enteredBy = currentUserName
                     )
-                    viewModel.submitReturn(entry, lastReturnId = null, onSuccess = onReturnAdded) {
-                        // Optional: show error toast/snackbar
-                    }
+                    viewModel.submitReturn(
+                        entry = entry,
+                        lastReturnId = null,
+                        onSuccess = onReturnAdded,
+                        onError = { errorMessage ->
+                            // Handle error (could show snackbar/toast)
+                        }
+                    )
                 }
             },
             enabled = isValidAmount && addReturnState !is Result.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Submit Return")
+            if (addReturnState is Result.Loading) {
+                LoadingIndicator()
+            } else {
+                Text("Submit Return")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         when (addReturnState) {
-            is Result.Loading -> LoadingIndicator()
             is Result.Error -> {
                 Text(
                     text = "Error: ${(addReturnState as Result.Error).exception.message}",
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
             else -> {}
         }
+
+        // ✅ Add bottom spacer to ensure content isn't cut off
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
