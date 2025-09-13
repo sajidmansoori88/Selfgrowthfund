@@ -9,9 +9,10 @@ import com.selfgrowthfund.sgf.data.repository.InvestmentRepository
 import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
 @HiltViewModel
 class InvestmentViewModel @Inject constructor(
     private val repository: InvestmentRepository,
@@ -31,14 +32,26 @@ class InvestmentViewModel @Inject constructor(
         }
     }
 
+    // ---------------- INVESTMENTS ----------------
+    val investments: StateFlow<List<Investment>> =
+        repository.getAllInvestments()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun getInvestmentById(id: String): Flow<Investment?> {
+        return repository.getInvestmentById(id)
+    }
+
     // ---------------- SUBMIT ----------------
-    fun submitInvestment(investment: Investment, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun submitInvestment(
+        investment: Investment,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
         viewModelScope.launch {
             isSubmitting.value = true
             submissionResult.value = null
 
             try {
-                // Use the investment object directly, no conversion needed
                 val result = repository.createInvestment(investment)
                 if (result is Result.Success) {
                     syncToFirestore(investment)
@@ -60,20 +73,20 @@ class InvestmentViewModel @Inject constructor(
     private fun syncToFirestore(investment: Investment) {
         val data = mapOf(
             "investmentId" to investment.investmentId,
-            "investeeType" to investment.investeeType.name, // Convert enum to string
+            "investeeType" to investment.investeeType.name,
             "investeeName" to investment.investeeName,
-            "ownershipType" to investment.ownershipType.name, // Convert enum to string
+            "ownershipType" to investment.ownershipType.name,
             "partnerNames" to investment.partnerNames,
             "investmentDate" to investment.investmentDate.toString(),
-            "investmentType" to investment.investmentType.name, // Convert enum to string
+            "investmentType" to investment.investmentType.name,
             "investmentName" to investment.investmentName,
             "amount" to investment.amount,
             "expectedProfitPercent" to investment.expectedProfitPercent,
             "expectedProfitAmount" to investment.expectedProfitAmount,
             "expectedReturnPeriod" to investment.expectedReturnPeriod,
             "returnDueDate" to investment.returnDueDate.toString(),
-            "modeOfPayment" to investment.modeOfPayment.name, // Convert enum to string
-            "status" to investment.status.name, // Convert enum to string
+            "modeOfPayment" to investment.modeOfPayment.name,
+            "status" to investment.status.name,
             "remarks" to investment.remarks
         )
 

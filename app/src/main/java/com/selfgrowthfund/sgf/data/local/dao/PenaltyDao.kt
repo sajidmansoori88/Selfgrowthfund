@@ -6,6 +6,7 @@ import androidx.room.Query
 import com.selfgrowthfund.sgf.data.local.entities.Penalty
 import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
 import com.selfgrowthfund.sgf.model.reports.ShareholderPenaltySummary
+import java.time.LocalDate
 
 @Dao
 interface PenaltyDao {
@@ -53,4 +54,7 @@ interface PenaltyDao {
         GROUP BY shareholderId
     """)
     suspend fun getShareholderPenaltySummary(): List<ShareholderPenaltySummary>
+    @Query("SELECT * FROM penalties WHERE date BETWEEN :startDate AND :endDate")
+    suspend fun getPenaltiesBetween(startDate: LocalDate, endDate: LocalDate): List<Penalty>
+
 }

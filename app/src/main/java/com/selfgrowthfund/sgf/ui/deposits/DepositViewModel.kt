@@ -172,13 +172,20 @@ class DepositViewModel @Inject constructor(
 
     fun getPaymentStatus(dueMonth: String, paymentDateStr: String): String {
         return try {
-            val dueDate = LocalDate.parse("01-$dueMonth", dueMonthFormatter).withDayOfMonth(10)
+            val dueDateStart = LocalDate.parse("01-$dueMonth", dueMonthFormatter)
+            val dueDateEnd = dueDateStart.withDayOfMonth(10)
             val paymentDate = LocalDate.parse(paymentDateStr, paymentDateFormatter)
-            if (paymentDate.isAfter(dueDate)) "Late" else "On-time"
+
+            when {
+                paymentDate.isBefore(dueDateStart) -> "Early"
+                paymentDate.isAfter(dueDateEnd) -> "Late"
+                else -> "On-time"
+            }
         } catch (_: Exception) {
             "Pending"
         }
     }
+
 
     fun submitDeposit(
         notes: String? = null,

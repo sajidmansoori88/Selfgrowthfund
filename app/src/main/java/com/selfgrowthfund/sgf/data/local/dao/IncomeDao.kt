@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Income
 import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
+import java.time.LocalDate
 
 
 @Dao
@@ -36,4 +37,9 @@ interface IncomeDao {
     WHERE strftime('%Y-%m', date) = :month
 """)
     suspend fun getMonthlyIncome(month: String): Double
+    @Query("SELECT COUNT(*) FROM investments WHERE approvalStatus = :status AND createdAt BETWEEN :start AND :end")
+    suspend fun countByStatus(status: String, start: LocalDate, end: LocalDate): Int
+
+    @Query("SELECT COUNT(*) FROM investments WHERE createdAt BETWEEN :start AND :end")
+    suspend fun countTotal(start: LocalDate, end: LocalDate): Int
 }

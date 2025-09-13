@@ -1,36 +1,33 @@
 package com.selfgrowthfund.sgf.ui.investmentreturns
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.selfgrowthfund.sgf.data.local.entities.Investment
+import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturns
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturnEntry
 import com.selfgrowthfund.sgf.data.repository.InvestmentReturnsRepository
 import com.selfgrowthfund.sgf.utils.Dates
-import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 
 @HiltViewModel
 class InvestmentReturnsViewModel @Inject constructor(
     private val repository: InvestmentReturnsRepository,
-    private val dates: Dates
+    private val dates: Dates,
+    private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
-    private val _addReturnState = MutableStateFlow<Result<Unit>?>(null)
-    val addReturnState: StateFlow<Result<Unit>?> = _addReturnState
+    // ---------------- STATE ----------------
+    val isSubmitting = MutableStateFlow(false)
+    val submissionResult = MutableStateFlow<Result<Unit>?>(null)
 
-    val isSubmitting: StateFlow<Boolean> = _addReturnState
-        .map { it is Result.Loading }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
-    /** Adds a return using a structured entry model */
+    // ---------------- SUBMIT ----------------
     fun submitReturn(
         entry: InvestmentReturnEntry,
         lastReturnId: String?,
@@ -38,30 +35,63 @@ class InvestmentReturnsViewModel @Inject constructor(
         onError: (String) -> Unit
     ) {
         viewModelScope.launch {
-            if (_addReturnState.value is Result.Loading) return@launch
+            if (isSubmitting.value) return@launch
 
             if (entry.amountReceived <= 0.0) {
-                _addReturnState.value = Result.Error(IllegalArgumentException("Amount must be positive"))
+                submissionResult.value = Result.Error(
+                    IllegalArgumentException("Amount must be positive")
+                )
                 onError("Amount must be positive")
                 return@launch
             }
 
-            _addReturnState.value = Result.Loading
+            isSubmitting.value = true
+            submissionResult.value = null
 
-            val returnEntity = entry.toInvestmentReturn(lastReturnId)
-            val result = repository.addReturn(returnEntity)
+            try {
+                val returnEntity = entry.toInvestmentReturn(lastReturnId)
+                val result = repository.addReturn(returnEntity)
 
-            _addReturnState.value = result
-
-            when (result) {
-                is Result.Success -> onSuccess()
-                is Result.Error -> onError(result.exception.message ?: "Submission failed")
-                else -> {}
+                submissionResult.value = result
+                when (result) {
+                    is Result.Success -> {
+                        syncToFirestore(returnEntity)
+                        onSuccess()
+                    }
+                    is Result.Error -> onError(result.exception.message ?: "Submission failed")
+                    else -> {}
+                }
+            } catch (e: Exception) {
+                submissionResult.value = Result.Error(e)
+                onError(e.message ?: "Submission failed")
             }
+
+            isSubmitting.value = false
         }
     }
 
-    /** Generates a preview of the return before saving */
+    // ---------------- FIRESTORE SYNC ----------------
+    private fun syncToFirestore(returnEntity: InvestmentReturns) {
+        val data = mapOf(
+            "returnId" to returnEntity.returnId,
+            "investmentId" to returnEntity.investmentId,
+            "amountReceived" to returnEntity.amountReceived,
+            "returnDate" to returnEntity.returnDate.toString(),
+            "remarks" to returnEntity.remarks
+        )
+
+        firestore.collection("investment_returns")
+            .document(returnEntity.returnId)
+            .set(data)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Return synced: ${returnEntity.returnId}")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Return sync failed", e)
+            }
+    }
+
+    // ---------------- PREVIEW ----------------
     fun previewReturn(entry: InvestmentReturnEntry): InvestmentReturns {
         val localDate = Instant.ofEpochMilli(dates.now())
             .atZone(ZoneId.systemDefault())
@@ -70,8 +100,9 @@ class InvestmentReturnsViewModel @Inject constructor(
         return entry.copy(returnDate = localDate).toInvestmentReturn(lastReturnId = null)
     }
 
-    /** Clears the current state */
+    // ---------------- CLEAR STATE ----------------
     fun clearState() {
-        _addReturnState.value = null
+        submissionResult.value = null
+        isSubmitting.value = false
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
+import androidx.core.content.edit
 
 @Composable
 fun CreatePinScreen(navController: NavHostController) {
@@ -30,7 +31,7 @@ fun CreatePinScreen(navController: NavHostController) {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
 
-        sharedPrefs.edit().putString("user_pin", pin).apply()
+        sharedPrefs.edit { putString("user_pin", pin) }
     }
 
     Column(

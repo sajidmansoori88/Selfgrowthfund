@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -19,7 +20,7 @@ fun CashFlowChart(data: List<CashFlowEntry>) {
                 Text("Opening: ₹%.2f".format(entry.openingBalance), style = MaterialTheme.typography.bodySmall)
                 Text("Closing: ₹%.2f".format(entry.closingBalance), style = MaterialTheme.typography.bodySmall)
             }
-            Divider()
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
         }
     }
 }

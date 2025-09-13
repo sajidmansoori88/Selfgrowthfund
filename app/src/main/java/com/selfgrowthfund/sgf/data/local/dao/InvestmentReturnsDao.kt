@@ -60,4 +60,10 @@ interface InvestmentReturnsDao {
     ORDER BY month ASC
 """)
     suspend fun getMonthlyInvestmentTimeline(): List<MonthlyAmount>
+
+    @Query("SELECT COUNT(*) FROM investment_returns WHERE approvalStatus = :status AND createdAt BETWEEN :start AND :end")
+    suspend fun countByStatus(status: String, start: LocalDate, end: LocalDate): Int
+
+    @Query("SELECT COUNT(*) FROM investment_returns WHERE createdAt BETWEEN :start AND :end")
+    suspend fun countTotal(start: LocalDate, end: LocalDate): Int
 }

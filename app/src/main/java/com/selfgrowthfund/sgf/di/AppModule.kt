@@ -96,4 +96,10 @@ object AppModule {
         investmentDao: InvestmentDao,
         dates: Dates
     ): InvestmentReturnsRepository = InvestmentReturnsRepository(returnsDao, investmentDao, dates)
+    @Provides
+    @Singleton
+    fun provideRepaymentRepository(
+        repaymentDao: RepaymentDao,
+        borrowingRepository: BorrowingRepository
+    ): RepaymentRepository = RepaymentRepository(repaymentDao, borrowingRepository)
 }

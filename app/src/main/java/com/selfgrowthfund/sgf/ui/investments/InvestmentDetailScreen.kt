@@ -4,22 +4,24 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturns
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.ui.components.InvestmentCard
 import com.selfgrowthfund.sgf.ui.components.InvestmentReturnSummaryCard
-import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
 import com.selfgrowthfund.sgf.ui.theme.GradientBackground
 
 @Composable
 fun InvestmentDetailScreen(
+    modifier: Modifier = Modifier,
     investment: Investment,
     returns: List<InvestmentReturns>,
     currentUserRole: MemberRole,
@@ -27,65 +29,142 @@ fun InvestmentDetailScreen(
     onApplyInvestment: () -> Unit,
     onDrawerClick: () -> Unit
 ) {
-    SGFScaffoldWrapper(
-        title = "Investments",
-        onDrawerClick = onDrawerClick
-    ) { innerPadding ->
-        GradientBackground {
-            Column(
-                modifier = Modifier
-                    .padding(innerPadding) // ✅ Apply the scaffold padding
-                    .padding(16.dp) // ✅ Add additional content padding
-                    .verticalScroll(rememberScrollState()) // ✅ Make it scrollable
-                    .fillMaxSize()
-            ) {
-                InvestmentCard(
-                    investment = investment,
-                    currentUserRole = currentUserRole,
-                    onAddReturn = onAddReturn
-                )
 
-                Spacer(modifier = Modifier.height(16.dp))
+    GradientBackground {
+        Column(
+            modifier = modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            InvestmentCard(
+                investment = investment,
+                currentUserRole = currentUserRole,
+                onAddReturn = onAddReturn
+            )
 
-                InvestmentReturnSummaryCard(returns = returns)
+            Spacer(modifier = Modifier.height(16.dp))
 
-                if (returns.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Past Returns",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    returns.forEach { ret ->
-                        Text(
-                            "• ₹${ret.amountReceived} on ${ret.returnDate}",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        )
-                    }
-                }
+            InvestmentReturnSummaryCard(returns = returns)
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // ✅ Floating Action Buttons with proper spacing
-                if (currentUserRole == MemberRole.MEMBER_TREASURER || currentUserRole == MemberRole.MEMBER_ADMIN) {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    ExtendedFloatingActionButton(
-                        text = { Text("Add Return") },
-                        icon = { Icon(Icons.Default.Add, contentDescription = "Add Return") },
-                        onClick = onAddReturn,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    ExtendedFloatingActionButton(
-                        text = { Text("Apply Investment") },
-                        icon = { Icon(Icons.Default.TrendingUp, contentDescription = "Apply Investment") },
-                        onClick = onApplyInvestment,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                // ✅ Add bottom spacer to ensure content isn't cut off
-                Spacer(modifier = Modifier.height(32.dp))
+            if (returns.isEmpty()) {
+                EmptyReturnsState()
+            } else {
+                PastReturnsList(returns = returns)
             }
+
+            if (currentUserRole.isAdminOrTreasurer()) {
+                Spacer(modifier = Modifier.height(24.dp))
+                AdminActions(
+                    onAddReturn = onAddReturn,
+                    onApplyInvestment = onApplyInvestment
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun PastReturnsList(returns: List<InvestmentReturns>) {
+    Column {
+        Text(
+            "Past Returns",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        returns.forEach { ret ->
+            PastReturnItem(returnItem = ret)
+        }
+    }
+}
+
+@Composable
+private fun PastReturnItem(returnItem: InvestmentReturns) {
+    Text(
+        "• ₹${returnItem.amountReceived} on ${returnItem.returnDate}",
+        style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.padding(vertical = 2.dp)
+    )
+}
+
+@Composable
+private fun EmptyReturnsState() {
+    Text(
+        "No returns recorded yet",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+        modifier = Modifier.padding(vertical = 16.dp)
+    )
+}
+
+@Composable
+private fun AdminActions(
+    modifier: Modifier = Modifier,
+    onAddReturn: () -> Unit,
+    onApplyInvestment: () -> Unit
+) {
+    Column(modifier = modifier) {
+        ExtendedFloatingActionButton(
+            text = { Text("Add Return") },
+            icon = { Icon(Icons.Default.Add, contentDescription = "Add Return") },
+            onClick = onAddReturn,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        ExtendedFloatingActionButton(
+            text = { Text("Apply Investment") },
+            icon = {
+                Icon(
+                    Icons.AutoMirrored.Filled.TrendingUp,
+                    contentDescription = "Apply Investment"
+                )
+            },
+            onClick = onApplyInvestment,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+// Extension function for role check
+fun MemberRole.isAdminOrTreasurer(): Boolean {
+    return this == MemberRole.MEMBER_TREASURER || this == MemberRole.MEMBER_ADMIN
+}
+
+// Optional: Loading state composable if you need it later
+@Composable
+private fun LoadingState() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentSize(Alignment.Center)
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+// Optional: Error state composable if you need it later
+@Composable
+private fun ErrorState(
+    errorMessage: String,
+    onRetry: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentSize(Alignment.Center)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = errorMessage,
+            color = MaterialTheme.colorScheme.error,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Button(onClick = onRetry) {
+            Text("Retry")
         }
     }
 }

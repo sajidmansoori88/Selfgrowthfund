@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
+
 @HiltViewModel
 class RepaymentViewModel @Inject constructor(
     private val repository: RepaymentRepository,
@@ -31,21 +32,49 @@ class RepaymentViewModel @Inject constructor(
     private val _repaymentSummaries = MutableStateFlow<Map<String, RepaymentSummary>>(emptyMap())
     val repaymentSummaries: StateFlow<Map<String, RepaymentSummary>> = _repaymentSummaries
 
+    // ---------------- Borrowing Details State ----------------
+    private val _borrowingDetails = MutableStateFlow<BorrowingDetails?>(null)
+    val borrowingDetails: StateFlow<BorrowingDetails?> = _borrowingDetails
+
     // ---------------- ID Preview ----------------
     fun fetchNextRepaymentId() {
         viewModelScope.launch {
-            val lastId = repository.getLastRepaymentId()
-            nextRepaymentId.value = IdGenerator.nextRepaymentId(lastId)
+            try {
+                val lastId = repository.getLastRepaymentId()
+                nextRepaymentId.value = IdGenerator.nextRepaymentId(lastId)
+            } catch (e: Exception) {
+                Log.e("RepaymentViewModel", "Error fetching next repayment ID", e)
+                nextRepaymentId.value = "ERROR"
+            }
         }
     }
 
-    // ---------------- Repayment Submission ----------------
+    // ---------------- Load Borrowing Details ----------------
+    fun loadBorrowingDetails(borrowId: String) {
+        viewModelScope.launch {
+            try {
+                val borrowing = repository.getBorrowingById(borrowId)
+                val previousRepayments = repository.getRepaymentsByBorrowId(borrowId)
+                val totalPrincipal = repository.getTotalPrincipalRepaid(borrowId)
+
+                _borrowingDetails.value = BorrowingDetails(
+                    borrowId = borrowId,
+                    shareholderName = borrowing.shareholderName,
+                    outstandingBefore = borrowing.amountRequested - totalPrincipal,
+                    borrowStartDate = borrowing.borrowStartDate, // FIXED: Make sure Borrowing entity has startDate field
+                    dueDate = borrowing.dueDate,
+                    previousRepayments = previousRepayments
+                )
+            } catch (e: Exception) {
+                Log.e("RepaymentViewModel", "Error loading borrowing details", e)
+                _borrowingDetails.value = null
+            }
+        }
+    }
+
+    // ---------------- Simplified Repayment Submission ----------------
     fun submitRepayment(
         entry: RepaymentEntry,
-        outstandingBefore: Double,
-        borrowStartDate: LocalDate,
-        dueDate: LocalDate,
-        previousRepayments: List<Repayment>,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -54,13 +83,18 @@ class RepaymentViewModel @Inject constructor(
             submissionResult.value = null
 
             try {
+                val details = _borrowingDetails.value
+                if (details == null) {
+                    throw IllegalStateException("Borrowing details not loaded. Please try again.")
+                }
+
                 val lastId = repository.getLastRepaymentId()
                 val repayment = entry.toRepayment(
                     lastRepaymentId = lastId,
-                    outstandingBefore = outstandingBefore,
-                    borrowStartDate = borrowStartDate,
-                    dueDate = dueDate,
-                    previousRepayments = previousRepayments
+                    outstandingBefore = details.outstandingBefore,
+                    borrowStartDate = details.borrowStartDate,
+                    dueDate = details.dueDate,
+                    previousRepayments = details.previousRepayments
                 )
 
                 repository.insert(repayment)
@@ -108,12 +142,32 @@ class RepaymentViewModel @Inject constructor(
     // ---------------- Summary Loader ----------------
     fun loadSummaries(borrowings: List<Borrowing>) {
         viewModelScope.launch {
-            val map = borrowings.associate { borrowing ->
-                val principal = repository.getTotalPrincipalRepaid(borrowing.borrowId)
-                val penalty = repository.getTotalPenaltyPaid(borrowing.borrowId)
-                borrowing.borrowId to RepaymentSummary(principal, penalty)
+            try {
+                val map = borrowings.associate { borrowing ->
+                    val principal = repository.getTotalPrincipalRepaid(borrowing.borrowId)
+                    val penalty = repository.getTotalPenaltyPaid(borrowing.borrowId)
+                    borrowing.borrowId to RepaymentSummary(principal, penalty)
+                }
+                _repaymentSummaries.value = map
+            } catch (e: Exception) {
+                Log.e("RepaymentViewModel", "Error loading repayment summaries", e)
+                _repaymentSummaries.value = emptyMap()
             }
-            _repaymentSummaries.value = map
         }
     }
+
+    // ---------------- Data Classes ----------------
+    data class BorrowingDetails(
+        val borrowId: String,
+        val shareholderName: String,
+        val outstandingBefore: Double,
+        val borrowStartDate: LocalDate,
+        val dueDate: LocalDate,
+        val previousRepayments: List<Repayment>
+    )
+
+    data class RepaymentSummary(
+        val totalPrincipal: Double,
+        val totalPenalty: Double
+    )
 }

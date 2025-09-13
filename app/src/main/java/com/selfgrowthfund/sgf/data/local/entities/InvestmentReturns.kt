@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import com.selfgrowthfund.sgf.model.enums.ApprovalAction
 import com.selfgrowthfund.sgf.model.enums.EntrySource
 import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import java.time.LocalDate
@@ -45,7 +46,8 @@ data class InvestmentReturns(
     val returnDate: LocalDate,
     val modeOfPayment: PaymentMode,
     val remarks: String? = null,
-
+    val approvalStatus: ApprovalAction= ApprovalAction.PENDING,
+    val createdAt: LocalDate = LocalDate.now(),
     val entrySource: EntrySource = EntrySource.ADMIN,
     val enteredBy: String? = null
 ) {

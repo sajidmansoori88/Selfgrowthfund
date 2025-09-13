@@ -1,6 +1,11 @@
     package com.selfgrowthfund.sgf.model.enums
 
+    import androidx.compose.material.icons.Icons
+    import androidx.compose.material.icons.filled.Cancel
+    import androidx.compose.material.icons.filled.CheckCircle
+    import androidx.compose.material.icons.filled.Schedule
     import androidx.compose.ui.graphics.Color
+    import androidx.compose.ui.graphics.vector.ImageVector
 
     interface LabelledEnum {
         val label: String
@@ -78,6 +83,7 @@
 
     enum class PaymentStatus(override val label: String) : LabelledEnum {
         ON_TIME("On Time"),
+        EARLY("Early"),
         LATE("Late"),
         PENDING("Pending");
 
@@ -88,6 +94,7 @@
                 entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: PENDING
         }
     }
+
 
     enum class InvesteeType(override val label: String) : LabelledEnum {
         Shareholder("Shareholder"),
@@ -224,20 +231,14 @@
             OTHER -> Color.Gray
         }
     }
-
-    enum class ReportPeriod(override val label: String) : LabelledEnum {
-        CURRENT_MONTH("Current Month"),
-        LAST_MONTH("Last Month"),
-        LAST_3_MONTHS("Last 3 Months"),
-        LAST_6_MONTHS("Last 6 Months"),
-        LAST_9_MONTHS("Last 9 Months"),
-        LAST_12_MONTHS("Last 12 Months");
+    enum class ApprovalAction(override val label: String) : LabelledEnum {
+        APPROVE("Approve"),
+        REJECT("Reject"),
+        PENDING("Pending Review");
 
         companion object {
-            fun fromLabel(label: String): ReportPeriod =
-                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: CURRENT_MONTH
-
-            fun getAllLabels(): List<String> = entries.map { it.label }
+            fun fromLabel(label: String): ApprovalAction =
+                entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: PENDING
         }
     }
 

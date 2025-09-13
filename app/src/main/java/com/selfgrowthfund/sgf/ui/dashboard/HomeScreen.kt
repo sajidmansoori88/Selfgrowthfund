@@ -1,6 +1,8 @@
 package com.selfgrowthfund.sgf.ui.dashboard
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,13 +14,16 @@ import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.model.reports.ShareholderSummary
 import com.selfgrowthfund.sgf.model.reports.ShareholderSummaryViewModel
 import com.selfgrowthfund.sgf.session.UserSessionViewModel
+import com.selfgrowthfund.sgf.ui.theme.GradientBackground
 import com.selfgrowthfund.sgf.ui.theme.SGFTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    modifier: Modifier = Modifier // ✅ Add modifier parameter
+) {
     val userSessionViewModel: UserSessionViewModel = hiltViewModel()
     val user by userSessionViewModel.currentUser.collectAsState()
 
@@ -33,7 +38,6 @@ fun HomeScreen() {
         println("DEBUG: HomeScreen launched - loading summaries")
         try {
             summaryViewModel.loadAllSummaries()
-            // ✅ don’t collect inside LaunchedEffect — collectAsState is already observing
         } catch (e: Exception) {
             loadingError = "Error loading data: ${e.message}"
             isLoading = false
@@ -43,38 +47,42 @@ fun HomeScreen() {
     // ✅ update loading state automatically when summaries flow updates
     LaunchedEffect(summaries) {
         isLoading = false
-        if (summaries.isEmpty()) {
-            loadingError = "No summaries found in database"
+        loadingError = if (summaries.isEmpty()) {
+            "No summaries found in database"
         } else {
-            loadingError = null
+            null
         }
     }
 
     val currentSummary = summaries.find { it.shareholderId == user.shareholderId }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Debug info
-        Text(
-            "DEBUG: User=${user.shareholderId}, Summaries=${summaries.size}, Loading=$isLoading",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(8.dp)
-        )
-
-        if (loadingError != null) {
+    GradientBackground {
+        Column(
+            modifier = modifier
+                .verticalScroll(rememberScrollState()) // ✅ Make it scrollable
+        ) {
+            // Debug info (you might want to remove this in production)
             Text(
-                "ERROR: $loadingError",
-                color = MaterialTheme.colorScheme.error,
+                "DEBUG: User=${user.shareholderId}, Summaries=${summaries.size}, Loading=$isLoading",
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(8.dp)
             )
-        }
 
-        Box(modifier = Modifier.fillMaxSize()) {
+            if (loadingError != null) {
+                Text(
+                    "ERROR: $loadingError",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+
             when {
                 isLoading -> {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -89,13 +97,16 @@ fun HomeScreen() {
                     HomeScreenContent(
                         name = user.name,
                         role = user.role.name,
-                        summary = currentSummary
+                        summary = currentSummary,
+                        modifier = Modifier.padding(32.dp) // ✅ Add padding here instead
                     )
                 }
 
                 else -> {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -103,7 +114,6 @@ fun HomeScreen() {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text("User ID: ${user.shareholderId}")
                             Text("Total summaries loaded: ${summaries.size}")
-                            Text("Available IDs: ${summaries.map { it.shareholderId }}")
 
                             Button(
                                 onClick = {
@@ -118,21 +128,24 @@ fun HomeScreen() {
                     }
                 }
             }
+
+            // ✅ Add bottom spacer to ensure content isn't cut off
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
+
     @Composable
     fun HomeScreenContent(
         name: String,
         role: String,
-        summary: ShareholderSummary
+        summary: ShareholderSummary,
+        modifier: Modifier = Modifier // ✅ Add modifier parameter
     ) {
         val formatter = remember { DateTimeFormatter.ofPattern("dd-MM-yyyy") }
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
+            modifier = modifier,
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
@@ -204,12 +217,11 @@ fun HomeScreen() {
                 outstandingBorrowing = 7000.0
             )
 
-            Box(modifier = Modifier) {
-                HomeScreenContent(
-                    name = "Sajid",
-                    role = MemberRole.MEMBER.name,
-                    summary = fakeSummary
-                )
-            }
+            HomeScreenContent(
+                name = "Sajid",
+                role = MemberRole.MEMBER.name,
+                summary = fakeSummary,
+                modifier = Modifier.padding(32.dp)
+            )
         }
     }

@@ -2,9 +2,12 @@ package com.selfgrowthfund.sgf.data.repository
 
 import com.selfgrowthfund.sgf.data.local.dao.ExpenseDao
 import com.selfgrowthfund.sgf.data.local.entities.Expense
+import java.time.LocalDate
+import javax.inject.Inject
 
 
-class ExpenseRepository(private val dao: ExpenseDao) {
+class ExpenseRepository @Inject constructor(
+    private val dao: ExpenseDao) {
 
     suspend fun addExpense(expense: Expense) = dao.insertExpense(expense)
 
@@ -15,4 +18,15 @@ class ExpenseRepository(private val dao: ExpenseDao) {
     suspend fun deleteExpense(expense: Expense) = dao.deleteExpense(expense)
 
     suspend fun clearAll() = dao.clearAllExpenses()
+    suspend fun countApproved(start: LocalDate, end: LocalDate) =
+        dao.countByStatus("APPROVED", start, end)
+
+    suspend fun countRejected(start: LocalDate, end: LocalDate) =
+        dao.countByStatus("REJECTED", start, end)
+
+    suspend fun countPending(start: LocalDate, end: LocalDate) =
+        dao.countByStatus("PENDING", start, end)
+
+    suspend fun countTotal(start: LocalDate, end: LocalDate) =
+        dao.countTotal(start, end)
 }

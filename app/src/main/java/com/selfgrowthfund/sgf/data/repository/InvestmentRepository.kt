@@ -15,6 +15,7 @@ class InvestmentRepository @Inject constructor(
     private val dao: InvestmentDao,
     private val dates: Dates
 ) {
+
     // CRUD
     suspend fun createInvestment(investment: Investment): Result<Unit> = try {
         dao.insert(investment)
@@ -119,4 +120,17 @@ class InvestmentRepository @Inject constructor(
         }
         return dao.getByInvesteeType(investeeType)
     }
+    fun getInvestmentById(id: String): Flow<Investment?> = dao.getByIdFlow(id)
+
+    suspend fun countApproved(start: LocalDate, end: LocalDate) =
+        dao.countByStatus("APPROVED", start, end)
+
+    suspend fun countRejected(start: LocalDate, end: LocalDate) =
+        dao.countByStatus("REJECTED", start, end)
+
+    suspend fun countPending(start: LocalDate, end: LocalDate) =
+        dao.countByStatus("PENDING", start, end)
+
+    suspend fun countTotal(start: LocalDate, end: LocalDate) =
+        dao.countTotal(start, end)
 }

@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import com.selfgrowthfund.sgf.model.enums.ApprovalAction
 import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
 import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import java.time.LocalDate
@@ -54,6 +55,13 @@ data class Repayment(
 
     @ColumnInfo(name = "notes")
     val notes: String? = null,
+
+    @ColumnInfo(name = "createdBy")
+    val createdBy: String,
+    @ColumnInfo(name = "createdAt")
+    val createdAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "approvalStatus")
+    val approvalStatus: ApprovalAction = ApprovalAction.PENDING,
 
     @ColumnInfo(name = "penaltyCalculationNotes")
     val penaltyCalculationNotes: String? = null

@@ -13,7 +13,8 @@ fun <T : LabelledEnum> DropdownMenuBox(
     label: String,
     options: List<T>,
     selected: T,
-    onSelected: (T) -> Unit
+    onSelected: (T) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
 

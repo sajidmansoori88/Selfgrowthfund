@@ -6,6 +6,7 @@ import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
 import com.selfgrowthfund.sgf.model.reports.ShareholderDepositSummary
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 @Dao
 interface DepositDao {
@@ -85,4 +86,10 @@ interface DepositDao {
 
     @Query("SELECT * FROM deposits WHERE shareholderId = :id ORDER BY paymentDate LIMIT 1")
     suspend fun getLastDepositForShareholder(id: String): Deposit?
+    @Query("SELECT COUNT(*) FROM deposits WHERE approvalStatus = :status AND createdAt BETWEEN :start AND :end")
+    suspend fun countByStatus(status: String, start: LocalDate, end: LocalDate): Int
+
+    @Query("SELECT COUNT(*) FROM deposits WHERE createdAt BETWEEN :start AND :end")
+    suspend fun countTotal(start: LocalDate, end: LocalDate): Int
+
 }

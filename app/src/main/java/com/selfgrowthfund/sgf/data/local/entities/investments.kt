@@ -31,7 +31,8 @@ data class Investment(
     val modeOfPayment: PaymentMode = PaymentMode.OTHER,
     val status: InvestmentStatus = InvestmentStatus.Active,
     val remarks: String? = null,
-
+    val approvalStatus: ApprovalAction = ApprovalAction.PENDING,
+    val createdAt: LocalDate = LocalDate.now(),
     val entrySource: EntrySource = EntrySource.USER,
     val enteredBy: String? = null
 )

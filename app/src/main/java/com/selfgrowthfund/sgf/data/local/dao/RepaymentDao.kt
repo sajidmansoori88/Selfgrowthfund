@@ -104,4 +104,9 @@ interface RepaymentDao {
     WHERE strftime('%Y-%m', repaymentDate) = :month
 """)
     suspend fun getMonthlyRepayments(month: String): Double
+    @Query("SELECT COUNT(*) FROM repayments WHERE approvalStatus = :status AND createdAt BETWEEN :start AND :end")
+    suspend fun countByStatus(status: String, start: LocalDate, end: LocalDate): Int
+
+    @Query("SELECT COUNT(*) FROM repayments WHERE createdAt BETWEEN :start AND :end")
+    suspend fun countTotal(start: LocalDate, end: LocalDate): Int
 }

@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
 import com.selfgrowthfund.sgf.ui.components.DepositSummaryCard
+import com.selfgrowthfund.sgf.ui.theme.GradientBackground
 import com.selfgrowthfund.sgf.ui.theme.SGFTheme
 import com.selfgrowthfund.sgf.utils.ExportUtils
 import java.time.LocalDate
@@ -23,20 +24,22 @@ fun DepositHistoryScreen(
     modifier: Modifier = Modifier,
     summaries: List<DepositEntrySummaryDTO>
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        if (summaries.isEmpty()) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Text("No deposit history available.")
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(summaries) { summary ->
-                    DepositSummaryCard(summary)
+    GradientBackground {
+        Box(modifier = modifier.fillMaxSize()) {
+            if (summaries.isEmpty()) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Text("No deposit history available.")
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(summaries) { summary ->
+                        DepositSummaryCard(summary)
+                    }
                 }
             }
         }

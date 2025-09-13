@@ -119,4 +119,29 @@ interface InvestmentDao {
 
     @Query("SELECT * FROM investments WHERE investeeType = :type")
     fun getByInvesteeType(type: InvesteeType): Flow<List<Investment>>
+
+    @Query("SELECT * FROM investments")
+    fun getAllInvestments(): Flow<List<Investment>>
+
+    @Query("SELECT * FROM investments WHERE investmentId = :id")
+    fun getInvestmentById(id: String): Flow<Investment?>
+    @Query("SELECT * FROM investments WHERE investmentId = :id")
+    fun getByIdFlow(id: String): Flow<Investment?>
+
+    @Query("SELECT * FROM investments WHERE status = :status")
+    fun getByStatusFlow(status: InvestmentStatus): Flow<List<Investment>>
+
+    @Query("SELECT * FROM investments WHERE investeeType = :type")
+    fun getByInvesteeTypeFlow(type: InvesteeType): Flow<List<Investment>>
+
+    @Query("SELECT COUNT(*) FROM investments WHERE approvalStatus = :status AND createdAt BETWEEN :start AND :end")
+    suspend fun countByStatus(status: String, start: LocalDate, end: LocalDate): Int
+
+    @Query("SELECT COUNT(*) FROM investments WHERE createdAt BETWEEN :start AND :end")
+    suspend fun countTotal(start: LocalDate, end: LocalDate): Int
+
 }
+
+
+
+

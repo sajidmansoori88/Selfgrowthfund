@@ -123,4 +123,17 @@ object AppTypeConverters {
     @TypeConverter @JvmStatic
     fun toShareholderStatusList(data: String?): List<ShareholderStatus>? =
         data?.split(",")?.map { ShareholderStatus.valueOf(it) }
+
+
+    @TypeConverter @JvmStatic
+    fun fromApprovalAction(value: ApprovalAction?): String? {
+        return value?.name
+    }
+
+    @TypeConverter @JvmStatic
+    fun toApprovalAction(value: String?): ApprovalAction? {
+        return value?.let { ApprovalAction.valueOf(it) }
+    }
+
+
 }

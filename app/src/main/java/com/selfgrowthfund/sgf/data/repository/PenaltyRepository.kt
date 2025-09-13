@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.data.repository
 import com.selfgrowthfund.sgf.data.local.dao.PenaltyDao
 import com.selfgrowthfund.sgf.data.local.entities.Penalty
 import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
+import java.time.LocalDate
 
 class PenaltyRepository(private val dao: PenaltyDao) {
 
@@ -25,4 +26,8 @@ class PenaltyRepository(private val dao: PenaltyDao) {
     suspend fun getPenaltiesByUser(userId: String): List<Penalty> = dao.getPenaltiesByUser(userId)
 
     suspend fun getPenaltiesByMonth(month: String): List<Penalty> = dao.getPenaltiesByMonth(month)
+    suspend fun getPenaltiesBetween(startDate: LocalDate, endDate: LocalDate): List<Penalty> {
+        return dao.getPenaltiesBetween(startDate, endDate)
+    }
+
 }

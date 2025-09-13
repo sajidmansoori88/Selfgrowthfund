@@ -1,5 +1,4 @@
 package com.selfgrowthfund.sgf.ui.borrowing
-
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,25 +23,48 @@ class BorrowingViewModel @Inject constructor(
 ) : ViewModel() {
 
     // ---------------- HISTORY ----------------
-    val allBorrowings: StateFlow<List<Borrowing>> =
-        borrowingDao.getAllBorrowings()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _allBorrowings = MutableStateFlow<List<Borrowing>>(emptyList())
+    val allBorrowings: StateFlow<List<Borrowing>> = _allBorrowings.asStateFlow()
 
-    val overdueBorrowings: StateFlow<List<Borrowing>> =
-        borrowingDao.getOverdueBorrowings(LocalDate.now())
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _overdueBorrowings = MutableStateFlow<List<Borrowing>>(emptyList())
+    val overdueBorrowings: StateFlow<List<Borrowing>> = _overdueBorrowings.asStateFlow()
 
     // ---------------- SUBMISSION STATE ----------------
-    val isSubmitting = MutableStateFlow(false)
-    val submissionResult = MutableStateFlow<Result<Unit>?>(null)
+    private val _isSubmitting = MutableStateFlow(false)
+    val isSubmitting: StateFlow<Boolean> = _isSubmitting.asStateFlow()
+
+    private val _submissionResult = MutableStateFlow<Result<Unit>?>(null)
+    val submissionResult: StateFlow<Result<Unit>?> = _submissionResult.asStateFlow()
 
     // ---------------- ID PREVIEW ----------------
-    val nextBorrowId = MutableStateFlow<String?>(null)
+    private val _nextBorrowId = MutableStateFlow<String?>(null)
+    val nextBorrowId: StateFlow<String?> = _nextBorrowId.asStateFlow()
+
+    init {
+        loadAllBorrowings()
+        loadOverdueBorrowings()
+    }
+
+    private fun loadAllBorrowings() {
+        viewModelScope.launch {
+            borrowingDao.getAllBorrowings().collect { borrowings ->
+                _allBorrowings.value = borrowings
+            }
+        }
+    }
+
+    private fun loadOverdueBorrowings() {
+        viewModelScope.launch {
+            borrowingDao.getOverdueBorrowings(LocalDate.now()).collect { borrowings ->
+                _overdueBorrowings.value = borrowings
+            }
+        }
+    }
 
     fun fetchNextBorrowId() {
         viewModelScope.launch {
             val lastId = borrowingDao.getLastBorrowingId()
-            nextBorrowId.value = IdGenerator.nextBorrowId(lastId)
+            _nextBorrowId.value = IdGenerator.nextBorrowId(lastId)
         }
     }
 
@@ -53,8 +75,10 @@ class BorrowingViewModel @Inject constructor(
         onError: (String) -> Unit
     ) {
         viewModelScope.launch {
-            isSubmitting.value = true
-            submissionResult.value = null
+            if (_isSubmitting.value) return@launch
+
+            _isSubmitting.value = true
+            _submissionResult.value = null
 
             try {
                 val lastId = borrowingDao.getLastBorrowingId()
@@ -67,14 +91,14 @@ class BorrowingViewModel @Inject constructor(
                 triggerApprovalNotification(borrowing)
                 listenForApprovalUpdates(borrowId)
 
-                submissionResult.value = Result.Success(Unit)
+                _submissionResult.value = Result.Success(Unit)
                 onSuccess()
             } catch (e: Exception) {
-                submissionResult.value = Result.Error(e)
+                _submissionResult.value = Result.Error(e)
                 onError(e.message ?: "Borrowing submission failed")
+            } finally {
+                _isSubmitting.value = false
             }
-
-            isSubmitting.value = false
         }
     }
 
@@ -124,9 +148,28 @@ class BorrowingViewModel @Inject constructor(
                 }
 
                 viewModelScope.launch {
-                    borrowingDao.updateBorrowingStatus(borrowId, newStatus, closedDate)
+                    // FIXED: Convert enum to string for DAO method
+                    borrowingDao.updateBorrowingStatus(borrowId, newStatus.name, closedDate)
                     Log.d("Firestore", "Borrowing status updated: $newStatus")
+
+                    // Refresh the lists after status update
+                    loadAllBorrowings()
+                    loadOverdueBorrowings()
                 }
             }
+    }
+
+    // ---------------- REFRESH METHODS ----------------
+    fun refreshAllBorrowings() {
+        loadAllBorrowings()
+    }
+
+    fun refreshOverdueBorrowings() {
+        loadOverdueBorrowings()
+    }
+
+    // ---------------- CLEAR STATE ----------------
+    fun clearSubmissionState() {
+        _submissionResult.value = null
     }
 }

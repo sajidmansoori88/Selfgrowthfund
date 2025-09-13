@@ -34,6 +34,7 @@ class ActionScreenViewModel @Inject constructor(
             .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
     }
 
+    // ---- Existing generic method ----
     fun submitResponse(actionId: String, shareholderId: String, response: ActionResponse) {
         viewModelScope.launch {
             _responseState.value = Result.Loading
@@ -54,14 +55,23 @@ class ActionScreenViewModel @Inject constructor(
         }
     }
 
+    // ---- Convenience wrappers for cleaner screen code ----
+    fun approve(action: ActionItem, shareholderId: String) {
+        submitResponse(action.actionId, shareholderId, ActionResponse.APPROVE)
+    }
+
+    fun reject(action: ActionItem, shareholderId: String) {
+        submitResponse(action.actionId, shareholderId, ActionResponse.REJECT)
+    }
+
+
     fun clearState() {
         _responseState.value = null
     }
 
     fun checkFinalization(action: ActionItem): Boolean {
         val totalResponses = action.responses.size
-        val quorum = 3 // or dynamic based on member count
-
+        val quorum = 3 // TODO: make dynamic
         val deadlinePassed = action.deadline?.isBefore(now) == true
         return totalResponses >= quorum || deadlinePassed
     }

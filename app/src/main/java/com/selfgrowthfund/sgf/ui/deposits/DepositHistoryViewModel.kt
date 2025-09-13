@@ -3,8 +3,10 @@ package com.selfgrowthfund.sgf.ui.deposits
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.selfgrowthfund.sgf.data.local.entities.Deposit
+import com.selfgrowthfund.sgf.data.local.types.DueMonth
 import com.selfgrowthfund.sgf.data.repository.DepositRepository
 import com.selfgrowthfund.sgf.model.enums.MemberRole
+import com.selfgrowthfund.sgf.model.enums.PaymentStatus
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.YearMonth
@@ -60,10 +62,11 @@ class DepositHistoryViewModel(
         visibleMonths,
         statusFilter,
         shareholderFilter
-    ) { deposits, months, status, shareholder ->
+    ) { deposits: List<Deposit>, monthStrings: List<String>, status: String, shareholder: String ->
+        val months = monthStrings.map { DueMonth(it) } // Convert strings to DueMonth
         deposits.filter { entry ->
-            entry.dueMonth in months &&
-                    (status == "All" || entry.paymentStatus == status) &&
+            entry.dueMonth in months && // Now comparing DueMonth with DueMonth
+                    (status == "All" || entry.paymentStatus == PaymentStatus.fromLabel(status)) &&
                     (
                             currentUserRole != MemberRole.MEMBER_ADMIN && entry.shareholderId == currentUserId ||
                                     currentUserRole == MemberRole.MEMBER_ADMIN && (shareholder == "All" || entry.shareholderName == shareholder)

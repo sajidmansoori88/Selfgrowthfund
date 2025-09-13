@@ -1,20 +1,17 @@
 package com.selfgrowthfund.sgf.data.local.entities
 
-import androidx.room.Entity
+import  androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
-import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
+import com.selfgrowthfund.sgf.data.local.types.DueMonth
+import com.selfgrowthfund.sgf.model.enums.*
 import java.time.Instant
+import java.time.LocalDate
 
 @Entity(
     tableName = "deposits",
     indices = [Index(value = ["shareholderId"]), Index(value = ["dueMonth"])]
 )
-@TypeConverters(AppTypeConverters::class)
 data class Deposit(
     @PrimaryKey
     val depositId: String,
@@ -22,8 +19,8 @@ data class Deposit(
     val shareholderId: String,
     val shareholderName: String,
 
-    val dueMonth: String, // Format: MMM-yyyy (e.g., "Aug-2025")
-    val paymentDate: LocalDate, // Actual payment date
+    val dueMonth: DueMonth,               // e.g., "Aug-2025"
+    val paymentDate: LocalDate,         // handled via converters
 
     val shareNos: Int,
     val shareAmount: Double = 2000.0,
@@ -31,17 +28,13 @@ data class Deposit(
     val penalty: Double = 0.0,
 
     val totalAmount: Double,
-    val paymentStatus: String,
-    val modeOfPayment: String,
+    val paymentStatus: PaymentStatus,   // enum → converter
+    val modeOfPayment: PaymentMode,     // ✅ fixed (no Companion)
+    val approvalStatus: ApprovalAction = ApprovalAction.PENDING, // enum → converter
 
-    val createdAt: Instant = Instant.now()
+    val createdAt: Instant = Instant.now() // handled via converters
 ) {
     companion object {
-        const val PAYMENT_ON_TIME = "On-time"
-        const val PAYMENT_LATE = "Late"
-        const val MODE_CASH = "Cash"
-        const val MODE_ONLINE = "Online"
-
         fun generateNextId(lastId: String?): String {
             return lastId?.let {
                 val num = it.removePrefix("D").toIntOrNull() ?: 0
@@ -51,11 +44,11 @@ data class Deposit(
 
         fun calculatePenalty(dueMonth: String, paymentDate: LocalDate): Double {
             return try {
-                val formatter = DateTimeFormatter.ofPattern("MMM-yyyy")
+                val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM-yyyy")
                 val dueDate = LocalDate.parse(dueMonth, formatter).withDayOfMonth(10)
 
                 if (paymentDate.isAfter(dueDate)) {
-                    val daysLate = ChronoUnit.DAYS.between(dueDate, paymentDate).toInt()
+                    val daysLate = java.time.temporal.ChronoUnit.DAYS.between(dueDate, paymentDate).toInt()
                     daysLate * 5.0
                 } else {
                     0.0

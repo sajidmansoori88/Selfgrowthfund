@@ -46,7 +46,7 @@
         @Query("UPDATE borrowings SET status = :status, closedDate = :closedDate WHERE borrowId = :borrowId")
         suspend fun updateBorrowingStatus(
             borrowId: String,
-            status: BorrowingStatus,
+            status: String,
             closedDate: LocalDate?
         )
 
@@ -167,4 +167,9 @@
     WHERE strftime('%Y-%m', repaymentDate) = :month
 """)
         suspend fun getMonthlyRepayments(month: String): Double
-    }
+        @Query("SELECT COUNT(*) FROM borrowings WHERE approvalStatus = :status AND createdAt BETWEEN :start AND :end")
+        suspend fun countByStatus(status: String, start: LocalDate, end: LocalDate): Int
+
+        @Query("SELECT COUNT(*) FROM borrowings WHERE createdAt BETWEEN :start AND :end")
+        suspend fun countTotal(start: LocalDate, end: LocalDate): Int
+}

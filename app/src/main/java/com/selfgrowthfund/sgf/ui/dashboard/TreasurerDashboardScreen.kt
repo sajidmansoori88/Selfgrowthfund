@@ -6,16 +6,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.selfgrowthfund.sgf.ui.theme.GradientBackground
 
 @Composable
 fun TreasurerDashboardScreen() { // ← No parameters!
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Treasurer Dashboard", style = MaterialTheme.typography.headlineMedium)
+    GradientBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Treasurer Dashboard", style = MaterialTheme.typography.headlineMedium)
+        }
     }
 }

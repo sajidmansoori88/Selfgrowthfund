@@ -92,7 +92,7 @@ fun BorrowingHistoryScreen(
                     val summary = summaries[borrowing.borrowId]
                     BorrowingCard(
                         borrowing = borrowing,
-                        summary = summary,
+                        summary = summary as RepaymentSummary?,
                         onRepay = { onAddRepayment(borrowing.borrowId) }
                     )
                 }

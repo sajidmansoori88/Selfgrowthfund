@@ -11,7 +11,8 @@ data class RepaymentEntry(
     val principalRepaid: Double,
     val penaltyPaid: Double,
     val modeOfPayment: PaymentMode = PaymentMode.OTHER,
-    val notes: String? = null
+    val notes: String? = null,
+    val createdBy: String
 ) {
     fun toRepayment(
         lastRepaymentId: String?,
@@ -40,7 +41,8 @@ data class RepaymentEntry(
             penaltyPaid = penaltyPaid,
             modeOfPayment = modeOfPayment,
             notes = notes,
-            penaltyCalculationNotes = penaltyNotes
+            penaltyCalculationNotes = penaltyNotes,
+            createdBy = createdBy,
         )
     }
 }

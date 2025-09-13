@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,13 +25,17 @@ fun InvestmentReturnsEntryScreen(
     viewModel: InvestmentReturnsViewModel,
     onReturnAdded: () -> Unit,
     currentUserName: String,
-    modifier: Modifier = Modifier // ✅ Add modifier parameter
+    modifier: Modifier = Modifier
 ) {
     var amountReceived by remember { mutableStateOf("") }
     var remarks by remember { mutableStateOf("") }
     var selectedPaymentMode by remember { mutableStateOf(PaymentMode.CASH) }
+    var lastReturnId by remember { mutableStateOf<String?>(null) }
 
-    val addReturnState by viewModel.addReturnState.collectAsState()
+    // Collect states from ViewModel (matching your ViewModel structure)
+    val isSubmitting by viewModel.isSubmitting.collectAsState()
+    val submissionResult by viewModel.submissionResult.collectAsState()
+
     val isValidAmount = amountReceived.toDoubleOrNull()?.let { it > 0.0 } == true
     val amountError = amountReceived.isNotBlank() && amountReceived.toDoubleOrNull() == null
 
@@ -47,16 +52,19 @@ fun InvestmentReturnsEntryScreen(
         viewModel.previewReturn(entry)
     }
 
-    LaunchedEffect(addReturnState) {
-        if (addReturnState is Result.Success) {
-            viewModel.clearState()
-            onReturnAdded()
+    LaunchedEffect(submissionResult) {
+        when (submissionResult) {
+            is Result.Success -> {
+                viewModel.clearState()
+                onReturnAdded()
+            }
+            else -> {}
         }
     }
 
     Column(
         modifier = modifier
-            .verticalScroll(rememberScrollState()) // ✅ Make it scrollable
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Text(
@@ -109,7 +117,7 @@ fun InvestmentReturnsEntryScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text("Preview:", style = MaterialTheme.typography.titleSmall)
-                Divider()
+                HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -150,18 +158,18 @@ fun InvestmentReturnsEntryScreen(
                     )
                     viewModel.submitReturn(
                         entry = entry,
-                        lastReturnId = null,
+                        lastReturnId = lastReturnId,
                         onSuccess = onReturnAdded,
                         onError = { errorMessage ->
-                            // Handle error (could show snackbar/toast)
+                            // You could show a snackbar here
                         }
                     )
                 }
             },
-            enabled = isValidAmount && addReturnState !is Result.Loading,
+            enabled = isValidAmount && !isSubmitting,
             modifier = Modifier.fillMaxWidth()
         ) {
-            if (addReturnState is Result.Loading) {
+            if (isSubmitting) {
                 LoadingIndicator()
             } else {
                 Text("Submit Return")
@@ -170,18 +178,24 @@ fun InvestmentReturnsEntryScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        when (addReturnState) {
+        when (val result = submissionResult) {
             is Result.Error -> {
                 Text(
-                    text = "Error: ${(addReturnState as Result.Error).exception.message}",
+                    text = "Error: ${result.exception.message ?: "Submission failed"}",
                     color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+            is Result.Success -> {
+                Text(
+                    text = "Return submitted successfully!",
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
             else -> {}
         }
 
-        // ✅ Add bottom spacer to ensure content isn't cut off
         Spacer(modifier = Modifier.height(32.dp))
     }
 }

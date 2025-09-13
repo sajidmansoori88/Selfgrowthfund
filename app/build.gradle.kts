@@ -7,8 +7,6 @@ plugins {
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.google.services)
-
-
 }
 
 android {
@@ -61,6 +59,21 @@ android {
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
+
+    // ✅ Fix duplicate META-INF conflicts
+    packaging {
+        resources {
+            excludes += "/META-INF/NOTICE.md"
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/LICENSE.txt"
+            excludes += "/META-INF/DEPENDENCIES"
+        }
+    }
+}
+
+// ✅ Global excludes (removes unwanted Jakarta XML Bind)
+configurations.all {
+    exclude(group = "jakarta.xml.bind", module = "jakarta.xml.bind-api")
 }
 
 dependencies {
@@ -119,7 +132,7 @@ dependencies {
     // ✅ Logging
     implementation(libs.timber)
 
-    // ✅ Material (classic)
+    // ✅ Material (classic, for things missing in M3)
     implementation(libs.material)
 
     // ✅ Desugaring
@@ -147,24 +160,28 @@ dependencies {
     // ✅ Optional: Firebase Auth
     implementation(libs.firebase.auth)
 
-    androidTestImplementation (libs.room.testing) // or your Room version
-    androidTestImplementation (libs.androidx.core)
-    androidTestImplementation (libs.androidx.test.ext.junit)
-    androidTestImplementation (libs.junit)
+    androidTestImplementation(libs.room.testing) // or your Room version
+    androidTestImplementation(libs.androidx.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.junit)
 
+    // ✅ PDF libs
     implementation(libs.itext7.kernel)
     implementation(libs.itext7.layout)
     implementation(libs.itext7.core)
 
+    // ✅ Accompanist
     implementation(libs.accompanist.systemuicontroller)
 
+    // ✅ Biometrics
     implementation(libs.androidx.biometric)
 
+    // ✅ Google Auth
     implementation(libs.google.auth)
 
+    // ✅ Security
     implementation(libs.androidx.security)
 
+    // ✅ Material Icons Extended
     implementation(libs.material.icons.extended)
-
-
 }

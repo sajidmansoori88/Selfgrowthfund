@@ -43,11 +43,17 @@ class BorrowingRepository @Inject constructor(
     // ==================== Query Operations ====================
     fun getAllBorrowings(): Flow<List<Borrowing>> = borrowingDao.getAllBorrowings()
 
-    suspend fun getBorrowingById(borrowId: String): Result<Borrowing> = try {
-        Result.Success(
-            borrowingDao.getBorrowingById(borrowId)
-                ?: throw Exception("Borrowing not found")
-        )
+    // FIXED: Return type matches signature - returns Borrowing directly
+    suspend fun getBorrowingById(borrowId: String): Borrowing {
+        return borrowingDao.getBorrowingById(borrowId)
+            ?: throw Exception("Borrowing not found with ID: $borrowId")
+    }
+
+    // FIXED: Added method that returns Result<Borrowing> if needed elsewhere
+    suspend fun getBorrowingByIdWithResult(borrowId: String): Result<Borrowing> = try {
+        val borrowing = borrowingDao.getBorrowingById(borrowId)
+            ?: throw Exception("Borrowing not found with ID: $borrowId")
+        Result.Success(borrowing)
     } catch (e: Exception) {
         Result.Error(e)
     }
@@ -71,7 +77,7 @@ class BorrowingRepository @Inject constructor(
             null
         }
         // FIXED: Pass status.name to convert enum to string for DAO
-        borrowingDao.updateBorrowingStatus(borrowId, status, closedDate)
+        borrowingDao.updateBorrowingStatus(borrowId, status.name, closedDate)
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
@@ -108,4 +114,15 @@ class BorrowingRepository @Inject constructor(
         val numeric = lastId?.removePrefix("BR")?.toIntOrNull() ?: 0
         return "BR" + String.format(Locale.US, "%04d", numeric + 1)
     }
+    suspend fun countApproved(start: LocalDate, end: LocalDate) =
+        borrowingDao.countByStatus("APPROVED", start, end)
+
+    suspend fun countRejected(start: LocalDate, end: LocalDate) =
+        borrowingDao.countByStatus("REJECTED", start, end)
+
+    suspend fun countPending(start: LocalDate, end: LocalDate) =
+        borrowingDao.countByStatus("PENDING", start, end)
+
+    suspend fun countTotal(start: LocalDate, end: LocalDate) =
+        borrowingDao.countTotal(start, end)
 }

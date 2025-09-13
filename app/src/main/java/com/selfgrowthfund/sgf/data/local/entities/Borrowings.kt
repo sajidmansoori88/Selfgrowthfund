@@ -1,15 +1,14 @@
 package com.selfgrowthfund.sgf.data.local.entities
 
-import androidx.room.*
-import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.selfgrowthfund.sgf.model.enums.ApprovalAction
 import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
 @Entity(tableName = "borrowings")
-@TypeConverters(AppTypeConverters::class)
-
 data class Borrowing(
     @PrimaryKey
     val borrowId: String = UUID.randomUUID().toString(),
@@ -17,21 +16,22 @@ data class Borrowing(
     val shareholderId: String,
     val shareholderName: String,
 
-    val applicationDate: LocalDate,
+    val applicationDate: LocalDate,   // handled via converters
     val amountRequested: Double,
 
     val borrowEligibility: Double,
     val approvedAmount: Double,
 
-    val borrowStartDate: LocalDate,
-    val dueDate: LocalDate,
+    val borrowStartDate: LocalDate,   // handled via converters
+    val dueDate: LocalDate,           // handled via converters
 
     val status: BorrowingStatus = BorrowingStatus.PENDING,
-    val closedDate: LocalDate? = null,
+    val closedDate: LocalDate? = null, // handled via converters
 
     val notes: String? = null,
     val createdBy: String,
-    val createdAt: Instant = Instant.now()
+    val createdAt: Instant = Instant.now(),  // handled via converters
+    val approvalStatus: ApprovalAction = ApprovalAction.PENDING
 ) {
     constructor(
         shareholderId: String,
