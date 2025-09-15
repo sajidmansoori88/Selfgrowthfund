@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 4,
-    "identityHash": "3b906a0cefb250ab75d7e0ed360d251c",
+    "identityHash": "de132514cebef84faf08ad72009594f7",
     "entities": [
       {
         "tableName": "shareholders",
@@ -961,7 +961,7 @@
       },
       {
         "tableName": "penalties",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `reason` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `shareholderId` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `reason` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1004,6 +1004,12 @@
             "columnName": "shareholderId",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -1014,8 +1020,8 @@
         }
       },
       {
-        "tableName": "incomes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `recordedBy` TEXT NOT NULL)",
+        "tableName": "other_incomes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1058,6 +1064,12 @@
             "columnName": "recordedBy",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -1068,8 +1080,8 @@
         }
       },
       {
-        "tableName": "expenses",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `recordedBy` TEXT NOT NULL)",
+        "tableName": "other_expenses",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1111,6 +1123,12 @@
             "fieldPath": "recordedBy",
             "columnName": "recordedBy",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -1124,7 +1142,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3b906a0cefb250ab75d7e0ed360d251c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'de132514cebef84faf08ad72009594f7')"
     ]
   }
 }

@@ -9,16 +9,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.selfgrowthfund.sgf.data.local.entities.Expense
+import com.selfgrowthfund.sgf.data.local.entities.OtherExpenses
 import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import java.time.LocalDate
 
 @Composable
-fun AddExpenseScreen(
+fun AddOtherExpenseScreen(
     user: User
 ) {
-    val expenseViewModel: ExpenseViewModel = hiltViewModel()
+    val otherExpenseViewModel: OtherExpenseViewModel = hiltViewModel()
 
     var amount by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -62,13 +62,13 @@ fun AddExpenseScreen(
 
         Button(
             onClick = {
-                val expense = Expense(
+                val otherExpenses = OtherExpenses(
                     date = LocalDate.now(),
                     amount = amount.toDoubleOrNull() ?: 0.0,
                     remarks = description,
                     recordedBy = user.shareholderId
                 )
-                expenseViewModel.insertExpense(expense)
+                otherExpenseViewModel.insertExpense(otherExpenses)
             },
             modifier = Modifier.fillMaxWidth()
         ) {

@@ -9,17 +9,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.selfgrowthfund.sgf.data.local.entities.Income
+import com.selfgrowthfund.sgf.data.local.entities.OtherIncomes
 import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import java.time.LocalDate
 
 @Composable
-fun AddIncomeScreen(
+fun AddOtherIncomeScreen(
     user: User
 
 ) {
-    val incomeViewModel: IncomeViewModel = hiltViewModel()
+    val otherIncomeViewModel: OtherIncomeViewModel = hiltViewModel()
 
     var amount by remember { mutableStateOf("") }
     var source by remember { mutableStateOf("") }
@@ -61,13 +61,13 @@ fun AddIncomeScreen(
 
             Button(
                 onClick = {
-                    val income = Income(
+                    val otherIncomes = OtherIncomes(
                         date = LocalDate.now(),
                         amount = amount.toDoubleOrNull() ?: 0.0,
                         remarks = description,
                         recordedBy = user.shareholderId
                     )
-                    incomeViewModel.insertIncome(income)
+                    otherIncomeViewModel.insertIncome(otherIncomes)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

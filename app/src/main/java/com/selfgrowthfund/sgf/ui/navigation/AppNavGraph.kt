@@ -54,8 +54,8 @@ import com.selfgrowthfund.sgf.ui.repayments.AddRepaymentScreen
 import com.selfgrowthfund.sgf.ui.repayments.RepaymentViewModel
 import com.selfgrowthfund.sgf.ui.reports.CashFlowReportScreen
 import com.selfgrowthfund.sgf.ui.reports.ReportsDashboardScreen
-import com.selfgrowthfund.sgf.ui.transactions.AddExpenseScreen
-import com.selfgrowthfund.sgf.ui.transactions.AddIncomeScreen
+import com.selfgrowthfund.sgf.ui.transactions.AddOtherExpenseScreen
+import com.selfgrowthfund.sgf.ui.transactions.AddOtherIncomeScreen
 import com.selfgrowthfund.sgf.ui.transactions.TransactionForm
 import com.selfgrowthfund.sgf.ui.transactions.TransactionViewModel
 import java.time.LocalDate
@@ -591,23 +591,23 @@ fun AppNavGraph(
             )
         }
 
-        composable(Screen.AddExpense.route) {
+        composable(Screen.AddOtherExpense.route) {
             SGFScaffoldWrapper(
                 title = "Add Expense",
                 onDrawerClick = onDrawerClick,
                 content = {
-                    AddExpenseScreen(user = currentUser)
+                    AddOtherExpenseScreen(user = currentUser)
                 },
                 snackbarHostState = remember { SnackbarHostState() }
             )
         }
 
-        composable(Screen.AddIncome.route) {
+        composable(Screen.AddOtherIncome.route) {
             SGFScaffoldWrapper(
                 title = "Add Income",
                 onDrawerClick = onDrawerClick,
                 content = {
-                    AddIncomeScreen(user = currentUser)
+                    AddOtherIncomeScreen(user = currentUser)
                 },
                 snackbarHostState = remember { SnackbarHostState() }
             )

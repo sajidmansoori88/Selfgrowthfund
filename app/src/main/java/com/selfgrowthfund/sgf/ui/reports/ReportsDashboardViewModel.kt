@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.selfgrowthfund.sgf.model.reports.FundOverviewMetrics
 import com.selfgrowthfund.sgf.model.reports.CashFlowEntry
-import com.selfgrowthfund.sgf.data.local.dao.ExpenseDao
+import com.selfgrowthfund.sgf.data.local.dao.OtherExpenseDao
 import com.selfgrowthfund.sgf.data.local.dao.PenaltyDao
 import com.selfgrowthfund.sgf.data.local.dao.DepositDao
 import com.selfgrowthfund.sgf.data.local.dao.BorrowingDao
@@ -20,7 +20,7 @@ class ReportsDashboardViewModel @Inject constructor(
     private val depositDao: DepositDao,
     private val borrowingDao: BorrowingDao,
     private val investmentDao: InvestmentDao,
-    private val expenseDao: ExpenseDao,
+    private val otherExpenseDao: OtherExpenseDao,
     private val penaltyDao: PenaltyDao
 ) : ViewModel() {
 
@@ -88,7 +88,7 @@ class ReportsDashboardViewModel @Inject constructor(
         val outstandingBorrowings = borrowingDao.getOutstandingAmount()
         val overdueBorrowings = borrowingDao.getOverdueCount()
 
-        val otherExpenses = expenseDao.getTotalExpenses()
+        val otherExpenses = otherExpenseDao.getTotalExpenses()
         val netProfit = totalEarnings + returnsFromClosed - otherExpenses
 
         return FundOverviewMetrics(
@@ -114,7 +114,7 @@ class ReportsDashboardViewModel @Inject constructor(
                     penaltyDao.getMonthlyPenaltyTotal(monthStrFormatted) +
                     investmentDao.getMonthlyReturns(monthStrFormatted)
 
-            val expense = expenseDao.getMonthlyExpenses(monthStrFormatted) +
+            val expense = otherExpenseDao.getMonthlyExpenses(monthStrFormatted) +
                     borrowingDao.getMonthlyRepayments(monthStrFormatted)
 
             val opening = previousClosing

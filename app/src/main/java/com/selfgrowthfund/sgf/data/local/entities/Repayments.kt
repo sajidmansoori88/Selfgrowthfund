@@ -5,6 +5,7 @@ import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
 import com.selfgrowthfund.sgf.model.enums.ApprovalAction
 import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
 import com.selfgrowthfund.sgf.model.enums.PaymentMode
+import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -59,7 +60,7 @@ data class Repayment(
     @ColumnInfo(name = "createdBy")
     val createdBy: String,
     @ColumnInfo(name = "createdAt")
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Instant = Instant.now(),
     @ColumnInfo(name = "approvalStatus")
     val approvalStatus: ApprovalAction = ApprovalAction.PENDING,
 

@@ -1,20 +1,20 @@
 package com.selfgrowthfund.sgf.data.repository
 
-import com.selfgrowthfund.sgf.data.local.dao.IncomeDao
-import com.selfgrowthfund.sgf.data.local.entities.Income
+import com.selfgrowthfund.sgf.data.local.dao.OtherIncomeDao
+import com.selfgrowthfund.sgf.data.local.entities.OtherIncomes
 import java.time.LocalDate
 import javax.inject.Inject
 
 class IncomeRepository @Inject constructor(
-    private val dao: IncomeDao) {
+    private val dao: OtherIncomeDao) {
 
-    suspend fun addIncome(income: Income) = dao.insertIncome(income)
+    suspend fun addIncome(otherIncomes: OtherIncomes) = dao.insertIncome(otherIncomes)
 
-    suspend fun getIncomesForUser(userId: String): List<Income> = dao.getIncomesByUser(userId)
+    suspend fun getIncomesForUser(userId: String): List<OtherIncomes> = dao.getIncomesByUser(userId)
 
-    suspend fun getAllIncomes(): List<Income> = dao.getAllIncomes()
+    suspend fun getAllIncomes(): List<OtherIncomes> = dao.getAllIncomes()
 
-    suspend fun deleteIncome(income: Income) = dao.deleteIncome(income)
+    suspend fun deleteIncome(otherIncomes: OtherIncomes) = dao.deleteIncome(otherIncomes)
 
     suspend fun clearAll() = dao.clearAllIncomes()
     suspend fun countApproved(start: LocalDate, end: LocalDate) =

@@ -1,33 +1,33 @@
 package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.*
-import com.selfgrowthfund.sgf.data.local.entities.Expense
+import com.selfgrowthfund.sgf.data.local.entities.OtherExpenses
 import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
 import java.time.LocalDate
 
 @Dao
-interface ExpenseDao {
+interface OtherExpenseDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertExpense(expense: Expense)
+    suspend fun insertExpense(otherExpenses: OtherExpenses)
 
-    @Query("SELECT * FROM expenses ORDER BY date DESC")
-    suspend fun getAllExpenses(): List<Expense>
+    @Query("SELECT * FROM other_expenses ORDER BY date DESC")
+    suspend fun getAllExpenses(): List<OtherExpenses>
 
-    @Query("SELECT * FROM expenses WHERE recordedBy = :userId ORDER BY date DESC")
-    suspend fun getExpensesByUser(userId: String): List<Expense>
+    @Query("SELECT * FROM other_expenses WHERE recordedBy = :userId ORDER BY date DESC")
+    suspend fun getExpensesByUser(userId: String): List<OtherExpenses>
 
     @Delete
-    suspend fun deleteExpense(expense: Expense)
+    suspend fun deleteExpense(otherExpenses: OtherExpenses)
 
-    @Query("DELETE FROM expenses")
+    @Query("DELETE FROM other_expenses")
     suspend fun clearAllExpenses()
-    @Query("SELECT SUM(amount) FROM expenses")
+    @Query("SELECT SUM(amount) FROM other_expenses")
     suspend fun getTotalExpenses(): Double
 
     @Query("""
     SELECT strftime('%Y-%m', date) AS month, SUM(amount) AS total
-    FROM expenses
+    FROM other_expenses
     GROUP BY month
     ORDER BY month ASC
 """)
@@ -35,7 +35,7 @@ interface ExpenseDao {
 
     @Query("""
     SELECT SUM(amount)
-    FROM expenses
+    FROM other_expenses
     WHERE strftime('%Y-%m', date) = :month
 """)
     suspend fun getMonthlyExpenses(month: String): Double

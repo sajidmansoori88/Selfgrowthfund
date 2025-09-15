@@ -91,8 +91,8 @@ sealed class Screen(val route: String) {
 
     // Transactions / Penalties / Incomes
     object AddTransaction : Screen("add_transaction")
-    object AddExpense : Screen("add_expense")
-    object AddIncome : Screen("add_income")
+    object AddOtherExpense : Screen("add_other_expense")
+    object AddOtherIncome : Screen("add_other_income")
     object AddPenalty : Screen("add_penalty")
 
     // Member Management

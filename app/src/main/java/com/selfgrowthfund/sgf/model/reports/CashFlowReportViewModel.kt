@@ -3,8 +3,8 @@ package com.selfgrowthfund.sgf.model.reports
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.selfgrowthfund.sgf.data.local.dao.DepositDao
-import com.selfgrowthfund.sgf.data.local.dao.ExpenseDao
-import com.selfgrowthfund.sgf.data.local.dao.IncomeDao
+import com.selfgrowthfund.sgf.data.local.dao.OtherExpenseDao
+import com.selfgrowthfund.sgf.data.local.dao.OtherIncomeDao
 import com.selfgrowthfund.sgf.data.local.dao.PenaltyDao
 import com.selfgrowthfund.sgf.data.local.dao.RepaymentDao
 import dagger.hilt.android.lifecycle.*
@@ -19,8 +19,8 @@ class CashFlowReportViewModel @Inject constructor(
     private val depositDao: DepositDao,
     private val penaltyDao: PenaltyDao,
     private val repaymentDao: RepaymentDao,
-    private val incomeDao: IncomeDao,
-    private val expenseDao: ExpenseDao
+    private val otherIncomeDao: OtherIncomeDao,
+    private val otherExpenseDao: OtherExpenseDao
 ) : ViewModel() {
 
     private val _cashFlow = MutableStateFlow<List<MonthlyCashFlow>>(emptyList())
@@ -31,8 +31,8 @@ class CashFlowReportViewModel @Inject constructor(
             val deposits = depositDao.getMonthlyDeposits() // List<MonthlyAmount>
             val penalties = penaltyDao.getMonthlyPenalties() // List<MonthlyAmount>
             val repayments = repaymentDao.getMonthlyRepayments() // List<MonthlyAmount>
-            val otherIncome = incomeDao.getMonthlyOtherIncome() // List<MonthlyAmount>
-            val expenses = expenseDao.getMonthlyExpenses() // List<MonthlyAmount>
+            val otherIncome = otherIncomeDao.getMonthlyOtherIncome() // List<MonthlyAmount>
+            val expenses = otherExpenseDao.getMonthlyExpenses() // List<MonthlyAmount>
 
             val incomeMap = mutableMapOf<String, Double>()
 

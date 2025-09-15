@@ -49,8 +49,8 @@ object AppModule {
     // ✅ Newly added DAOs
     @Provides fun provideActionItemDao(db: AppDatabase): ActionItemDao = db.actionItemDao()
     @Provides fun providePenaltyDao(db: AppDatabase): PenaltyDao = db.penaltyDao()
-    @Provides fun provideIncomeDao(db: AppDatabase): IncomeDao = db.incomeDao()
-    @Provides fun provideExpenseDao(db: AppDatabase): ExpenseDao = db.expenseDao()
+    @Provides fun provideIncomeDao(db: AppDatabase): OtherIncomeDao = db.incomeDao()
+    @Provides fun provideExpenseDao(db: AppDatabase): OtherExpenseDao = db.expenseDao()
 
     /* Utilities */
     @Provides

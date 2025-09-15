@@ -15,7 +15,7 @@ class FundOverviewViewModel @Inject constructor(
     private val depositDao: DepositDao,
     private val borrowingDao: BorrowingDao,
     private val investmentDao: InvestmentDao,
-    private val expenseDao: ExpenseDao,
+    private val otherExpenseDao: OtherExpenseDao,
     private val penaltyDao: PenaltyDao,
     private val repaymentDao: RepaymentDao
 ) : ViewModel() {
@@ -87,7 +87,7 @@ class FundOverviewViewModel @Inject constructor(
             val overdueBorrowings = borrowingDao.getOverdueCount()
 
             // Expenses & Net
-            val otherExpenses = expenseDao.getTotalExpenses()
+            val otherExpenses = otherExpenseDao.getTotalExpenses()
             val netProfitOrLoss = totalEarnings + returnsFromClosed - otherExpenses
 
             _metrics.value = FundOverviewMetrics(
