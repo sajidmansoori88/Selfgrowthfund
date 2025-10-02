@@ -12,10 +12,11 @@ data class DepositSummaryModel(
 )
 
 fun DepositEntrySummaryDTO.toDomain(): DepositSummaryModel = DepositSummaryModel(
-    id = depositId,
+    id = depositId ?: provisionalId,    // fallback if depositId is null
     name = shareholderName,
-    month = dueMonth,
+    month = dueMonth,                   // both non-null, safe
     amount = totalAmount,
     status = paymentStatus,
-    timestamp = createdAt?.toEpochMilli() ?: System.currentTimeMillis()
+    timestamp = createdAt.toEpochMilli() // Instant is non-null, no safe call needed
 )
+

@@ -106,4 +106,23 @@ object Migrations {
             db.execSQL("ALTER TABLE deposit_entries ADD COLUMN entrySource TEXT NOT NULL DEFAULT 'USER'")
         }
     }
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `approval_flow` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `entityType` TEXT NOT NULL,
+                `entityId` TEXT NOT NULL,
+                `role` TEXT NOT NULL,
+                `action` TEXT NOT NULL,
+                `approvedBy` TEXT NOT NULL,
+                `approvedAt` INTEGER NOT NULL
+            )
+        """.trimIndent())
+
+            // optional index (useful if you query by entityId or role)
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_approval_flow_entityId ON approval_flow(entityId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_approval_flow_role ON approval_flow(role)")
+        }
+    }
 }

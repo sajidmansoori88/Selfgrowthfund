@@ -1,6 +1,6 @@
 package com.selfgrowthfund.sgf.di
 
-import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
@@ -14,9 +14,9 @@ object FirebaseModule {
 
     @Provides
     @Singleton
-    fun provideFirestore(): FirebaseFirestore {
-        // Use the already initialized default app
-        val app = FirebaseApp.getInstance()
-        return FirebaseFirestore.getInstance(app)
-    }
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
 }

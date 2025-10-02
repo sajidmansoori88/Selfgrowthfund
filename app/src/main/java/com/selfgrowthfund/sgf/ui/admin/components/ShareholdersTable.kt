@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.HorizontalDivider // ← Changed from Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,14 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.selfgrowthfund.sgf.model.User
+import com.selfgrowthfund.sgf.data.local.entities.Shareholder
 import com.selfgrowthfund.sgf.ui.components.EmptyStateCard
 
 @Composable
 fun ShareholdersTable(
-    shareholders: List<User>,
-    onModify: (User) -> Unit,
-    onDelete: (User) -> Unit,
+    shareholders: List<Shareholder>,
+    onModify: (Shareholder) -> Unit,
+    onDelete: (Shareholder) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -40,16 +40,15 @@ fun ShareholdersTable(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                icon = Icons.Default.Person, // 👈 pick any Material icon you like
+                icon = Icons.Default.Person,
                 title = "No shareholders found",
                 message = "Add new members to get started."
             )
-
         } else {
             // Show data rows
-            shareholders.forEach { user ->
+            shareholders.forEach { shareholder ->
                 ShareholderTableRow(
-                    user = user,
+                    shareholder = shareholder,        // ✅ already a Shareholder
                     onModify = onModify,
                     onDelete = onDelete
                 )
@@ -74,45 +73,22 @@ fun ShareholderTableHeader() {
             .defaultMinSize(minWidth = 350.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // ID Column
-        TableHeaderText(
-            text = "ID",
-            modifier = Modifier.weight(1f), // Apply weight here
-            textAlign = TextAlign.Start
-        )
-
-        // Name Column
-        TableHeaderText(
-            text = "Name",
-            modifier = Modifier.weight(2f), // Apply weight here
-            textAlign = TextAlign.Start
-        )
-
-        // Role Column
-        TableHeaderText(
-            text = "Role",
-            modifier = Modifier.weight(1.5f), // Apply weight here
-            textAlign = TextAlign.Start
-        )
-
-        // Actions Column
-        TableHeaderText(
-            text = "Actions",
-            modifier = Modifier.weight(1f), // Apply weight here
-            textAlign = TextAlign.Center
-        )
+        TableHeaderText("ID", Modifier.weight(1f), TextAlign.Start)
+        TableHeaderText("Name", Modifier.weight(2f), TextAlign.Start)
+        TableHeaderText("Role", Modifier.weight(1.5f), TextAlign.Start)
+        TableHeaderText("Actions", Modifier.weight(1f), TextAlign.Center)
     }
 }
 
 @Composable
 private fun TableHeaderText(
     text: String,
-    modifier: Modifier = Modifier, // Accept modifier parameter
+    modifier: Modifier = Modifier,
     textAlign: TextAlign = TextAlign.Start
 ) {
     Text(
         text = text,
-        modifier = modifier, // Use the passed modifier
+        modifier = modifier,
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onPrimaryContainer,

@@ -338,7 +338,7 @@ fun AddDepositScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Status:")
-                        val statusEnum = PaymentStatus.fromLabel(paymentStatus)
+                        val statusEnum = paymentStatus
                         Text(
                             text = statusEnum.label,
                             color = when (statusEnum) {

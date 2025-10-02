@@ -2,7 +2,7 @@ package com.selfgrowthfund.sgf.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.selfgrowthfund.sgf.model.enums.ApprovalAction
+import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
 import java.time.Instant
 import java.time.LocalDate
@@ -16,23 +16,30 @@ data class Borrowing(
     val shareholderId: String,
     val shareholderName: String,
 
-    val applicationDate: LocalDate,   // handled via converters
+    val applicationDate: LocalDate,   // via converter
     val amountRequested: Double,
 
     val borrowEligibility: Double,
     val approvedAmount: Double,
 
-    val borrowStartDate: LocalDate,   // handled via converters
-    val dueDate: LocalDate,           // handled via converters
+    val borrowStartDate: LocalDate,   // via converter
+    val dueDate: LocalDate,           // via converter
 
+    // --- Loan Lifecycle ---
     val status: BorrowingStatus = BorrowingStatus.PENDING,
-    val closedDate: LocalDate? = null, // handled via converters
+    val closedDate: LocalDate? = null, // via converter
 
+    // --- Approval Workflow ---
+    val approvalStatus: ApprovalStage = ApprovalStage.PENDING,
+    val approvedBy: String? = null,
     val notes: String? = null,
+
+    // --- Metadata ---
     val createdBy: String,
-    val createdAt: Instant = Instant.now(),  // handled via converters
-    val approvalStatus: ApprovalAction = ApprovalAction.PENDING
+    val createdAt: Instant = Instant.now(),
+    val updatedAt: Instant = Instant.now()
 ) {
+
     constructor(
         shareholderId: String,
         shareholderName: String,
@@ -55,9 +62,12 @@ data class Borrowing(
         dueDate = calculateDueDate(borrowStartDate),
         status = BorrowingStatus.PENDING,
         closedDate = null,
+        approvalStatus = ApprovalStage.PENDING,
+        approvedBy = null,
         notes = notes,
         createdBy = createdBy,
-        createdAt = Instant.now()
+        createdAt = Instant.now(),
+        updatedAt = Instant.now()
     )
 
     companion object {
@@ -65,12 +75,14 @@ data class Borrowing(
         fun calculateEligibility(shareholderAmount: Double): Double = shareholderAmount * 0.9
     }
 
+    // --- Validation ---
     fun validate(): Boolean {
         return approvedAmount <= borrowEligibility &&
                 amountRequested > 0 &&
                 !borrowStartDate.isBefore(applicationDate)
     }
 
+    // --- Lifecycle Checks ---
     fun isPending(): Boolean = status == BorrowingStatus.PENDING
     fun isApproved(): Boolean = status == BorrowingStatus.APPROVED
     fun isRejected(): Boolean = status == BorrowingStatus.REJECTED

@@ -33,13 +33,23 @@ fun AdminApprovalHistoryScreen(
     val periodCalculator = remember { ReportPeriodCalculator() }
     var showCustomDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(selectedPeriod, customPeriod) {
+        val cp = customPeriod
+        if (selectedPeriod == ReportPeriod.CUSTOM && cp != null) {
+            viewModel.loadApprovalSummary(ReportPeriod.CUSTOM, cp.startDate, cp.endDate)
+        } else {
+            val (start, end) = periodCalculator.getDateRange(selectedPeriod)
+            viewModel.loadApprovalSummary(selectedPeriod, start, end)
+        }
+    }
+
     GradientBackground {
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // ===== Header Row (only this row is horizontally scrollable) =====
+            // ===== Header Row =====
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -52,13 +62,11 @@ fun AdminApprovalHistoryScreen(
                     options = ReportPeriod.entries.toList(),
                     selected = selectedPeriod,
                     onSelected = { period ->
-                        viewModel.selectedPeriod.value = period
+                        viewModel.setSelectedPeriod(period)
                         if (period == ReportPeriod.CUSTOM) {
                             showCustomDialog = true
                         } else {
-                            viewModel.customPeriod.value = null
-                            val dateRange = periodCalculator.getDateRange(period)
-                            viewModel.loadApprovalSummary(period, dateRange.first, dateRange.second)
+                            viewModel.setCustomPeriod(null)
                         }
                     },
                     modifier = Modifier.weight(1f)
@@ -105,7 +113,7 @@ fun AdminApprovalHistoryScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ===== Summary Table (compact / vertical-small) =====
+            // ===== Summary Table =====
             if (summary.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -134,14 +142,13 @@ fun AdminApprovalHistoryScreen(
         CustomPeriodPickerDialog(
             onDismiss = { showCustomDialog = false },
             onConfirm = { period ->
-                viewModel.customPeriod.value = period
-                val (start, end) = period.startDate to period.endDate
-                viewModel.loadApprovalSummary(ReportPeriod.CUSTOM, start, end)
+                viewModel.setCustomPeriod(period)
                 showCustomDialog = false
             }
         )
     }
 }
+
 
 // ---------- Export helper ----------
 private fun exportData(

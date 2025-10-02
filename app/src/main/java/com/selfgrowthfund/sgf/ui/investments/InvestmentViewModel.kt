@@ -1,58 +1,141 @@
 package com.selfgrowthfund.sgf.ui.investments
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.data.repository.InvestmentRepository
-import com.selfgrowthfund.sgf.utils.IdGenerator
+import com.selfgrowthfund.sgf.data.repository.ShareholderRepository
+import com.selfgrowthfund.sgf.model.enums.*
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import java.time.LocalDate
+import java.util.UUID
 import javax.inject.Inject
+
+// ---------------- UI STATE ----------------
+data class AddInvestmentUiState(
+    val provisionalId: String = UUID.randomUUID().toString(),
+    val shareholderId: String? = null,
+    val investeeName: String = "",
+    val shareholderList: List<Pair<String, String>> = emptyList(),
+    val investeeType: InvesteeType = InvesteeType.Shareholder,
+    val investmentName: String = "",
+    val ownershipType: OwnershipType = OwnershipType.Individual,
+    val partnerNames: String = "",
+    val investmentDate: LocalDate = LocalDate.now(),
+    val investmentType: InvestmentType = InvestmentType.Other,
+    val amount: Double = 0.0,
+    val expectedProfitPercent: Double = 0.0,
+    val expectedProfitAmount: Double = 0.0,
+    val expectedReturnPeriod: Int = 0,
+    val remarks: String = "",
+    val isSubmitting: Boolean = false
+)
 
 @HiltViewModel
 class InvestmentViewModel @Inject constructor(
     private val repository: InvestmentRepository,
+    private val shareholderRepository: ShareholderRepository,
     private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
     // ---------------- STATE ----------------
-    val isSubmitting = MutableStateFlow(false)
-    val submissionResult = MutableStateFlow<Result<Unit>?>(null)
-    val nextInvestmentId = MutableStateFlow<String?>(null)
+    private val _uiState = MutableStateFlow(AddInvestmentUiState())
+    val uiState: StateFlow<AddInvestmentUiState> = _uiState.asStateFlow()
 
-    // ---------------- ID PREVIEW ----------------
-    fun fetchNextInvestmentId() {
-        viewModelScope.launch {
-            val lastId = repository.getLastInvestmentId()
-            nextInvestmentId.value = IdGenerator.nextInvestmentId(lastId)
-        }
-    }
+    val submissionResult = MutableStateFlow<Result<Unit>?>(null)
 
     // ---------------- INVESTMENTS ----------------
     val investments: StateFlow<List<Investment>> =
         repository.getAllInvestments()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun getInvestmentById(id: String): Flow<Investment?> {
-        return repository.getInvestmentById(id)
+    // ✅ Option A: Expose Flow directly (recommended for UI observers)
+    fun getInvestmentByProvisionalId(id: String): Flow<Investment?> =
+        repository.getByProvisionalIdFlow(id)
+
+    fun getInvestmentByInvestmentId(id: String): Flow<Investment?> =
+        repository.getByInvestmentIdFlow(id)
+
+    // ✅ Option B: If you really need the suspend versions:
+    suspend fun loadInvestmentByProvisionalId(id: String): Investment? =
+        repository.getByProvisionalId(id)
+
+    suspend fun loadInvestmentByInvestmentId(id: String): Investment? =
+        repository.getByInvestmentId(id)
+
+    // ---------------- UI STATE UPDATES ----------------
+    fun onInvesteeTypeSelected(type: InvesteeType) {
+        viewModelScope.launch {
+            if (type == InvesteeType.Shareholder) {
+                shareholderRepository.getAllShareholdersStream()
+                    .collect { members ->
+                        val activeMembers = members.filter { it.isActive() }
+                        _uiState.update {
+                            it.copy(
+                                investeeType = type,
+                                shareholderList = activeMembers.map { m -> m.shareholderId to m.fullName },
+                                investeeName = "",
+                                shareholderId = null
+                            )
+                        }
+                    }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        investeeType = type,
+                        shareholderList = emptyList(),
+                        shareholderId = null,
+                        investeeName = ""
+                    )
+                }
+            }
+        }
+    }
+
+    fun onShareholderSelected(id: String, name: String) {
+        _uiState.update { it.copy(shareholderId = id, investeeName = name) }
+    }
+
+    fun updateField(field: (AddInvestmentUiState) -> AddInvestmentUiState) {
+        _uiState.update { field(it) }
     }
 
     // ---------------- SUBMIT ----------------
-    fun submitInvestment(
-        investment: Investment,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit
-    ) {
+    fun submitInvestment(onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
-            isSubmitting.value = true
+            _uiState.update { it.copy(isSubmitting = true) }
             submissionResult.value = null
 
             try {
+                val state = _uiState.value
+
+                val investment = Investment(
+                    investmentId = null,
+                    provisionalId = state.provisionalId,
+                    shareholderId = state.shareholderId ?: "",
+                    investeeType = state.investeeType,
+                    investeeName = state.investeeName,
+                    ownershipType = state.ownershipType,
+                    partnerNames = state.partnerNames,
+                    investmentDate = state.investmentDate,
+                    investmentType = state.investmentType,
+                    investmentName = state.investmentName,
+                    amount = state.amount,
+                    expectedProfitPercent = state.expectedProfitPercent,
+                    expectedProfitAmount = state.expectedProfitAmount,
+                    expectedReturnPeriod = state.expectedReturnPeriod,
+                    remarks = state.remarks,
+                    approvalStatus = ApprovalStage.PENDING,
+                    returnDueDate = state.investmentDate.plusDays(state.expectedReturnPeriod.toLong())
+                )
+
                 val result = repository.createInvestment(investment)
+
                 if (result is Result.Success) {
                     syncToFirestore(investment)
                     submissionResult.value = Result.Success(Unit)
@@ -65,16 +148,17 @@ class InvestmentViewModel @Inject constructor(
                 onError(e.message ?: "Investment submission failed")
             }
 
-            isSubmitting.value = false
+            _uiState.update { it.copy(isSubmitting = false) }
         }
     }
 
     // ---------------- FIRESTORE SYNC ----------------
     private fun syncToFirestore(investment: Investment) {
         val data = mapOf(
-            "investmentId" to investment.investmentId,
+            "provisionalId" to investment.provisionalId,
             "investeeType" to investment.investeeType.name,
             "investeeName" to investment.investeeName,
+            "shareholderId" to investment.shareholderId,
             "ownershipType" to investment.ownershipType.name,
             "partnerNames" to investment.partnerNames,
             "investmentDate" to investment.investmentDate.toString(),
@@ -84,20 +168,20 @@ class InvestmentViewModel @Inject constructor(
             "expectedProfitPercent" to investment.expectedProfitPercent,
             "expectedProfitAmount" to investment.expectedProfitAmount,
             "expectedReturnPeriod" to investment.expectedReturnPeriod,
-            "returnDueDate" to investment.returnDueDate.toString(),
-            "modeOfPayment" to investment.modeOfPayment.name,
-            "status" to investment.status.name,
-            "remarks" to investment.remarks
+            "remarks" to investment.remarks,
+            "approvalStatus" to investment.approvalStatus.name,
+            "returnDueDate" to investment.returnDueDate.toString()
         )
 
         firestore.collection("investments")
-            .document(investment.investmentId)
+            .document(investment.provisionalId)
             .set(data)
             .addOnSuccessListener {
-                Log.d("Firestore", "Investment synced: ${investment.investmentId}")
+                Timber.d("Investment synced: ${investment.provisionalId}")
             }
             .addOnFailureListener { e ->
-                Log.e("Firestore", "Investment sync failed", e)
+                Timber.e(e, "Investment sync failed")
             }
     }
 }
+

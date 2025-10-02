@@ -85,7 +85,7 @@ fun AdminApprovalScreen(
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                                 Text(
-                                    "Date: ${approval.date}",
+                                    "Date: ${approval.createdAt}",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }

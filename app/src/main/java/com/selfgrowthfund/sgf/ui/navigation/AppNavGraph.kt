@@ -19,7 +19,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturns
 import com.selfgrowthfund.sgf.ui.WelcomeScreen
 import com.selfgrowthfund.sgf.ui.dashboard.HomeScreen
@@ -48,7 +47,6 @@ import com.selfgrowthfund.sgf.ui.investmentreturns.InvestmentReturnsEntryScreen
 import com.selfgrowthfund.sgf.ui.investmentreturns.InvestmentReturnsViewModel
 import com.selfgrowthfund.sgf.ui.investments.AddInvestmentScreen
 import com.selfgrowthfund.sgf.ui.investments.InvestmentViewModel
-import com.selfgrowthfund.sgf.ui.investments.safeValueOf
 import com.selfgrowthfund.sgf.ui.penalty.AddPenaltyScreen
 import com.selfgrowthfund.sgf.ui.repayments.AddRepaymentScreen
 import com.selfgrowthfund.sgf.ui.repayments.RepaymentViewModel
@@ -63,10 +61,12 @@ import com.selfgrowthfund.sgf.ui.admin.AdminDashboardScreen
 import com.selfgrowthfund.sgf.ui.admin.AdminDashboardViewModel
 import com.selfgrowthfund.sgf.ui.editshareholders.EditShareholderScreen
 import com.selfgrowthfund.sgf.ui.investments.InvestmentDetailScreen
+import com.selfgrowthfund.sgf.ui.investments.InvestmentListScreen
 import com.selfgrowthfund.sgf.ui.reports.ActiveBorrowingReportScreen
 import com.selfgrowthfund.sgf.ui.reports.ClosedBorrowingReportScreen
 import com.selfgrowthfund.sgf.ui.reports.FundOverviewScreen
 import com.selfgrowthfund.sgf.ui.reports.ReportsPlaceholderScreen
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun AppNavGraph(
@@ -125,6 +125,8 @@ fun AppNavGraph(
 
         // ───── Shareholder Management ─────
         composable("shareholder_screen") {
+            val viewModel: AdminDashboardViewModel = hiltViewModel()
+
             SGFScaffoldWrapper(
                 title = "Shareholders",
                 onDrawerClick = onDrawerClick,
@@ -132,16 +134,15 @@ fun AppNavGraph(
                 content = { innerPadding ->
                     AdminShareholderScreen(
                         modifier = Modifier.padding(innerPadding),
+                        viewModel = viewModel,
                         onAddClick = { navController.navigate("add_shareholder_screen") },
-                        onModifyClick = { user -> navController.navigate("edit_shareholder_screen/${user.id}") },
-                        onDeleteClick = { user ->
-                            // You can show a confirmation dialog or call a ViewModel method here
-                            println("Delete requested for user: ${user.id}")
-                        }
+                        onModifyClick = { shareholder -> viewModel.modifyShareholder(shareholder) },
+                        onDeleteClick = { shareholder -> viewModel.deleteShareholder(shareholder) }
                     )
-                },
+                }
             )
         }
+
 
         composable("add_shareholder_screen") {
             SGFScaffoldWrapper(
@@ -415,64 +416,88 @@ fun AppNavGraph(
             )
         }
 
-        // 📈 Investments
+        // 📈 Investments List (entry point)
         composable(Screen.Investments.route) {
             val investmentViewModel: InvestmentViewModel = hiltViewModel()
-            val investmentReturnsViewModel: InvestmentReturnsViewModel = hiltViewModel()
+            val investments by investmentViewModel.investments.collectAsState()
+
             SGFScaffoldWrapper(
                 title = "Investments",
                 onDrawerClick = onDrawerClick,
                 snackbarHostState = remember { SnackbarHostState() },
                 content = { innerPadding ->
-                    // TODO: Replace dummy data with ViewModel data
-                    val dummyInvestment = Investment(
-                        investmentId = "INV001",
-                        investeeType = InvesteeType.External,
-                        investeeName = "John Doe",
-                        ownershipType = OwnershipType.Individual,
-                        partnerNames = null,
-                        investmentDate = LocalDate.now(),
-                        investmentType = InvestmentType.Other,
-                        investmentName = "Seed Capital",
-                        amount = 10000.0,
-                        expectedProfitPercent = 20.0,
-                        expectedProfitAmount = 2000.0,
-                        expectedReturnPeriod = 90,
-                        returnDueDate = LocalDate.now().plusDays(90),
-                        modeOfPayment = PaymentMode.OTHER,
-                        status = InvestmentStatus.Active,
-                        remarks = null
-                    )
-                    val dummyReturns = emptyList<InvestmentReturns>()
-
-                    InvestmentDetailScreen(
-                        investment = dummyInvestment,
-                        returns = dummyReturns,
-                        currentUserRole = currentUser.role,
-                        onAddReturn = {
+                    InvestmentListScreen(
+                        investments = investments,
+                        onSelectInvestment = { investment ->
                             navController.navigate(
-                                Screen.AddInvestmentReturn.createRoute(
-                                    investmentId = dummyInvestment.investmentId,
-                                    investeeType = dummyInvestment.investeeType.name,
-                                    ownershipType = dummyInvestment.ownershipType.name,
-                                    investmentType = dummyInvestment.investmentType.name,
-                                    modeOfPayment = dummyInvestment.modeOfPayment.name,
-                                    status = dummyInvestment.status.name
-                                )
+                                Screen.InvestmentDetail.createRoute(investment.provisionalId)
                             )
                         },
                         onApplyInvestment = {
                             navController.navigate(Screen.AddInvestment.route)
                         },
-                        onDrawerClick = onDrawerClick,
                         modifier = Modifier.padding(innerPadding)
                     )
-                },
-
+                }
             )
         }
 
-       // Add Investment Screen
+// 📊 Investment Detail (by provisionalId)
+        composable(
+            route = Screen.InvestmentDetail.route,
+            arguments = listOf(navArgument("provisionalId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val provisionalId = backStackEntry.arguments?.getString("provisionalId") ?: return@composable
+            val investmentViewModel: InvestmentViewModel = hiltViewModel()
+            val investment by investmentViewModel.getInvestmentByProvisionalId(provisionalId)
+                .collectAsState(initial = null)
+
+            investment?.let { inv ->
+                val investmentReturnsViewModel: InvestmentReturnsViewModel = hiltViewModel()
+
+                // ✅ directly collect Flow<List<InvestmentReturns>>
+                val returns: List<InvestmentReturns> by if (inv.investmentId != null) {
+                    investmentReturnsViewModel
+                        .getReturnsByInvestmentId(inv.investmentId!!)
+                        .collectAsState(initial = emptyList())
+                } else {
+                    flowOf<List<InvestmentReturns>>(emptyList())
+                        .collectAsState(initial = emptyList())
+                }
+
+                SGFScaffoldWrapper(
+                    title = "Investment Details",
+                    onDrawerClick = onDrawerClick,
+                    snackbarHostState = remember { SnackbarHostState() },
+                    content = { innerPadding ->
+                        InvestmentDetailScreen(
+                            investment = inv,
+                            returns = returns,
+                            currentUserRole = currentUser.role,
+                            onAddReturn = {
+                                inv.investmentId?.let { approvedId ->
+                                    navController.navigate(
+                                        Screen.AddInvestmentReturn.createRoute(
+                                            investmentId = approvedId,
+                                            investeeType = inv.investeeType.name,
+                                            ownershipType = inv.ownershipType.name,
+                                            investmentType = inv.investmentType.name
+                                        )
+                                    )
+                                }
+                            },
+                            onApplyInvestment = {
+                                navController.navigate(Screen.AddInvestment.route)
+                            },
+                            onDrawerClick = onDrawerClick,
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
+                )
+            }
+        }
+
+// ➕ Add Investment Screen
         composable(Screen.AddInvestment.route) {
             val investmentViewModel: InvestmentViewModel = hiltViewModel()
             SGFScaffoldWrapper(
@@ -489,52 +514,39 @@ fun AppNavGraph(
             )
         }
 
-        // Add Investment Return Screen
-        composable(Screen.AddInvestmentReturn.route) { backStackEntry ->
+// 💰 Add Investment Return (approved investments only)
+        composable(
+            route = Screen.AddInvestmentReturn.route,
+            arguments = listOf(
+                navArgument("investmentId") { type = NavType.StringType },
+                navArgument("investeeType") { type = NavType.StringType },
+                navArgument("ownershipType") { type = NavType.StringType },
+                navArgument("investmentType") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
             val investmentId = backStackEntry.arguments?.getString("investmentId") ?: return@composable
-            val investeeType = backStackEntry.arguments?.getString("investeeType") ?: ""
-            val ownershipType = backStackEntry.arguments?.getString("ownershipType") ?: ""
-            val investmentType = backStackEntry.arguments?.getString("investmentType") ?: ""
-            val modeOfPayment = backStackEntry.arguments?.getString("modeOfPayment") ?: ""
-            val status = backStackEntry.arguments?.getString("status") ?: ""
+            val investmentViewModel: InvestmentViewModel = hiltViewModel()
+            val investment by investmentViewModel.getInvestmentByInvestmentId(investmentId)
+                .collectAsState(initial = null)
 
             val investmentReturnsViewModel: InvestmentReturnsViewModel = hiltViewModel()
 
-            val investment = remember {
-                Investment(
-                    investmentId = investmentId,
-                    investeeType = safeValueOf<InvesteeType>(investeeType) ?: InvesteeType.External,
-                    investeeName = "John Doe", // You might want to get this from arguments or ViewModel
-                    ownershipType = safeValueOf<OwnershipType>(ownershipType) ?: OwnershipType.Individual,
-                    partnerNames = null,
-                    investmentDate = LocalDate.now(),
-                    investmentType = safeValueOf<InvestmentType>(investmentType) ?: InvestmentType.Other,
-                    investmentName = "Seed Capital", // You might want to get this from arguments or ViewModel
-                    amount = 10000.0, // You might want to get this from arguments or ViewModel
-                    expectedProfitPercent = 20.0, // You might want to get this from arguments or ViewModel
-                    expectedProfitAmount = 2000.0, // You might want to get this from arguments or ViewModel
-                    expectedReturnPeriod = 90, // You might want to get this from arguments or ViewModel
-                    returnDueDate = LocalDate.now().plusDays(90),
-                    modeOfPayment = safeValueOf<PaymentMode>(modeOfPayment) ?: PaymentMode.OTHER,
-                    status = safeValueOf<InvestmentStatus>(status) ?: InvestmentStatus.Active,
-                    remarks = null
+            investment?.let { inv ->
+                SGFScaffoldWrapper(
+                    title = "Add Investment Return",
+                    onDrawerClick = onDrawerClick,
+                    snackbarHostState = remember { SnackbarHostState() },
+                    content = { innerPadding ->
+                        InvestmentReturnsEntryScreen(
+                            investment = inv,
+                            viewModel = investmentReturnsViewModel,
+                            currentUserName = currentUser.name,
+                            onReturnAdded = { navController.popBackStack() },
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
                 )
             }
-
-            SGFScaffoldWrapper(
-                title = "Add Investment Return",
-                onDrawerClick = onDrawerClick,
-                content = { innerPadding -> // ✅ This gives you the innerPadding
-                    InvestmentReturnsEntryScreen(
-                        investment = investment,
-                        viewModel = investmentReturnsViewModel,
-                        currentUserName = currentUser.name,
-                        onReturnAdded = { navController.popBackStack() },
-                        modifier = Modifier.padding(innerPadding) // ✅ CRITICAL: Pass the padding here
-                    )
-                },
-                snackbarHostState = remember { SnackbarHostState() }
-            )
         }
 
         // ✅ Profile

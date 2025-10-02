@@ -9,15 +9,17 @@ import com.selfgrowthfund.sgf.data.local.entities.*
     entities = [
         Shareholder::class,
         Deposit::class,
-        DepositEntry::class,
         Borrowing::class,
         Repayment::class,
         Investment::class,
         InvestmentReturns::class,
         ActionItem::class,
         Penalty::class,
-        OtherIncomes::class,
-        OtherExpenses::class
+        OtherIncome::class,
+        OtherExpense::class,
+        ApprovalFlow::class,
+        UserSessionHistory ::class
+
     ],
     version = AppDatabase.VERSION,
     exportSchema = true
@@ -32,7 +34,6 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun shareholderDao(): ShareholderDao
     abstract fun depositDao(): DepositDao
-    abstract fun depositEntryDao(): DepositEntryDao
     abstract fun borrowingDao(): BorrowingDao
     abstract fun repaymentDao(): RepaymentDao
     abstract fun investmentDao(): InvestmentDao
@@ -41,6 +42,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun penaltyDao(): PenaltyDao
     abstract fun incomeDao(): OtherIncomeDao
     abstract fun expenseDao(): OtherExpenseDao
+    abstract fun approvalFlowDao(): ApprovalFlowDao
+    abstract fun userSessionDao(): UserSessionDao
 
     internal class DatabaseCallback : Callback() {
         // Add any database initialization code here if needed

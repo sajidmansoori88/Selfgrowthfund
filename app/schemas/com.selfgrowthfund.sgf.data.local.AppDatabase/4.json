@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 4,
-    "identityHash": "de132514cebef84faf08ad72009594f7",
+    "identityHash": "8d0e13536d538a3df7d460a167972ce5",
     "entities": [
       {
         "tableName": "shareholders",
@@ -117,13 +117,18 @@
       },
       {
         "tableName": "deposits",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` INTEGER NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`depositId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisionalId` TEXT NOT NULL, `depositId` TEXT, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` INTEGER NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT, `approvalStatus` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `isSynced` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`provisionalId`))",
         "fields": [
+          {
+            "fieldPath": "provisionalId",
+            "columnName": "provisionalId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
           {
             "fieldPath": "depositId",
             "columnName": "depositId",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "shareholderId",
@@ -188,8 +193,7 @@
           {
             "fieldPath": "modeOfPayment",
             "columnName": "modeOfPayment",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "approvalStatus",
@@ -198,8 +202,36 @@
             "notNull": true
           },
           {
+            "fieldPath": "approvedBy",
+            "columnName": "approvedBy",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entrySource",
+            "columnName": "entrySource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
             "fieldPath": "createdAt",
             "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -207,7 +239,7 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "depositId"
+            "provisionalId"
           ]
         },
         "indices": [
@@ -232,145 +264,8 @@
         ]
       },
       {
-        "tableName": "deposit_entries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`depositId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `dueMonth` TEXT NOT NULL, `paymentDate` INTEGER NOT NULL, `shareNos` INTEGER NOT NULL, `shareAmount` REAL NOT NULL, `additionalContribution` REAL NOT NULL, `penalty` REAL NOT NULL, `totalAmount` REAL NOT NULL, `paymentStatus` TEXT NOT NULL, `modeOfPayment` TEXT, `status` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `isSynced` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, PRIMARY KEY(`depositId`))",
-        "fields": [
-          {
-            "fieldPath": "depositId",
-            "columnName": "depositId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "shareholderId",
-            "columnName": "shareholderId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "shareholderName",
-            "columnName": "shareholderName",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "dueMonth",
-            "columnName": "dueMonth",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "paymentDate",
-            "columnName": "paymentDate",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "shareNos",
-            "columnName": "shareNos",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "shareAmount",
-            "columnName": "shareAmount",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "additionalContribution",
-            "columnName": "additionalContribution",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "penalty",
-            "columnName": "penalty",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "totalAmount",
-            "columnName": "totalAmount",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "paymentStatus",
-            "columnName": "paymentStatus",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "modeOfPayment",
-            "columnName": "modeOfPayment",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "status",
-            "columnName": "status",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "approvedBy",
-            "columnName": "approvedBy",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "notes",
-            "columnName": "notes",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "isSynced",
-            "columnName": "isSynced",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "entrySource",
-            "columnName": "entrySource",
-            "affinity": "TEXT",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "depositId"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_deposit_entries_shareholderId",
-            "unique": false,
-            "columnNames": [
-              "shareholderId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposit_entries_shareholderId` ON `${TABLE_NAME}` (`shareholderId`)"
-          },
-          {
-            "name": "index_deposit_entries_dueMonth",
-            "unique": false,
-            "columnNames": [
-              "dueMonth"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_deposit_entries_dueMonth` ON `${TABLE_NAME}` (`dueMonth`)"
-          }
-        ]
-      },
-      {
         "tableName": "borrowings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`borrowId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `applicationDate` INTEGER NOT NULL, `amountRequested` REAL NOT NULL, `borrowEligibility` REAL NOT NULL, `approvedAmount` REAL NOT NULL, `borrowStartDate` INTEGER NOT NULL, `dueDate` INTEGER NOT NULL, `status` TEXT NOT NULL, `closedDate` INTEGER, `notes` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `approvalStatus` TEXT NOT NULL, PRIMARY KEY(`borrowId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`borrowId` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `applicationDate` INTEGER NOT NULL, `amountRequested` REAL NOT NULL, `borrowEligibility` REAL NOT NULL, `approvedAmount` REAL NOT NULL, `borrowStartDate` INTEGER NOT NULL, `dueDate` INTEGER NOT NULL, `status` TEXT NOT NULL, `closedDate` INTEGER, `approvalStatus` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`borrowId`))",
         "fields": [
           {
             "fieldPath": "borrowId",
@@ -438,6 +333,17 @@
             "affinity": "INTEGER"
           },
           {
+            "fieldPath": "approvalStatus",
+            "columnName": "approvalStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedBy",
+            "columnName": "approvedBy",
+            "affinity": "TEXT"
+          },
+          {
             "fieldPath": "notes",
             "columnName": "notes",
             "affinity": "TEXT"
@@ -455,9 +361,9 @@
             "notNull": true
           },
           {
-            "fieldPath": "approvalStatus",
-            "columnName": "approvalStatus",
-            "affinity": "TEXT",
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -470,13 +376,18 @@
       },
       {
         "tableName": "repayments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`repaymentId` TEXT NOT NULL, `borrowId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `outstandingBefore` REAL NOT NULL, `penaltyDue` REAL NOT NULL, `repaymentDate` INTEGER NOT NULL, `principalRepaid` REAL NOT NULL, `penaltyPaid` REAL NOT NULL, `totalAmountPaid` REAL NOT NULL, `modeOfPayment` TEXT NOT NULL, `finalOutstanding` REAL NOT NULL, `borrowingStatus` TEXT NOT NULL, `notes` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `approvalStatus` TEXT NOT NULL, `penaltyCalculationNotes` TEXT, PRIMARY KEY(`repaymentId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisional_id` TEXT NOT NULL, `repayment_id` TEXT, `borrowId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `outstandingBefore` REAL NOT NULL, `penaltyDue` REAL NOT NULL, `repaymentDate` INTEGER NOT NULL, `principalRepaid` REAL NOT NULL, `penaltyPaid` REAL NOT NULL, `totalAmountPaid` REAL NOT NULL, `modeOfPayment` TEXT NOT NULL, `finalOutstanding` REAL NOT NULL, `borrowingStatus` TEXT NOT NULL, `penaltyCalculationNotes` TEXT, `notes` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `is_synced` INTEGER NOT NULL, `entry_source` TEXT, `legacy_approval_action` TEXT, PRIMARY KEY(`provisional_id`))",
         "fields": [
           {
-            "fieldPath": "repaymentId",
-            "columnName": "repaymentId",
+            "fieldPath": "provisionalId",
+            "columnName": "provisional_id",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "repaymentId",
+            "columnName": "repayment_id",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "borrowId",
@@ -545,6 +456,11 @@
             "notNull": true
           },
           {
+            "fieldPath": "penaltyCalculationNotes",
+            "columnName": "penaltyCalculationNotes",
+            "affinity": "TEXT"
+          },
+          {
             "fieldPath": "notes",
             "columnName": "notes",
             "affinity": "TEXT"
@@ -563,20 +479,47 @@
           },
           {
             "fieldPath": "approvalStatus",
-            "columnName": "approvalStatus",
+            "columnName": "approval_status",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "penaltyCalculationNotes",
-            "columnName": "penaltyCalculationNotes",
+            "fieldPath": "approvedBy",
+            "columnName": "approved_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "approvalNotes",
+            "columnName": "approval_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "is_synced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entrySource",
+            "columnName": "entry_source",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "legacyApprovalAction",
+            "columnName": "legacy_approval_action",
             "affinity": "TEXT"
           }
         ],
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "repaymentId"
+            "provisional_id"
           ]
         },
         "indices": [
@@ -602,13 +545,18 @@
       },
       {
         "tableName": "investments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`investmentId` TEXT NOT NULL, `investeeType` TEXT NOT NULL, `investeeName` TEXT, `ownershipType` TEXT NOT NULL, `partnerNames` TEXT, `investmentDate` INTEGER NOT NULL, `investmentType` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `amount` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `returnDueDate` INTEGER NOT NULL, `modeOfPayment` TEXT NOT NULL, `status` TEXT NOT NULL, `remarks` TEXT, `approvalStatus` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, `enteredBy` TEXT, PRIMARY KEY(`investmentId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisionalId` TEXT NOT NULL, `investmentId` TEXT, `investeeType` TEXT NOT NULL, `investeeName` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `ownershipType` TEXT NOT NULL, `partnerNames` TEXT, `investmentDate` INTEGER NOT NULL, `investmentType` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `amount` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `returnDueDate` INTEGER, `status` TEXT NOT NULL, `remarks` TEXT, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, `enteredBy` TEXT, `is_synced` INTEGER NOT NULL, `legacyApprovalAction` TEXT, PRIMARY KEY(`provisionalId`))",
         "fields": [
+          {
+            "fieldPath": "provisionalId",
+            "columnName": "provisionalId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
           {
             "fieldPath": "investmentId",
             "columnName": "investmentId",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "investeeType",
@@ -619,7 +567,14 @@
           {
             "fieldPath": "investeeName",
             "columnName": "investeeName",
-            "affinity": "TEXT"
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shareholderId",
+            "columnName": "shareholderId",
+            "affinity": "TEXT",
+            "notNull": true
           },
           {
             "fieldPath": "ownershipType",
@@ -677,14 +632,7 @@
           {
             "fieldPath": "returnDueDate",
             "columnName": "returnDueDate",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "modeOfPayment",
-            "columnName": "modeOfPayment",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "status",
@@ -699,8 +647,24 @@
           },
           {
             "fieldPath": "approvalStatus",
-            "columnName": "approvalStatus",
+            "columnName": "approval_status",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedBy",
+            "columnName": "approved_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "approvalNotes",
+            "columnName": "approval_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -719,18 +683,40 @@
             "fieldPath": "enteredBy",
             "columnName": "enteredBy",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "is_synced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "legacyApprovalAction",
+            "columnName": "legacyApprovalAction",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "investmentId"
+            "provisionalId"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_investments_investmentId",
+            "unique": true,
+            "columnNames": [
+              "investmentId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_investments_investmentId` ON `${TABLE_NAME}` (`investmentId`)"
+          }
+        ]
       },
       {
         "tableName": "investment_returns",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`returnId` TEXT NOT NULL, `investmentId` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `actualReturnPeriod` INTEGER NOT NULL, `amountInvested` REAL NOT NULL, `amountReceived` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `actualProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `actualProfitAmount` REAL NOT NULL, `profitPercentVariance` REAL NOT NULL, `profitAmountVariance` REAL NOT NULL, `returnDate` INTEGER NOT NULL, `modeOfPayment` TEXT NOT NULL, `remarks` TEXT, `approvalStatus` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, `enteredBy` TEXT, PRIMARY KEY(`returnId`), FOREIGN KEY(`investmentId`) REFERENCES `investments`(`investmentId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`returnId` TEXT NOT NULL, `investmentId` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `actualReturnPeriod` INTEGER NOT NULL, `amountInvested` REAL NOT NULL, `amountReceived` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `actualProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `actualProfitAmount` REAL NOT NULL, `profitPercentVariance` REAL NOT NULL, `profitAmountVariance` REAL NOT NULL, `returnDate` INTEGER NOT NULL, `modeOfPayment` TEXT NOT NULL, `remarks` TEXT, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, `enteredBy` TEXT, `is_synced` INTEGER NOT NULL, `legacyApprovalAction` TEXT, PRIMARY KEY(`returnId`), FOREIGN KEY(`investmentId`) REFERENCES `investments`(`investmentId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "returnId",
@@ -829,8 +815,24 @@
           },
           {
             "fieldPath": "approvalStatus",
-            "columnName": "approvalStatus",
+            "columnName": "approval_status",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedBy",
+            "columnName": "approved_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "approvalNotes",
+            "columnName": "approval_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -848,6 +850,17 @@
           {
             "fieldPath": "enteredBy",
             "columnName": "enteredBy",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "is_synced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "legacyApprovalAction",
+            "columnName": "legacyApprovalAction",
             "affinity": "TEXT"
           }
         ],
@@ -1021,7 +1034,94 @@
       },
       {
         "tableName": "other_incomes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `is_synced` INTEGER NOT NULL, `legacyApprovalAction` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remarks",
+            "columnName": "remarks",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modeOfPayment",
+            "columnName": "modeOfPayment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvalStatus",
+            "columnName": "approval_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedBy",
+            "columnName": "approved_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "approvalNotes",
+            "columnName": "approval_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordedBy",
+            "columnName": "recordedBy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "is_synced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "legacyApprovalAction",
+            "columnName": "legacyApprovalAction",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "other_expenses",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `approvedBy` TEXT, `approvalNotes` TEXT, `updatedAt` INTEGER NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `legacyApprovalAction` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1060,6 +1160,22 @@
             "notNull": true
           },
           {
+            "fieldPath": "approvedBy",
+            "columnName": "approvedBy",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "approvalNotes",
+            "columnName": "approvalNotes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "recordedBy",
             "columnName": "recordedBy",
             "affinity": "TEXT",
@@ -1068,6 +1184,71 @@
           {
             "fieldPath": "createdAt",
             "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "legacyApprovalAction",
+            "columnName": "legacyApprovalAction",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "approval_flow",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, `role` TEXT NOT NULL, `action` TEXT NOT NULL, `approvedBy` TEXT NOT NULL, `approvedAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityId",
+            "columnName": "entityId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "role",
+            "columnName": "role",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "action",
+            "columnName": "action",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedBy",
+            "columnName": "approvedBy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedAt",
+            "columnName": "approvedAt",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -1080,8 +1261,8 @@
         }
       },
       {
-        "tableName": "other_expenses",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "tableName": "UserSessionHistory",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `shareholderId` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1090,44 +1271,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "date",
-            "columnName": "date",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "amount",
-            "columnName": "amount",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "remarks",
-            "columnName": "remarks",
+            "fieldPath": "shareholderId",
+            "columnName": "shareholderId",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "modeOfPayment",
-            "columnName": "modeOfPayment",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "approvalStatus",
-            "columnName": "approvalStatus",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "recordedBy",
-            "columnName": "recordedBy",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -1142,7 +1293,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'de132514cebef84faf08ad72009594f7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8d0e13536d538a3df7d460a167972ce5')"
     ]
   }
 }

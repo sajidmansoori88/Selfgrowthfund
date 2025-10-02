@@ -2,21 +2,26 @@ package com.selfgrowthfund.sgf.data.repository
 
 import com.selfgrowthfund.sgf.data.local.dao.InvestmentDao
 import com.selfgrowthfund.sgf.data.local.entities.Investment
-import com.selfgrowthfund.sgf.model.enums.InvestmentStatus
+import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.enums.InvesteeType
+import com.selfgrowthfund.sgf.model.enums.InvestmentStatus
 import com.selfgrowthfund.sgf.utils.Dates
+import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class InvestmentRepository @Inject constructor(
     private val dao: InvestmentDao,
-    private val dates: Dates
+    dates: Dates
 ) {
 
-    // CRUD
+    // --- Create & Update ---
     suspend fun createInvestment(investment: Investment): Result<Unit> = try {
         dao.insert(investment)
         Result.Success(Unit)
@@ -31,33 +36,28 @@ class InvestmentRepository @Inject constructor(
         Result.Error(e)
     }
 
-    suspend fun deleteInvestment(id: String): Result<Unit> = try {
-        dao.delete(id)
+    // --- Delete ---
+    suspend fun deleteInvestment(provisionalId: String): Result<Unit> = try {
+        dao.deleteByProvisionalId(provisionalId)
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
 
-    // Get
-    suspend fun getInvestment(id: String): Result<Investment> = try {
-        Result.Success(dao.getById(id) ?: throw Exception("Investment not found"))
-    } catch (e: Exception) {
-        Result.Error(e)
-    }
+    // --- Lookup ---
+    suspend fun getByProvisionalId(id: String): Investment? = dao.getByProvisionalId(id)
+    suspend fun getByInvestmentId(id: String): Investment? = dao.getByInvestmentId(id)
 
-    fun getAllInvestments(): Flow<List<Investment>> = dao.getAll()
+    fun getByProvisionalIdFlow(id: String): Flow<Investment?> = dao.getByProvisionalIdFlow(id)
+    fun getByInvestmentIdFlow(id: String): Flow<Investment?> = dao.getByInvestmentIdFlow(id)
 
-    // Use enum directly (not .name)
-    fun getActiveInvestments(): Flow<List<Investment>> =
-        dao.getByStatus(InvestmentStatus.Active)
+    fun getAllInvestments(): Flow<List<Investment>> = dao.getAllInvestmentsFlow()
+    fun getActiveInvestments(): Flow<List<Investment>> = dao.getByStatus(InvestmentStatus.Active)
+    fun getInvestmentsByType(type: InvesteeType): Flow<List<Investment>> = dao.getByInvesteeType(type)
 
-    // Use enum directly (not .name)
-    fun getInvestmentsByType(type: InvesteeType): Flow<List<Investment>> =
-        dao.getByInvesteeType(type)
-
-    // Business Logic
-    suspend fun changeInvestmentStatus(id: String, newStatus: InvestmentStatus): Result<Unit> = try {
-        val investment = dao.getById(id) ?: throw Exception("Investment not found")
+    // --- Business Logic ---
+    suspend fun changeInvestmentStatus(provisionalId: String, newStatus: InvestmentStatus): Result<Unit> = try {
+        val investment = dao.getByProvisionalId(provisionalId) ?: throw Exception("Investment not found")
         dao.update(investment.copy(status = newStatus))
         Result.Success(Unit)
     } catch (e: Exception) {
@@ -78,6 +78,7 @@ class InvestmentRepository @Inject constructor(
         Result.Error(e)
     }
 
+    // --- Aggregates ---
     suspend fun getTotalActiveInvestmentValue(): Result<Double> = try {
         Result.Success(dao.getTotalActiveAmount() ?: 0.0)
     } catch (e: Exception) {
@@ -90,47 +91,71 @@ class InvestmentRepository @Inject constructor(
         Result.Error(e)
     }
 
-    // ID Preview
-    suspend fun getLastInvestmentId(): String? = dao.getLastInvestmentId()
-
-    // Summary DTO
     suspend fun getInvestmentSummary(): Result<InvestmentDao.InvestmentSummary> = try {
         Result.Success(dao.getInvestmentSummary())
     } catch (e: Exception) {
         Result.Error(e)
     }
 
-    // Overload methods that accept String parameters for compatibility
-    suspend fun changeInvestmentStatus(id: String, newStatus: String): Result<Unit> = try {
-        val investment = dao.getById(id) ?: throw Exception("Investment not found")
-        val statusEnum = InvestmentStatus.valueOf(newStatus)
-        dao.update(investment.copy(status = statusEnum))
-        Result.Success(Unit)
-    } catch (e: Exception) {
-        Result.Error(e)
+    // --- Approval Workflow ---
+    suspend fun approve(
+        provisionalId: String,
+        approverId: String?,
+        notes: String?,
+        newStatus: ApprovalStage
+    ): Boolean = withContext(Dispatchers.IO) {
+        val updatedAt = LocalDate.now()
+        val rows = dao.updateApprovalStatus(provisionalId, newStatus, approverId, notes, updatedAt)
+        rows > 0
     }
 
-    // Use safe conversion for string input
-    fun getInvestmentsByType(type: String): Flow<List<Investment>> {
-        val investeeType = try {
-            InvesteeType.valueOf(type)
-        } catch (e: IllegalArgumentException) {
-            // Return empty flow or handle error appropriately
-            return emptyFlow()
-        }
-        return dao.getByInvesteeType(investeeType)
+    suspend fun reject(
+        provisionalId: String,
+        rejectedBy: String?,
+        notes: String?
+    ): Boolean = withContext(Dispatchers.IO) {
+        val updatedAt = LocalDate.now()
+        val rows = dao.updateApprovalStatus(provisionalId, ApprovalStage.REJECTED, rejectedBy, notes, updatedAt)
+        rows > 0
     }
-    fun getInvestmentById(id: String): Flow<Investment?> = dao.getByIdFlow(id)
 
+    suspend fun approveAndAssignId(
+        provisionalId: String,
+        approverId: String?,
+        notes: String?
+    ): Boolean = withContext(Dispatchers.IO) {
+        val lastId = dao.getLastApprovedInvestmentId()
+        val newId = IdGenerator.nextInvestmentId(lastId)
+        val updatedAt = LocalDate.now()
+        dao.approveInvestment(
+            provisionalId = provisionalId,
+            newId = newId,
+            status = ApprovalStage.ADMIN_APPROVED,
+            approvedBy = approverId,
+            notes = notes,
+            updatedAt = updatedAt
+        )
+        true
+    }
+
+    // --- Reports ---
     suspend fun countApproved(start: LocalDate, end: LocalDate) =
-        dao.countByStatus("APPROVED", start, end)
+        dao.countByStatus(ApprovalStage.APPROVED, start, end)
 
     suspend fun countRejected(start: LocalDate, end: LocalDate) =
-        dao.countByStatus("REJECTED", start, end)
+        dao.countByStatus(ApprovalStage.REJECTED, start, end)
 
     suspend fun countPending(start: LocalDate, end: LocalDate) =
-        dao.countByStatus("PENDING", start, end)
+        dao.countByStatus(ApprovalStage.PENDING, start, end)
 
     suspend fun countTotal(start: LocalDate, end: LocalDate) =
         dao.countTotal(start, end)
+
+    suspend fun getApprovalsBetween(start: LocalDate, end: LocalDate): List<Investment> =
+        dao.getApprovalsBetween(start, end)
+
+    suspend fun findById(id: String): Investment? {
+        // Look up by provisionalId first (since approvals happen before investmentId assignment)
+        return dao.getByProvisionalId(id) ?: dao.getByInvestmentId(id)
+    }
 }

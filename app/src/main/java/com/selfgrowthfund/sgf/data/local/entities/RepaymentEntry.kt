@@ -1,8 +1,10 @@
 package com.selfgrowthfund.sgf.data.local.entities
 
 import com.selfgrowthfund.sgf.model.enums.PaymentMode
-import com.selfgrowthfund.sgf.utils.IdGenerator
+import com.selfgrowthfund.sgf.model.enums.ApprovalStage
+import java.time.Instant
 import java.time.LocalDate
+import java.util.UUID
 
 data class RepaymentEntry(
     val borrowId: String,
@@ -15,13 +17,12 @@ data class RepaymentEntry(
     val createdBy: String
 ) {
     fun toRepayment(
-        lastRepaymentId: String?,
         outstandingBefore: Double,
         borrowStartDate: LocalDate,
         dueDate: LocalDate,
         previousRepayments: List<Repayment>
     ): Repayment {
-        val newId = IdGenerator.nextRepaymentId(lastRepaymentId)
+        val provisionalId = UUID.randomUUID().toString() // 🔑 new PK
         val (penaltyDue, penaltyNotes) = Repayment.calculatePenalty(
             borrowStartDate = borrowStartDate,
             dueDate = dueDate,
@@ -31,7 +32,8 @@ data class RepaymentEntry(
         )
 
         return Repayment(
-            repaymentId = newId,
+            provisionalId = provisionalId,
+            repaymentId = null, // Assigned by Admin later
             borrowId = borrowId,
             shareholderName = shareholderName,
             outstandingBefore = outstandingBefore,
@@ -43,6 +45,13 @@ data class RepaymentEntry(
             notes = notes,
             penaltyCalculationNotes = penaltyNotes,
             createdBy = createdBy,
+            createdAt = Instant.now(),
+            approvalStatus = ApprovalStage.PENDING,
+            approvedBy = null,
+            approvalNotes = null,
+            updatedAt = Instant.now(),
+            isSynced = false,
+            entrySource = "USER"
         )
     }
 }

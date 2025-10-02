@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.data.local.entities
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
 import com.selfgrowthfund.sgf.model.enums.ApprovalAction
+import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.enums.EntrySource
 import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import java.time.LocalDate
@@ -46,10 +47,31 @@ data class InvestmentReturns(
     val returnDate: LocalDate,
     val modeOfPayment: PaymentMode,
     val remarks: String? = null,
-    val approvalStatus: ApprovalAction= ApprovalAction.PENDING,
+
+    // --- Approval workflow ---
+    @ColumnInfo(name = "approval_status")
+    val approvalStatus: ApprovalStage = ApprovalStage.PENDING,
+
+    @ColumnInfo(name = "approved_by")
+    val approvedBy: String? = null,
+
+    @ColumnInfo(name = "approval_notes")
+    val approvalNotes: String? = null,
+
+    @ColumnInfo(name = "updated_at")
+    val updatedAt: LocalDate = LocalDate.now(),
+
+    // --- Metadata ---
     val createdAt: LocalDate = LocalDate.now(),
-    val entrySource: EntrySource = EntrySource.ADMIN,
-    val enteredBy: String? = null
+    val entrySource: EntrySource = EntrySource.MemberAdmin,
+    val enteredBy: String? = null,
+
+    @ColumnInfo(name = "is_synced")
+    val isSynced: Boolean = false,
+
+    // Legacy compatibility
+    @Deprecated("Use approvalStatus: ApprovalStage instead")
+    val legacyApprovalAction: ApprovalAction? = null
 ) {
     constructor(
         returnId: String,
@@ -58,11 +80,11 @@ data class InvestmentReturns(
         modeOfPayment: PaymentMode,
         returnDate: LocalDate = LocalDate.now(),
         remarks: String? = null,
-        entrySource: EntrySource = EntrySource.ADMIN,
+        entrySource: EntrySource = EntrySource.MemberAdmin,
         enteredBy: String? = null
     ) : this(
         returnId = returnId,
-        investmentId = investment.investmentId,
+        investmentId = investment.investmentId ?: error("Investment must be approved before returns"),
         investmentName = investment.investmentName,
         expectedReturnPeriod = investment.expectedReturnPeriod,
         actualReturnPeriod = calculateDaysBetween(investment.investmentDate, returnDate),
@@ -72,10 +94,8 @@ data class InvestmentReturns(
         actualProfitPercent = calculateActualProfitPercent(investment.amount, amountReceived),
         expectedProfitAmount = investment.expectedProfitAmount,
         actualProfitAmount = amountReceived - investment.amount,
-        profitPercentVariance = calculateActualProfitPercent(
-            investment.amount,
-            amountReceived
-        ) - investment.expectedProfitPercent,
+        profitPercentVariance = calculateActualProfitPercent(investment.amount, amountReceived) -
+                investment.expectedProfitPercent,
         profitAmountVariance = (amountReceived - investment.amount) - investment.expectedProfitAmount,
         returnDate = returnDate,
         modeOfPayment = modeOfPayment,

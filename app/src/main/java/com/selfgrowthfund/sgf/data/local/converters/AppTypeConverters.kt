@@ -124,16 +124,16 @@ object AppTypeConverters {
     fun toShareholderStatusList(data: String?): List<ShareholderStatus>? =
         data?.split(",")?.map { ShareholderStatus.valueOf(it) }
 
+    // ───── Approval Enums ─────
+    @TypeConverter @JvmStatic
+    fun fromApprovalAction(value: ApprovalAction?): String? = value?.name
 
     @TypeConverter @JvmStatic
-    fun fromApprovalAction(value: ApprovalAction?): String? {
-        return value?.name
-    }
+    fun toApprovalAction(value: String?): ApprovalAction? = value?.let { ApprovalAction.valueOf(it) }
 
     @TypeConverter @JvmStatic
-    fun toApprovalAction(value: String?): ApprovalAction? {
-        return value?.let { ApprovalAction.valueOf(it) }
-    }
+    fun fromApprovalStage(value: ApprovalStage?): String? = value?.name   // 👈 NEW
 
-
+    @TypeConverter @JvmStatic
+    fun toApprovalStage(value: String?): ApprovalStage? = value?.let { ApprovalStage.valueOf(it) }  // 👈 NEW
 }

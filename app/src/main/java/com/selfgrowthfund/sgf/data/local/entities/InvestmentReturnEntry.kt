@@ -11,7 +11,7 @@ data class InvestmentReturnEntry(
     val returnDate: LocalDate = LocalDate.now(),
     val modeOfPayment: PaymentMode,
     val remarks: String? = null,
-    val entrySource: EntrySource = EntrySource.ADMIN,
+    val entrySource: EntrySource = EntrySource.MemberAdmin,
     val enteredBy: String? = null
 ) {
     fun toInvestmentReturn(lastReturnId: String?): InvestmentReturns {

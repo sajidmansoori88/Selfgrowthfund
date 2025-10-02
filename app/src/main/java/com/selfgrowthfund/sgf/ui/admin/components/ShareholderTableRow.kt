@@ -15,19 +15,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.selfgrowthfund.sgf.model.User
+import com.selfgrowthfund.sgf.data.local.entities.Shareholder
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 
 @Composable
 fun ShareholderTableRow(
-    user: User,
-    onModify: (User) -> Unit,
-    onDelete: (User) -> Unit,
+    shareholder: Shareholder,
+    onModify: (Shareholder) -> Unit,
+    onDelete: (Shareholder) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isEditing by remember { mutableStateOf(false) }
-    var editedName by remember(user) { mutableStateOf(user.name) }
-    var editedRole by remember(user) { mutableStateOf(user.role) }
+    var editedName by remember(shareholder) { mutableStateOf(shareholder.fullName) }
+    var editedRole by remember(shareholder) { mutableStateOf(shareholder.role) }
+
+    // NEW: for confirmation dialog
+    var showConfirmDialog by remember { mutableStateOf(false) }
 
     Row(
         modifier = modifier
@@ -36,9 +39,9 @@ fun ShareholderTableRow(
             .clickable { /* Optional: row click */ },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // ID Column - Auto width
+        // ✅ ID column
         Text(
-            text = user.id,
+            text = shareholder.shareholderId,
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
@@ -46,7 +49,7 @@ fun ShareholderTableRow(
             overflow = TextOverflow.Ellipsis
         )
 
-        // Name Column - More space
+        // ✅ Name column
         if (isEditing) {
             OutlinedTextField(
                 value = editedName,
@@ -58,7 +61,7 @@ fun ShareholderTableRow(
             )
         } else {
             Text(
-                text = user.name,
+                text = shareholder.fullName,
                 modifier = Modifier.weight(2f),
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
@@ -66,7 +69,7 @@ fun ShareholderTableRow(
             )
         }
 
-        // Role Column - Fixed proportional width
+        // ✅ Role column
         if (isEditing) {
             RoleDropdown(
                 selectedRole = editedRole,
@@ -75,25 +78,29 @@ fun ShareholderTableRow(
             )
         } else {
             Text(
-                text = user.role.label,
+                text = shareholder.role.label,
                 modifier = Modifier.weight(1.5f),
                 style = MaterialTheme.typography.bodyMedium,
-                color = getRoleColor(user.role), // ✅ Now this function exists
+                color = getRoleColor(shareholder.role),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
 
-        // Actions Column - Fixed width
+        // ✅ Actions column
         Row(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.Center
         ) {
             if (isEditing) {
-                // Save button
                 IconButton(
                     onClick = {
-                        onModify(user.copy(name = editedName, role = editedRole))
+                        onModify(
+                            shareholder.copy(
+                                fullName = editedName,
+                                role = editedRole
+                            )
+                        )
                         isEditing = false
                     },
                     modifier = Modifier.size(32.dp)
@@ -105,12 +112,11 @@ fun ShareholderTableRow(
                     )
                 }
 
-                // Cancel button
                 IconButton(
                     onClick = {
                         isEditing = false
-                        editedName = user.name
-                        editedRole = user.role
+                        editedName = shareholder.fullName
+                        editedRole = shareholder.role
                     },
                     modifier = Modifier.size(32.dp)
                 ) {
@@ -121,7 +127,6 @@ fun ShareholderTableRow(
                     )
                 }
             } else {
-                // Edit button
                 IconButton(
                     onClick = { isEditing = true },
                     modifier = Modifier.size(32.dp)
@@ -129,9 +134,8 @@ fun ShareholderTableRow(
                     Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }
 
-                // Delete button
                 IconButton(
-                    onClick = { onDelete(user) },
+                    onClick = { showConfirmDialog = true }, // open confirmation
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
@@ -143,9 +147,31 @@ fun ShareholderTableRow(
             }
         }
     }
+
+    // ✅ Confirmation dialog
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Confirm Delete") },
+            text = { Text("Are you sure you want to delete shareholder '${shareholder.fullName}'? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmDialog = false
+                        onDelete(shareholder)
+                    }
+                ) { Text("Yes, Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
-// ✅ Add this missing function
+
 @Composable
 private fun getRoleColor(role: MemberRole): Color {
     return when (role) {

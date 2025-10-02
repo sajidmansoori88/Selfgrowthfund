@@ -1,6 +1,5 @@
 package com.selfgrowthfund.sgf.ui.repayments
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
@@ -11,9 +10,9 @@ import com.selfgrowthfund.sgf.data.repository.RepaymentRepository
 import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -28,6 +27,9 @@ class RepaymentViewModel @Inject constructor(
     val submissionResult = MutableStateFlow<Result<Unit>?>(null)
     val nextRepaymentId = MutableStateFlow<String?>(null)
 
+    // ---------------- Approval State ----------------
+    val approvalResult = MutableStateFlow<Result<Unit>?>(null)
+
     // ---------------- Summary State ----------------
     private val _repaymentSummaries = MutableStateFlow<Map<String, RepaymentSummary>>(emptyMap())
     val repaymentSummaries: StateFlow<Map<String, RepaymentSummary>> = _repaymentSummaries
@@ -36,6 +38,28 @@ class RepaymentViewModel @Inject constructor(
     private val _borrowingDetails = MutableStateFlow<BorrowingDetails?>(null)
     val borrowingDetails: StateFlow<BorrowingDetails?> = _borrowingDetails
 
+    // ---------------- Firestore Live Repayments ----------------
+    val liveRepayments: StateFlow<List<Repayment>> =
+        repository.getLiveRepayments()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val liveRepaymentSummaries: StateFlow<List<com.selfgrowthfund.sgf.data.local.dto.RepaymentSummaryDTO>> =
+        repository.getLiveRepaymentSummaries()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // ---------------- Manual Firestore → Room Refresh ----------------
+    fun refreshFromFirestore(onComplete: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                repository.refreshFromFirestore()
+                onComplete(true)
+            } catch (e: Exception) {
+                Timber.e(e, "Repayment refresh failed")
+                onComplete(false)
+            }
+        }
+    }
+
     // ---------------- ID Preview ----------------
     fun fetchNextRepaymentId() {
         viewModelScope.launch {
@@ -43,7 +67,7 @@ class RepaymentViewModel @Inject constructor(
                 val lastId = repository.getLastRepaymentId()
                 nextRepaymentId.value = IdGenerator.nextRepaymentId(lastId)
             } catch (e: Exception) {
-                Log.e("RepaymentViewModel", "Error fetching next repayment ID", e)
+                Timber.e(e, "Error fetching next repayment ID")
                 nextRepaymentId.value = "ERROR"
             }
         }
@@ -61,18 +85,18 @@ class RepaymentViewModel @Inject constructor(
                     borrowId = borrowId,
                     shareholderName = borrowing.shareholderName,
                     outstandingBefore = borrowing.amountRequested - totalPrincipal,
-                    borrowStartDate = borrowing.borrowStartDate, // FIXED: Make sure Borrowing entity has startDate field
+                    borrowStartDate = borrowing.borrowStartDate,
                     dueDate = borrowing.dueDate,
                     previousRepayments = previousRepayments
                 )
             } catch (e: Exception) {
-                Log.e("RepaymentViewModel", "Error loading borrowing details", e)
+                Timber.e(e, "Error loading borrowing details")
                 _borrowingDetails.value = null
             }
         }
     }
 
-    // ---------------- Simplified Repayment Submission ----------------
+    // ---------------- Repayment Submission ----------------
     fun submitRepayment(
         entry: RepaymentEntry,
         onSuccess: () -> Unit,
@@ -84,13 +108,9 @@ class RepaymentViewModel @Inject constructor(
 
             try {
                 val details = _borrowingDetails.value
-                if (details == null) {
-                    throw IllegalStateException("Borrowing details not loaded. Please try again.")
-                }
+                    ?: throw IllegalStateException("Borrowing details not loaded. Please try again.")
 
-                val lastId = repository.getLastRepaymentId()
                 val repayment = entry.toRepayment(
-                    lastRepaymentId = lastId,
                     outstandingBefore = details.outstandingBefore,
                     borrowStartDate = details.borrowStartDate,
                     dueDate = details.dueDate,
@@ -114,6 +134,7 @@ class RepaymentViewModel @Inject constructor(
     // ---------------- Firestore Sync ----------------
     private fun syncToFirestore(repayment: Repayment) {
         val data = mapOf(
+            "provisionalId" to repayment.provisionalId,
             "repaymentId" to repayment.repaymentId,
             "borrowId" to repayment.borrowId,
             "shareholderName" to repayment.shareholderName,
@@ -121,22 +142,72 @@ class RepaymentViewModel @Inject constructor(
             "principalRepaid" to repayment.principalRepaid,
             "penaltyPaid" to repayment.penaltyPaid,
             "totalAmountPaid" to repayment.totalAmountPaid,
-            "modeOfPayment" to repayment.modeOfPayment,
+            "modeOfPayment" to repayment.modeOfPayment.name,
             "finalOutstanding" to repayment.finalOutstanding,
-            "borrowingStatus" to repayment.borrowingStatus,
+            "borrowingStatus" to repayment.borrowingStatus.name,
+            "outstandingBefore" to repayment.outstandingBefore,
+            "penaltyDue" to repayment.penaltyDue,
             "notes" to repayment.notes,
-            "penaltyCalculationNotes" to repayment.penaltyCalculationNotes
+            "penaltyCalculationNotes" to repayment.penaltyCalculationNotes,
+            "approvalStatus" to repayment.approvalStatus.name,
+            "createdBy" to repayment.createdBy
         )
 
         firestore.collection("repayments")
-            .document(repayment.repaymentId)
+            .document(repayment.provisionalId)
             .set(data)
             .addOnSuccessListener {
-                Log.d("Firestore", "Repayment synced: ${repayment.repaymentId}")
+                Timber.d("Repayment synced: ${repayment.provisionalId}")
             }
             .addOnFailureListener { e ->
-                Log.e("Firestore", "Repayment sync failed", e)
+                Timber.e(e, "Repayment sync failed")
             }
+    }
+
+    // ---------------- Approvals ----------------
+    fun approveAsTreasurer(provisionalId: String, treasurerId: String, notes: String? = null) {
+        viewModelScope.launch {
+            try {
+                val success = repository.approve(
+                    provisionalId,
+                    approverId = treasurerId,
+                    notes = notes,
+                    newStatus = com.selfgrowthfund.sgf.model.enums.ApprovalStage.TREASURER_APPROVED
+                )
+                approvalResult.value = if (success) Result.Success(Unit) else Result.Error(Exception("Approval failed"))
+            } catch (e: Exception) {
+                Timber.e(e, "Treasurer approval failed")
+                approvalResult.value = Result.Error(e)
+            }
+        }
+    }
+
+    fun approveAsAdmin(provisionalId: String, adminId: String, notes: String? = null) {
+        viewModelScope.launch {
+            try {
+                val success = repository.approveAndAssignId(
+                    provisionalId,
+                    approverId = adminId,
+                    notes = notes
+                )
+                approvalResult.value = if (success) Result.Success(Unit) else Result.Error(Exception("Admin approval failed"))
+            } catch (e: Exception) {
+                Timber.e(e, "Admin approval failed")
+                approvalResult.value = Result.Error(e)
+            }
+        }
+    }
+
+    fun rejectRepayment(provisionalId: String, rejectedBy: String, notes: String? = null) {
+        viewModelScope.launch {
+            try {
+                val success = repository.reject(provisionalId, rejectedBy, notes)
+                approvalResult.value = if (success) Result.Success(Unit) else Result.Error(Exception("Rejection failed"))
+            } catch (e: Exception) {
+                Timber.e(e, "Repayment rejection failed")
+                approvalResult.value = Result.Error(e)
+            }
+        }
     }
 
     // ---------------- Summary Loader ----------------
@@ -150,7 +221,7 @@ class RepaymentViewModel @Inject constructor(
                 }
                 _repaymentSummaries.value = map
             } catch (e: Exception) {
-                Log.e("RepaymentViewModel", "Error loading repayment summaries", e)
+                Timber.e(e, "Error loading repayment summaries")
                 _repaymentSummaries.value = emptyMap()
             }
         }

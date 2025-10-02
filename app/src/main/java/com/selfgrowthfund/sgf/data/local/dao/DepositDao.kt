@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Deposit
 import com.selfgrowthfund.sgf.data.local.dto.DepositEntrySummaryDTO
+import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
 import com.selfgrowthfund.sgf.model.reports.ShareholderDepositSummary
 import kotlinx.coroutines.flow.Flow
@@ -11,9 +12,7 @@ import java.time.LocalDate
 @Dao
 interface DepositDao {
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insert(deposit: Deposit)
-
+    // --- Basic Queries ---
     @Query("SELECT * FROM deposits ORDER BY paymentDate DESC")
     fun getAll(): Flow<List<Deposit>>
 
@@ -32,19 +31,11 @@ interface DepositDao {
     @Query("SELECT * FROM deposits ORDER BY dueMonth DESC")
     fun getAllDeposits(): List<Deposit>
 
-    @Query("""
-        SELECT depositId, shareholderId, shareholderName, dueMonth, paymentDate, 
-               shareNos, shareAmount, additionalContribution, penalty, totalAmount, 
-               paymentStatus, modeOfPayment, createdAt 
-        FROM deposits
-    """)
-    fun getDepositEntrySummary(): Flow<List<DepositEntrySummaryDTO>>
-
     @Query("SELECT SUM(additionalContribution) FROM deposits")
     suspend fun getAdditionalContributions(): Double
 
     @Query("""
-        SELECT strftime('%Y-%m', paymentDate) AS month, SUM(totalamount) AS total
+        SELECT strftime('%Y-%m', paymentDate) AS month, SUM(totalAmount) AS total
         FROM deposits
         GROUP BY month
         ORDER BY month ASC
@@ -52,13 +43,13 @@ interface DepositDao {
     suspend fun getMonthlyDeposits(): List<MonthlyAmount>
 
     @Query("""
-        SELECT shareholderId, SUM(totalamount) AS totalDeposits, MAX(paymentDate) AS lastDate
+        SELECT shareholderId, SUM(totalAmount) AS totalDeposits, MAX(paymentDate) AS lastDate
         FROM deposits
         GROUP BY shareholderId
     """)
     suspend fun getShareholderDepositSummary(): List<ShareholderDepositSummary>
 
-    @Query("SELECT SUM(totalamount) FROM deposits")
+    @Query("SELECT SUM(totalAmount) FROM deposits")
     suspend fun getTotalFundDeposit(): Double
 
     @Query("SELECT SUM(shareAmount * shareNos) FROM deposits")
@@ -77,19 +68,107 @@ interface DepositDao {
         WHERE strftime('%Y-%m', paymentDate) = :month
     """)
     suspend fun getMonthlyIncome(month: String): Double
+
     @Query("""
-    SELECT SUM(shareAmount * shareNos)
-    FROM deposits
-    WHERE strftime('%Y-%m', paymentDate) = :month
-""")
+        SELECT SUM(shareAmount * shareNos)
+        FROM deposits
+        WHERE strftime('%Y-%m', paymentDate) = :month
+    """)
     suspend fun getMonthlyShareDeposit(month: String): Double
 
     @Query("SELECT * FROM deposits WHERE shareholderId = :id ORDER BY paymentDate LIMIT 1")
     suspend fun getLastDepositForShareholder(id: String): Deposit?
-    @Query("SELECT COUNT(*) FROM deposits WHERE approvalStatus = :status AND createdAt BETWEEN :start AND :end")
-    suspend fun countByStatus(status: String, start: LocalDate, end: LocalDate): Int
 
-    @Query("SELECT COUNT(*) FROM deposits WHERE createdAt BETWEEN :start AND :end")
+    // --- Approvals ---
+    @Query("""
+        UPDATE deposits 
+        SET approvalStatus = :status, 
+            depositId = :depositId, 
+            approvedBy = :approvedBy, 
+            notes = :notes,
+            updatedAt = :timestamp 
+        WHERE provisionalId = :provisionalId
+    """)
+    suspend fun approveByAdmin(
+        provisionalId: String,
+        depositId: String,
+        status: ApprovalStage,
+        approvedBy: String,
+        notes: String?,
+        timestamp: Long
+    )
+
+    @Query("""
+        UPDATE deposits 
+        SET approvalStatus = :status, 
+            approvedBy = :approvedBy, 
+            notes = :notes,
+            updatedAt = :timestamp 
+        WHERE provisionalId = :provisionalId
+    """)
+    suspend fun updateStatus(
+        provisionalId: String,
+        status: ApprovalStage,
+        approvedBy: String,
+        notes: String?,
+        timestamp: Long
+    )
+
+    // --- Counts & Reports ---
+    @Query("""
+        SELECT COUNT(*) FROM deposits 
+        WHERE approvalStatus = :status 
+        AND paymentDate BETWEEN :start AND :end
+    """)
+    suspend fun countByStatus(status: ApprovalStage, start: LocalDate, end: LocalDate): Int
+
+    @Query("""
+        SELECT COUNT(*) FROM deposits 
+        WHERE paymentDate BETWEEN :start AND :end
+    """)
     suspend fun countTotal(start: LocalDate, end: LocalDate): Int
 
+    @Query("""
+        SELECT * FROM deposits 
+        WHERE paymentDate BETWEEN :start AND :end
+    """)
+    suspend fun getApprovalsBetween(start: LocalDate, end: LocalDate): List<Deposit>
+
+    // --- Finders ---
+    @Query("SELECT * FROM deposits WHERE depositId = :depositId LIMIT 1")
+    suspend fun findById(depositId: String): Deposit?
+
+    @Query("SELECT * FROM deposits WHERE provisionalId = :id LIMIT 1")
+    suspend fun getByProvisionalId(id: String): Deposit?
+
+    @Query("SELECT * FROM deposits WHERE depositId = :id LIMIT 1")
+    suspend fun getByDepositId(id: String): Deposit?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(deposit: Deposit)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(deposits: List<Deposit>)
+
+    // --- Summaries ---
+    @Query("""
+        SELECT 
+            provisionalId, 
+            depositId, 
+            shareholderId, 
+            shareholderName, 
+            shareNos, 
+            shareAmount, 
+            additionalContribution, 
+            penalty, 
+            totalAmount, 
+            paymentStatus, 
+            dueMonth, 
+            paymentDate, 
+            createdAt,
+            modeOfPayment
+        FROM deposits
+        ORDER BY createdAt DESC
+    """)
+    fun getDepositEntrySummaries(): Flow<List<DepositEntrySummaryDTO>>
 }

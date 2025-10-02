@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.selfgrowthfund.sgf.data.local.entities.OtherIncomes
+import com.selfgrowthfund.sgf.data.local.entities.OtherIncome
 import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import java.time.LocalDate
@@ -61,7 +61,7 @@ fun AddOtherIncomeScreen(
 
             Button(
                 onClick = {
-                    val otherIncomes = OtherIncomes(
+                    val otherIncomes = OtherIncome(
                         date = LocalDate.now(),
                         amount = amount.toDoubleOrNull() ?: 0.0,
                         remarks = description,

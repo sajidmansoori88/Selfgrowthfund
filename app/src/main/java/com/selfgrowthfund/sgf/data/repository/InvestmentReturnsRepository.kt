@@ -3,16 +3,24 @@ package com.selfgrowthfund.sgf.data.repository
 import com.selfgrowthfund.sgf.data.local.dao.InvestmentDao
 import com.selfgrowthfund.sgf.data.local.dao.InvestmentReturnsDao
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturns
+import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class InvestmentReturnsRepository @Inject constructor(
     private val returnsDao: InvestmentReturnsDao,
     private val investmentDao: InvestmentDao,
-    private val dates: Dates
+    dates: Dates
 ) {
+
+    // ─────────────── Add / Insert ───────────────
     suspend fun addReturn(returnEntity: InvestmentReturns): Result<Unit> = try {
         returnsDao.insertReturn(returnEntity)
         Result.Success(Unit)
@@ -20,29 +28,57 @@ class InvestmentReturnsRepository @Inject constructor(
         Result.Error(e)
     }
 
-    suspend fun getReturnsForInvestment(investmentId: String): List<InvestmentReturns> {
-        return returnsDao.getReturnsByInvestmentId(investmentId)
+    // ─────────────── Reactive (Flows) ───────────────
+    fun getReturnsByInvestmentId(investmentId: String): Flow<List<InvestmentReturns>> =
+        returnsDao.getReturnsByInvestmentIdFlow(investmentId)
+
+    // ─────────────── Queries (suspend, one-shot) ───────────────
+    suspend fun getReturnsForInvestment(investmentId: String): List<InvestmentReturns> =
+        returnsDao.getReturnsByInvestmentId(investmentId)
+
+    suspend fun getTotalProfitForInvestment(investmentId: String): Double =
+        returnsDao.getReturnsByInvestmentId(investmentId).sumOf { it.actualProfitAmount }
+
+    suspend fun getTotalReturnedAmount(investmentId: String): Double =
+        returnsDao.getReturnsByInvestmentId(investmentId).sumOf { it.amountReceived }
+
+    // ─────────────── Approval workflow ───────────────
+    suspend fun approve(
+        returnId: String,
+        approverId: String?,
+        notes: String?,
+        newStatus: ApprovalStage
+    ): Boolean = withContext(Dispatchers.IO) {
+        val updatedAt = LocalDate.now()
+        val rows = returnsDao.updateApprovalStatus(returnId, newStatus, approverId, notes, updatedAt)
+        rows > 0
     }
 
-    suspend fun getTotalProfitForInvestment(investmentId: String): Double {
-        return returnsDao.getReturnsByInvestmentId(investmentId)
-            .sumOf { it.actualProfitAmount }
+    suspend fun reject(
+        returnId: String,
+        rejectedBy: String?,
+        notes: String?
+    ): Boolean = withContext(Dispatchers.IO) {
+        val updatedAt = LocalDate.now()
+        val rows = returnsDao.updateApprovalStatus(returnId, ApprovalStage.REJECTED, rejectedBy, notes, updatedAt)
+        rows > 0
     }
 
-    suspend fun getTotalReturnedAmount(investmentId: String): Double {
-        return returnsDao.getReturnsByInvestmentId(investmentId)
-            .sumOf { it.amountReceived }
-    }
-
+    // ─────────────── Reports ───────────────
     suspend fun countApproved(start: LocalDate, end: LocalDate) =
-        returnsDao.countByStatus("APPROVED", start, end)
+        returnsDao.countByStatus(ApprovalStage.APPROVED, start, end)
 
     suspend fun countRejected(start: LocalDate, end: LocalDate) =
-        returnsDao.countByStatus("REJECTED", start, end)
+        returnsDao.countByStatus(ApprovalStage.REJECTED, start, end)
 
     suspend fun countPending(start: LocalDate, end: LocalDate) =
-        returnsDao.countByStatus("PENDING", start, end)
+        returnsDao.countByStatus(ApprovalStage.PENDING, start, end)
 
     suspend fun countTotal(start: LocalDate, end: LocalDate) =
         returnsDao.countTotal(start, end)
+
+    suspend fun getApprovalsBetween(start: LocalDate, end: LocalDate): List<InvestmentReturns> =
+        returnsDao.getApprovalsBetween(start, end)
+
+    suspend fun findById(returnsId: String) = returnsDao.findById(returnsId)
 }

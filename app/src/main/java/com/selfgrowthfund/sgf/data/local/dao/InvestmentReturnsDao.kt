@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturns
+import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
@@ -47,23 +48,52 @@ interface InvestmentReturnsDao {
     """)
     suspend fun getLatestReturn(investmentId: String): InvestmentReturns?
 
+    // --- Monthly Reports ---
     @Query("""
-    SELECT SUM(amountReceived)
-    FROM investment_returns
-    WHERE strftime('%Y-%m', returnDate) = :month
-""")
+        SELECT SUM(amountReceived)
+        FROM investment_returns
+        WHERE strftime('%Y-%m', returnDate) = :month
+    """)
     suspend fun getMonthlyReturns(month: String): Double
+
     @Query("""
-    SELECT strftime('%Y-%m', returnDate) AS month, SUM(amountReceived) AS total
-    FROM investment_returns
-    GROUP BY month
-    ORDER BY month ASC
-""")
+        SELECT strftime('%Y-%m', returnDate) AS month, SUM(amountReceived) AS total
+        FROM investment_returns
+        GROUP BY month
+        ORDER BY month ASC
+    """)
     suspend fun getMonthlyInvestmentTimeline(): List<MonthlyAmount>
 
-    @Query("SELECT COUNT(*) FROM investment_returns WHERE approvalStatus = :status AND createdAt BETWEEN :start AND :end")
-    suspend fun countByStatus(status: String, start: LocalDate, end: LocalDate): Int
+    // --- Approval Workflow ---
+    @Query("""
+        UPDATE investment_returns
+        SET approval_status = :status,
+            approved_by = :approvedBy,
+            approval_notes = :notes,
+            updated_at = :updatedAt
+        WHERE returnId = :returnId
+    """)
+    suspend fun updateApprovalStatus(
+        returnId: String,
+        status: ApprovalStage,
+        approvedBy: String?,
+        notes: String?,
+        updatedAt: LocalDate
+    ): Int
+
+    @Query("SELECT COUNT(*) FROM investment_returns WHERE approval_status = :status AND createdAt BETWEEN :start AND :end")
+    suspend fun countByStatus(status: ApprovalStage, start: LocalDate, end: LocalDate): Int
 
     @Query("SELECT COUNT(*) FROM investment_returns WHERE createdAt BETWEEN :start AND :end")
     suspend fun countTotal(start: LocalDate, end: LocalDate): Int
+
+    @Query("SELECT * FROM investment_returns WHERE createdAt BETWEEN :start AND :end")
+    suspend fun getApprovalsBetween(start: LocalDate, end: LocalDate): List<InvestmentReturns>
+
+    @Query("SELECT * FROM investment_returns WHERE returnId = :returnsId LIMIT 1")
+    suspend fun findById(returnsId: String): InvestmentReturns?
+
+    // --- Flows ---
+    @Query("SELECT * FROM investment_returns WHERE investmentId = :investmentId ORDER BY returnDate DESC")
+    fun getReturnsByInvestmentIdFlow(investmentId: String): Flow<List<InvestmentReturns>>
 }

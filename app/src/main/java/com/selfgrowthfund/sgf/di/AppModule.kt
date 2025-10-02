@@ -31,7 +31,8 @@ object AppModule {
             .addMigrations(
                 Migrations.MIGRATION_1_2,
                 Migrations.MIGRATION_2_3,
-                Migrations.MIGRATION_3_4
+                Migrations.MIGRATION_3_4,
+                Migrations.MIGRATION_4_5
             )
             .addCallback(AppDatabase.DatabaseCallback())
             .build()
@@ -43,19 +44,21 @@ object AppModule {
     @Provides fun provideBorrowingDao(db: AppDatabase): BorrowingDao = db.borrowingDao()
     @Provides fun provideRepaymentDao(db: AppDatabase): RepaymentDao = db.repaymentDao()
     @Provides fun provideInvestmentDao(db: AppDatabase): InvestmentDao = db.investmentDao()
-    @Provides fun provideDepositEntryDao(db: AppDatabase): DepositEntryDao = db.depositEntryDao()
     @Provides fun provideInvestmentReturnsDao(db: AppDatabase): InvestmentReturnsDao = db.investmentReturnsDao()
-
-    // ✅ Newly added DAOs
     @Provides fun provideActionItemDao(db: AppDatabase): ActionItemDao = db.actionItemDao()
     @Provides fun providePenaltyDao(db: AppDatabase): PenaltyDao = db.penaltyDao()
     @Provides fun provideIncomeDao(db: AppDatabase): OtherIncomeDao = db.incomeDao()
     @Provides fun provideExpenseDao(db: AppDatabase): OtherExpenseDao = db.expenseDao()
+    @Provides fun provideApprovalFlowDao(db: AppDatabase): ApprovalFlowDao = db.approvalFlowDao()
+    @Provides fun provideUserSessionDao(db: AppDatabase): UserSessionDao = db.userSessionDao()
+
+
 
     /* Utilities */
     @Provides
     @Singleton
     fun provideDates(): Dates = Dates
+
 
     /* Repositories */
     @Provides
@@ -70,9 +73,9 @@ object AppModule {
     @Singleton
     fun provideDepositRepository(
         depositDao: DepositDao,
-        depositEntryDao: DepositEntryDao,
+        firestore: FirebaseFirestore,
         dates: Dates
-    ): DepositRepository = DepositRepository(depositDao, depositEntryDao, dates)
+    ): DepositRepository = DepositRepository(depositDao, firestore, dates)
 
     @Provides
     @Singleton
@@ -96,10 +99,15 @@ object AppModule {
         investmentDao: InvestmentDao,
         dates: Dates
     ): InvestmentReturnsRepository = InvestmentReturnsRepository(returnsDao, investmentDao, dates)
+
     @Provides
     @Singleton
     fun provideRepaymentRepository(
         repaymentDao: RepaymentDao,
-        borrowingRepository: BorrowingRepository
-    ): RepaymentRepository = RepaymentRepository(repaymentDao, borrowingRepository)
+        borrowingRepository: BorrowingRepository,
+        firestore: FirebaseFirestore
+    ): RepaymentRepository = RepaymentRepository(repaymentDao, borrowingRepository, firestore)
+
+
+
 }

@@ -120,4 +120,10 @@ interface ShareholderDao {
 
     @Query("DELETE FROM shareholders WHERE shareholderId = :id")
     suspend fun deleteById(id: String)
+
+    @Query("SELECT * FROM shareholders")
+    suspend fun getAll(): List<Shareholder>
+
+    @Update
+    suspend fun update(shareholder: Shareholder)
 }

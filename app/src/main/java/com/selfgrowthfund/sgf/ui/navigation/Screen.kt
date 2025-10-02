@@ -48,31 +48,29 @@ sealed class Screen(val route: String) {
     object ActiveBorrowingsReport : Screen("active_borrowings_report")
     object ClosedBorrowingsReport : Screen("closed_borrowings_report")
 
-    // Investments flow
-    object AddInvestment : Screen("add_investment")
-    object InvestmentDetail : Screen("investment_detail/{investmentId}") {
-        fun createRoute(investmentId: String) = "investment_detail/$investmentId"
+    // ───── Investments Flow ─────
+    // 📊 Investment Detail (by provisionalId)
+    object InvestmentDetail : Screen("investment_detail/{provisionalId}") {
+        fun createRoute(provisionalId: String) = "investment_detail/$provisionalId"
     }
-    object AddInvestmentReturn : Screen("add_investment_return/{investmentId}/{investeeType}/{ownershipType}/{investmentType}/{modeOfPayment}/{status}") {
+
+    // ➕ Add Investment
+    object AddInvestment : Screen("add_investment")
+
+    // 💰 Add Investment Return (by investmentId + type info)
+    object AddInvestmentReturn : Screen(
+        "add_investment_return?investmentId={investmentId}&investeeType={investeeType}&ownershipType={ownershipType}&investmentType={investmentType}"
+    ) {
         fun createRoute(
             investmentId: String,
-            investeeType: String,
-            ownershipType: String,
-            investmentType: String,
-            modeOfPayment: String,
-            status: String
-        ) = "add_investment_return/$investmentId/$investeeType/$ownershipType/$investmentType/$modeOfPayment/$status"
+            investeeType: String = "",
+            ownershipType: String = "",
+            investmentType: String = ""
+        ): String {
+            return "add_investment_return?investmentId=$investmentId&investeeType=$investeeType&ownershipType=$ownershipType&investmentType=$investmentType"
+        }
     }
 
-    // ✅ NEW: Simplified Investment Return
-    object AddReturn : Screen("add_return/{investmentId}") {
-        fun createRoute(investmentId: String) = "add_return/$investmentId"
-    }
-
-    // ✅ NEW: Apply Investment
-    object ApplyInvestment : Screen("apply_investment/{investmentId}") {
-        fun createRoute(investmentId: String) = "apply_investment/$investmentId"
-    }
 
     // Deposits flow
     object AddDeposit : Screen("add_deposit?shareholderId={shareholderId}&shareholderName={shareholderName}&role={role}&lastDepositId={lastDepositId}") {

@@ -9,8 +9,10 @@ import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.Paragraph
+import com.selfgrowthfund.sgf.session.SessionEntry
 import java.io.File
 import java.io.FileOutputStream
+import java.io.FileWriter
 import java.io.OutputStreamWriter
 
 object ExportUtils {
@@ -30,7 +32,7 @@ object ExportUtils {
     }
 
     /**
-     * Exports data to CSV file.
+     * Generic: Exports data to CSV file.
      */
     fun exportToCsv(
         context: Context,
@@ -106,7 +108,40 @@ object ExportUtils {
         )
     }
 
-    fun exportToCsv(headers: List<String>, rows: List<List<String>>): String {
+    // ----------------------
+    // Session-specific CSV
+    // ----------------------
+
+    /**
+     * Exports a list of SessionEntry into CSV and returns the file.
+     */
+    fun exportSessionHistoryCSV(
+        context: Context,
+        sessionEntries: List<SessionEntry>,
+        permanent: Boolean = false
+    ): File {
+        val fileName = "session_history.csv"
+        val file = File(context.getExternalFilesDir(null), fileName)
+        FileWriter(file).use { writer ->
+            // Header
+            writer.append("Sr,ShareholderId,Name,Current Month Sessions,Lifetime Sessions\n")
+            // Rows
+            sessionEntries.forEach {
+                writer.append("${it.sr},${it.shareholderId},${it.name},${it.currentMonthSessions},${it.lifetimeSessions}\n")
+            }
+        }
+        return file
+    }
+}
+
+// ----------------------
+    // Utility builder
+    // ----------------------
+
+    /**
+     * Builds CSV as a plain String (useful if you just need text).
+     */
+    fun buildCsvString(headers: List<String>, rows: List<List<String>>): String {
         val csvBuilder = StringBuilder()
         csvBuilder.append(headers.joinToString(",")).append("\n")
         rows.forEach { row ->
@@ -114,4 +149,4 @@ object ExportUtils {
         }
         return csvBuilder.toString()
     }
-}
+

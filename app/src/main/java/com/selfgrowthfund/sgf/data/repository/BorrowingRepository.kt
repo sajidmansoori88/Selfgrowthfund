@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.data.repository
 import com.selfgrowthfund.sgf.data.local.dao.BorrowingDao
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
 import com.selfgrowthfund.sgf.data.local.entities.Borrowing
+import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
@@ -43,13 +44,11 @@ class BorrowingRepository @Inject constructor(
     // ==================== Query Operations ====================
     fun getAllBorrowings(): Flow<List<Borrowing>> = borrowingDao.getAllBorrowings()
 
-    // FIXED: Return type matches signature - returns Borrowing directly
     suspend fun getBorrowingById(borrowId: String): Borrowing {
         return borrowingDao.getBorrowingById(borrowId)
             ?: throw Exception("Borrowing not found with ID: $borrowId")
     }
 
-    // FIXED: Added method that returns Result<Borrowing> if needed elsewhere
     suspend fun getBorrowingByIdWithResult(borrowId: String): Result<Borrowing> = try {
         val borrowing = borrowingDao.getBorrowingById(borrowId)
             ?: throw Exception("Borrowing not found with ID: $borrowId")
@@ -61,22 +60,17 @@ class BorrowingRepository @Inject constructor(
     fun getBorrowingsByShareholder(shareholderId: String): Flow<List<Borrowing>> =
         borrowingDao.getBorrowingsByShareholder(shareholderId)
 
-    // FIXED: Use BorrowingStatus enum instead of String
     fun getBorrowingsByStatus(status: BorrowingStatus): Flow<List<Borrowing>> =
-        borrowingDao.getBorrowingsByStatus(status.name) // Convert enum to string for DAO
+        borrowingDao.getBorrowingsByStatus(status.name)
 
     // ==================== Status Management ====================
-    // FIXED: Use BorrowingStatus enum instead of String
     suspend fun updateBorrowingStatus(
         borrowId: String,
         status: BorrowingStatus
     ): Result<Unit> = try {
-        val closedDate: LocalDate? = if (BorrowingStatus.getClosedStatuses().contains(status)) {
+        val closedDate: LocalDate? = if (BorrowingStatus.getClosed().contains(status)) {
             dates.today()
-        } else {
-            null
-        }
-        // FIXED: Pass status.name to convert enum to string for DAO
+        } else null
         borrowingDao.updateBorrowingStatus(borrowId, status.name, closedDate)
         Result.Success(Unit)
     } catch (e: Exception) {
@@ -95,18 +89,49 @@ class BorrowingRepository @Inject constructor(
         Result.Error(e)
     }
 
-    // FIXED: Added proper implementation or handle missing method
     suspend fun getTotalActiveLoanAmount(shareholderId: String): Result<Double> = try {
-        // Option 1: If the method exists in DAO
         Result.Success(borrowingDao.getTotalActiveLoanAmount(shareholderId))
-
-        // Option 2: If method doesn't exist, calculate manually
-        // val activeBorrowings = borrowingDao.getBorrowingsByStatus(BorrowingStatus.ACTIVE.name)
-        // val total = activeBorrowings.sumOf { it.amount }
-        // Result.Success(total)
     } catch (e: Exception) {
         Result.Error(e)
     }
+
+    // ==================== Approval Flow ====================
+    suspend fun approve(provisionalId: String, approverId: String? = null, notes: String? = null) {
+        borrowingDao.updateApprovalStatus(
+            provisionalId = provisionalId,
+            status = ApprovalStage.APPROVED,
+            approvedBy = approverId,
+            notes = notes,
+            timestamp = System.currentTimeMillis()
+        )
+    }
+
+    suspend fun reject(provisionalId: String, rejectedBy: String? = null, notes: String? = null) {
+        borrowingDao.updateApprovalStatus(
+            provisionalId = provisionalId,
+            status = ApprovalStage.REJECTED,
+            approvedBy = rejectedBy,
+            notes = notes,
+            timestamp = System.currentTimeMillis()
+        )
+    }
+
+    suspend fun countApproved(start: LocalDate, end: LocalDate) =
+        borrowingDao.countByStatus(ApprovalStage.APPROVED, start, end)
+
+    suspend fun countRejected(start: LocalDate, end: LocalDate) =
+        borrowingDao.countByStatus(ApprovalStage.REJECTED, start, end)
+
+    suspend fun countPending(start: LocalDate, end: LocalDate) =
+        borrowingDao.countByStatus(ApprovalStage.PENDING, start, end)
+
+    suspend fun countTotal(start: LocalDate, end: LocalDate) =
+        borrowingDao.countTotal(start, end)
+
+    suspend fun getApprovalsBetween(start: LocalDate, end: LocalDate): List<Borrowing> =
+        borrowingDao.getApprovalsBetween(start, end)
+
+    suspend fun findById(borrowingId: String) = borrowingDao.findById(borrowingId)
 
     // ==================== ID Generation ====================
     private suspend fun generateNextBorrowingId(): String {
@@ -114,15 +139,4 @@ class BorrowingRepository @Inject constructor(
         val numeric = lastId?.removePrefix("BR")?.toIntOrNull() ?: 0
         return "BR" + String.format(Locale.US, "%04d", numeric + 1)
     }
-    suspend fun countApproved(start: LocalDate, end: LocalDate) =
-        borrowingDao.countByStatus("APPROVED", start, end)
-
-    suspend fun countRejected(start: LocalDate, end: LocalDate) =
-        borrowingDao.countByStatus("REJECTED", start, end)
-
-    suspend fun countPending(start: LocalDate, end: LocalDate) =
-        borrowingDao.countByStatus("PENDING", start, end)
-
-    suspend fun countTotal(start: LocalDate, end: LocalDate) =
-        borrowingDao.countTotal(start, end)
 }

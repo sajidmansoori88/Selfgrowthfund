@@ -95,25 +95,3 @@ fun ExportActions(context: Context, summaries: List<DepositEntrySummaryDTO>) {
 fun formatDate(date: LocalDate): String {
     return date.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
 }
-
-@Preview(showBackground = true)
-@Composable
-fun DepositHistoryPreview() {
-    val mockSummaries = listOf(
-        DepositEntrySummaryDTO(
-            shareholderName = "John Doe",
-            dueMonth = "August 2025",
-            paymentDate = LocalDate.of(2025, 8, 10),
-            totalAmount = 6000.0,
-            paymentStatus = "Paid"
-        )
-    )
-
-    SGFTheme {
-            LazyColumn(modifier = Modifier.padding(16.dp)) {
-                items(mockSummaries) { summary ->
-                    DepositSummaryCard(summary)
-                }
-            }
-        }
-    }

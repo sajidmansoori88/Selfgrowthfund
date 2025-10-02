@@ -7,46 +7,137 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.selfgrowthfund.sgf.ui.admin.components.SessionHeaderRow
-import com.selfgrowthfund.sgf.ui.admin.components.SessionRow
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.selfgrowthfund.sgf.session.SessionEntry
 import com.selfgrowthfund.sgf.ui.theme.GradientBackground
-import kotlinx.coroutines.launch
 
 @Composable
 fun AdminSessionHistoryScreen(
-    viewModel: AdminDashboardViewModel,
+    viewModel: AdminDashboardViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     val sessionEntries by viewModel.sessionHistory.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
+
+    // Handle snackbar messages from ViewModel
+    LaunchedEffect(uiState.successMessage, uiState.errorMessage) {
+        uiState.successMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearMessages()
+        }
+        uiState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearMessages()
+        }
+    }
 
     GradientBackground {
-        Column(
-            modifier = modifier
-                .horizontalScroll(rememberScrollState())
-                .padding(16.dp)) {
-            Button(onClick = {
-                viewModel.exportSessionCSV()
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Session history CSV exported")
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { innerPadding ->
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(16.dp)
+            ) {
+                // Loading indicator
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-            }) {
-                Text("Export CSV")
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    SessionHeaderRow()
+                // Export Button
+                Button(
+                    onClick = { viewModel.exportSessionCSV() },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Export CSV")
                 }
-                itemsIndexed(sessionEntries) { index, entry ->
-                    SessionRow(index, entry)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (sessionEntries.isEmpty() && !uiState.isLoading) {
+                    Text(
+                        "No session history available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                } else {
+                    // Horizontal scroll for the table
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            item { SessionHeaderRow() }
+                            itemsIndexed(sessionEntries) { index, entry ->
+                                SessionRow(index = index, entry = entry)
+                            }
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SessionHeaderRow() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text("Sr", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text("Name", fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
+        Text("This Month", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text("Lifetime", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun SessionRow(index: Int, entry: SessionEntry) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = entry.sr.toString(),
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = entry.name,
+                modifier = Modifier.weight(2f),
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = entry.currentMonthSessions.toString(),
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = entry.lifetimeSessions.toString(),
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.secondary
+            )
         }
     }
 }

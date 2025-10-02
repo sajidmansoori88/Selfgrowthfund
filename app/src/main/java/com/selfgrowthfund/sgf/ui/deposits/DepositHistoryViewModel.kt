@@ -65,8 +65,11 @@ class DepositHistoryViewModel(
     ) { deposits: List<Deposit>, monthStrings: List<String>, status: String, shareholder: String ->
         val months = monthStrings.map { DueMonth(it) } // Convert strings to DueMonth
         deposits.filter { entry ->
-            entry.dueMonth in months && // Now comparing DueMonth with DueMonth
-                    (status == "All" || entry.paymentStatus == PaymentStatus.fromLabel(status)) &&
+            entry.dueMonth in months &&
+                    (
+                            status == "All" ||
+                                    PaymentStatus.fromLabel(status)?.let { entry.paymentStatus == it } == true
+                            ) &&
                     (
                             currentUserRole != MemberRole.MEMBER_ADMIN && entry.shareholderId == currentUserId ||
                                     currentUserRole == MemberRole.MEMBER_ADMIN && (shareholder == "All" || entry.shareholderName == shareholder)
@@ -79,7 +82,7 @@ class DepositHistoryViewModel(
             _isLoading.value = true
             _loadError.value = null
             try {
-                val deposits = repository.getAllDeposits()
+                val deposits = repository.getAllDeposits() // ✅ now available in repository
                 _allDeposits.value = deposits
             } catch (e: Exception) {
                 _loadError.value = e.message

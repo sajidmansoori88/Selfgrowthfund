@@ -25,7 +25,7 @@ fun InvestmentCard(
 
             Text("Amount: ₹${investment.amount}", style = MaterialTheme.typography.bodyMedium)
             Text("Expected Profit: ₹${investment.expectedProfitAmount}", style = MaterialTheme.typography.bodyMedium)
-            Text("Return Due: ${investment.returnDueDate.format(formatter)}", style = MaterialTheme.typography.bodyMedium)
+            Text("Return Due: ${investment.returnDueDate?.format(formatter)}", style = MaterialTheme.typography.bodyMedium)
             Text("Status: ${investment.status}", style = MaterialTheme.typography.bodySmall)
 
             Spacer(modifier = Modifier.height(12.dp))

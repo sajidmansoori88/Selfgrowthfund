@@ -5,7 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.selfgrowthfund.sgf.model.SessionEntry
+import com.selfgrowthfund.sgf.session.SessionEntry
 
 @Composable
 fun SessionRow(index: Int, entry: SessionEntry) {

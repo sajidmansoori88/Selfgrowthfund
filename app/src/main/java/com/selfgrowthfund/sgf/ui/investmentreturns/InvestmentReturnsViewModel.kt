@@ -10,6 +10,7 @@ import com.selfgrowthfund.sgf.data.repository.InvestmentReturnsRepository
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -69,6 +70,10 @@ class InvestmentReturnsViewModel @Inject constructor(
             isSubmitting.value = false
         }
     }
+
+    fun getReturnsByInvestmentId(investmentId: String): Flow<List<InvestmentReturns>> =
+        repository.getReturnsByInvestmentId(investmentId)
+
 
     // ---------------- FIRESTORE SYNC ----------------
     private fun syncToFirestore(returnEntity: InvestmentReturns) {

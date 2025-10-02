@@ -17,13 +17,14 @@ class ShareholderRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
 
-    // Reactive streams
+    // ──────────────── Reactive streams ────────────────
     fun getAllShareholdersStream(): Flow<List<Shareholder>> = dao.getAllShareholdersFlow()
     fun getShareholderByIdStream(id: String): Flow<Shareholder?> = dao.getShareholderByIdFlow(id)
 
-    // Direct access
-    suspend fun getLastShareholderId(): String? = dao.getLastShareholderId()
+    // ──────────────── Direct DB access ────────────────
+    suspend fun getAllShareholders(): List<Shareholder> = dao.getAll()
     suspend fun getShareholderById(id: String): Shareholder? = dao.getShareholderById(id)
+    suspend fun getLastShareholderId(): String? = dao.getLastShareholderId()
     suspend fun searchShareholders(query: String): List<Shareholder> =
         dao.searchShareholders("%$query%")
 
@@ -52,7 +53,6 @@ class ShareholderRepository @Inject constructor(
         Result.Error(e)
     }
 
-    // Add this method to support deleting by Shareholder object
     suspend fun deleteShareholder(shareholder: Shareholder): Result<Unit> = try {
         dao.deleteShareholder(shareholder)
         Result.Success(Unit)
@@ -60,7 +60,7 @@ class ShareholderRepository @Inject constructor(
         Result.Error(e)
     }
 
-    // 🔄 Firestore sync
+    // ──────────────── Firestore sync ────────────────
     suspend fun syncShareholderToFirestore(input: ShareholderEntry): Result<Unit> = try {
         val now = Instant.ofEpochMilli(dates.now())
         val doc = firestore.collection("shareholder").document()
@@ -81,7 +81,7 @@ class ShareholderRepository @Inject constructor(
         Result.Error(e)
     }
 
-    // Helper
+    // ──────────────── Helpers ────────────────
     private fun Shareholder.withTimestamps(): Shareholder =
         copy(
             createdAt = Instant.ofEpochMilli(dates.now()),

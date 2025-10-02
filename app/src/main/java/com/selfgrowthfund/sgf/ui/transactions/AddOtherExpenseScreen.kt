@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.selfgrowthfund.sgf.data.local.entities.OtherExpenses
+import com.selfgrowthfund.sgf.data.local.entities.OtherExpense
 import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import java.time.LocalDate
@@ -62,7 +62,7 @@ fun AddOtherExpenseScreen(
 
         Button(
             onClick = {
-                val otherExpenses = OtherExpenses(
+                val otherExpenses = OtherExpense(
                     date = LocalDate.now(),
                     amount = amount.toDoubleOrNull() ?: 0.0,
                     remarks = description,

@@ -1,15 +1,15 @@
 package com.selfgrowthfund.sgf.data.local.entities
 
-
 import com.selfgrowthfund.sgf.model.enums.*
-import com.selfgrowthfund.sgf.utils.IdGenerator
 import java.time.LocalDate
+import java.util.UUID
 
 data class InvestmentEntry(
-    val investeeType: InvesteeType = InvesteeType.External,
-    val investeeName: String?,
+    val investeeType: InvesteeType = InvesteeType.Shareholder,
+    val investeeName: String,                 // required now
+    val shareholderId: String,                // required now
     val ownershipType: OwnershipType = OwnershipType.Individual,
-    val partnerNames: List<String>?,
+    val partnerNames: String? = null,         // comma-separated
 
     val investmentDate: LocalDate,
     val investmentType: InvestmentType = InvestmentType.Other,
@@ -23,18 +23,19 @@ data class InvestmentEntry(
     val status: InvestmentStatus = InvestmentStatus.Active,
     val remarks: String? = null,
 
-    val entrySource: EntrySource = EntrySource.USER,
+    val entrySource: EntrySource = EntrySource.User,
     val enteredBy: String? = null
 ) {
-    fun toInvestment(lastInvestmentId: String?): Investment {
-        val newId = IdGenerator.nextInvestmentId(lastInvestmentId)
+    fun toInvestment(): Investment {
         val expectedProfitAmount = amount * expectedProfitPercent / 100
         val returnDueDate = investmentDate.plusDays(expectedReturnPeriod.toLong())
 
         return Investment(
-            investmentId = newId,
+            provisionalId = UUID.randomUUID().toString(),  // always generated
+            investmentId = null,                           // will be set on approval
             investeeType = investeeType,
             investeeName = investeeName,
+            shareholderId = shareholderId,
             ownershipType = ownershipType,
             partnerNames = partnerNames,
             investmentDate = investmentDate,
@@ -45,9 +46,9 @@ data class InvestmentEntry(
             expectedProfitAmount = expectedProfitAmount,
             expectedReturnPeriod = expectedReturnPeriod,
             returnDueDate = returnDueDate,
-            modeOfPayment = modeOfPayment,
             status = status,
             remarks = remarks,
+            approvalStatus = ApprovalStage.PENDING,
             entrySource = entrySource,
             enteredBy = enteredBy
         )

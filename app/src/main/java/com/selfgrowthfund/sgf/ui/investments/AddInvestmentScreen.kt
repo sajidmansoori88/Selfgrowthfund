@@ -9,160 +9,123 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.model.enums.*
 import com.selfgrowthfund.sgf.ui.components.DatePickerField
-import com.selfgrowthfund.sgf.ui.components.DropdownMenuBox
+import com.selfgrowthfund.sgf.utils.Result
 import java.time.LocalDate
-
-// Add this utility function at the top of the file
-inline fun <reified T : Enum<T>> safeValueOf(type: String?): T? {
-    return try {
-        type?.let { enumValueOf<T>(it) }
-    } catch (e: IllegalArgumentException) {
-        null
-    }
-}
 
 @Composable
 fun AddInvestmentScreen(
     viewModel: InvestmentViewModel,
     onSuccess: () -> Unit,
-    modifier: Modifier = Modifier // ✅ Add modifier parameter
+    modifier: Modifier = Modifier
 ) {
-    val nextId by viewModel.nextInvestmentId.collectAsState()
-    val isSubmitting by viewModel.isSubmitting.collectAsState()
+    val state by viewModel.uiState.collectAsState()
     val submissionResult by viewModel.submissionResult.collectAsState()
     val validationError = remember { mutableStateOf<String?>(null) }
 
-    var investeeType by remember { mutableStateOf("") }
-    var investeeName by remember { mutableStateOf("") }
-    var partnerNames by remember { mutableStateOf("") }
-
-    var investmentDate by remember { mutableStateOf(LocalDate.now()) }
-    var investmentName by remember { mutableStateOf("") }
-
-    var amount by remember { mutableStateOf("") }
-    var expectedProfitPercent by remember { mutableStateOf("") }
-    var expectedReturnPeriod by remember { mutableStateOf("") }
-    var returnDueDate by remember { mutableStateOf(LocalDate.now().plusDays(30)) }
-
-    var modeOfPayment by remember { mutableStateOf("") }
-    var remarks by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf("") }
-
-    var investeeTypeExpanded by remember { mutableStateOf(false) }
-    var paymentModeExpanded by remember { mutableStateOf(false) }
-    var statusExpanded by remember { mutableStateOf(false) }
-
-    var selectedOwnership by remember { mutableStateOf(OwnershipType.Individual) }
-    var selectedInvestmentType by remember { mutableStateOf(InvestmentType.Trading) }
-    var otherInvestmentType by remember { mutableStateOf("") }
-
-    LaunchedEffect(Unit) {
-        viewModel.fetchNextInvestmentId()
-    }
-
     Column(
         modifier = modifier
-            .verticalScroll(rememberScrollState()) // ✅ Make it scrollable
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        // ----------------- Provisional ID -----------------
         Text(
-            "Next Investment ID: ${nextId ?: "Loading..."}",
+            "Provisional ID: ${state.provisionalId}",
             style = MaterialTheme.typography.labelMedium
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Investee Type Dropdown
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = investeeType,
-                onValueChange = { investeeType = it },
-                label = { Text("Investee Type") },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { investeeTypeExpanded = !investeeTypeExpanded }) {
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                    }
-                }
-            )
-            DropdownMenu(
-                expanded = investeeTypeExpanded,
-                onDismissRequest = { investeeTypeExpanded = false }
-            ) {
-                InvesteeType.entries.forEach { type ->
-                    DropdownMenuItem(
-                        text = { Text(type.name) },
-                        onClick = {
-                            investeeType = type.name
-                            investeeTypeExpanded = false
-                        }
-                    )
-                }
+        // ----------------- Investee Type -----------------
+        DropdownMenuBox(
+            label = "Investee Type",
+            options = InvesteeType.entries,
+            selected = state.investeeType,
+            onSelected = { newType ->
+                viewModel.onInvesteeTypeSelected(newType)
             }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = investeeName,
-            onValueChange = { investeeName = it },
-            label = { Text("Investee Name") },
-            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        if (state.investeeType == InvesteeType.Shareholder) {
+            // Dropdown of active shareholders
+            DropdownMenuBox(
+                label = "Shareholder",
+                options = state.shareholderList.map { it.second },
+                selected = state.investeeName.ifBlank { null },
+                onSelected = { name ->
+                    val id = state.shareholderList.firstOrNull { it.second == name }?.first ?: ""
+                    viewModel.onShareholderSelected(id, name)
+                }
+            )
+        } else {
+            // Free text entry
+            OutlinedTextField(
+                value = state.investeeName,
+                onValueChange = { newValue ->
+                    viewModel.updateField { s -> s.copy(investeeName = newValue) }
+                },
+                label = { Text("Investee Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // ----------------- Ownership Type -----------------
         DropdownMenuBox(
-            "Ownership Type",
-            OwnershipType.entries,
-            selectedOwnership
-        ) { selectedOwnership = it }
+            label = "Ownership Type",
+            options = OwnershipType.entries,
+            selected = state.ownershipType,
+            onSelected = { newType ->
+                viewModel.updateField { s -> s.copy(ownershipType = newType) }
+            }
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = partnerNames,
-            onValueChange = { partnerNames = it },
+            value = state.partnerNames,
+            onValueChange = { newValue ->
+                viewModel.updateField { s -> s.copy(partnerNames = newValue) }
+            },
             label = { Text("Partner Names (comma-separated)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // ----------------- Investment Date -----------------
         DatePickerField(
             label = "Investment Date",
-            date = investmentDate,
-            onDateChange = { investmentDate = it },
+            date = state.investmentDate,
+            onDateChange = { newDate ->
+                viewModel.updateField { s -> s.copy(investmentDate = newDate) }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // ----------------- Investment Type -----------------
         DropdownMenuBox(
-            "Investment Type",
-            InvestmentType.entries,
-            selectedInvestmentType
-        ) { selectedInvestmentType = it }
+            label = "Investment Type",
+            options = InvestmentType.entries,
+            selected = state.investmentType,
+            onSelected = { newType ->
+                viewModel.updateField { s -> s.copy(investmentType = newType) }
+            }
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (selectedInvestmentType == InvestmentType.Other) {
-            OutlinedTextField(
-                value = otherInvestmentType,
-                onValueChange = { otherInvestmentType = it },
-                label = { Text("Specify Other Type") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
         OutlinedTextField(
-            value = investmentName,
-            onValueChange = { investmentName = it },
+            value = state.investmentName,
+            onValueChange = { newValue ->
+                viewModel.updateField { s -> s.copy(investmentName = newValue) }
+            },
             label = { Text("Investment Name") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -170,8 +133,10 @@ fun AddInvestmentScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = amount,
-            onValueChange = { amount = it },
+            value = state.amount.toString(),
+            onValueChange = { newValue ->
+                viewModel.updateField { s -> s.copy(amount = newValue.toDoubleOrNull() ?: 0.0) }
+            },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -179,8 +144,10 @@ fun AddInvestmentScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = expectedProfitPercent,
-            onValueChange = { expectedProfitPercent = it },
+            value = state.expectedProfitPercent.toString(),
+            onValueChange = { newValue ->
+                viewModel.updateField { s -> s.copy(expectedProfitPercent = newValue.toDoubleOrNull() ?: 0.0) }
+            },
             label = { Text("Expected Profit (%)") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -188,96 +155,28 @@ fun AddInvestmentScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = expectedReturnPeriod,
-            onValueChange = { expectedReturnPeriod = it },
+            value = state.expectedReturnPeriod.toString(),
+            onValueChange = { newValue ->
+                viewModel.updateField { s -> s.copy(expectedReturnPeriod = newValue.toIntOrNull() ?: 0) }
+            },
             label = { Text("Return Period (days)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        DatePickerField(
-            label = "Return Due Date",
-            date = returnDueDate,
-            onDateChange = { returnDueDate = it },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Payment Mode Dropdown
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = modeOfPayment,
-                onValueChange = { modeOfPayment = it },
-                label = { Text("Mode of Payment") },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { paymentModeExpanded = !paymentModeExpanded }) {
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                    }
-                }
-            )
-            DropdownMenu(
-                expanded = paymentModeExpanded,
-                onDismissRequest = { paymentModeExpanded = false }
-            ) {
-                PaymentMode.entries.forEach { mode ->
-                    DropdownMenuItem(
-                        text = { Text(mode.name) },
-                        onClick = {
-                            modeOfPayment = mode.name
-                            paymentModeExpanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Status Dropdown
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = status,
-                onValueChange = { status = it },
-                label = { Text("Status") },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { statusExpanded = !statusExpanded }) {
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                    }
-                }
-            )
-            DropdownMenu(
-                expanded = statusExpanded,
-                onDismissRequest = { statusExpanded = false }
-            ) {
-                InvestmentStatus.entries.forEach { investmentStatus ->
-                    DropdownMenuItem(
-                        text = { Text(investmentStatus.name) },
-                        onClick = {
-                            status = investmentStatus.name
-                            statusExpanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         OutlinedTextField(
-            value = remarks,
-            onValueChange = { remarks = it },
+            value = state.remarks,
+            onValueChange = { newValue ->
+                viewModel.updateField { s -> s.copy(remarks = newValue) }
+            },
             label = { Text("Remarks (optional)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // ----------------- Validation Errors -----------------
         validationError.value?.let {
             Text(
                 text = it,
@@ -287,88 +186,42 @@ fun AddInvestmentScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
+        // ----------------- Submit Button -----------------
         Button(
             onClick = {
-                val principal = amount.toDoubleOrNull()
-                val profitPercent = expectedProfitPercent.toDoubleOrNull()
-                val returnDays = expectedReturnPeriod.toIntOrNull()
-
-                if (principal == null || principal <= 0.0) {
-                    validationError.value = "Amount must be a positive number"
+                if (state.amount <= 0.0) {
+                    validationError.value = "Amount must be positive"
                     return@Button
                 }
-                if (profitPercent == null || profitPercent < 0.0) {
-                    validationError.value = "Profit percent must be zero or positive"
-                    return@Button
-                }
-                if (returnDays == null || returnDays <= 0) {
-                    validationError.value = "Return period must be a positive number"
+                if (state.expectedReturnPeriod <= 0) {
+                    validationError.value = "Return period must be positive"
                     return@Button
                 }
 
                 validationError.value = null
-
-                // Calculate expected profit amount
-                val expectedProfitAmount = principal * (profitPercent / 100)
-
-                // Convert string values to enums using safe conversion
-                val investeeTypeEnum =
-                    safeValueOf<InvesteeType>(investeeType) ?: InvesteeType.External
-                val paymentModeEnum =
-                    safeValueOf<PaymentMode>(modeOfPayment) ?: PaymentMode.OTHER
-                val statusEnum =
-                    safeValueOf<InvestmentStatus>(status) ?: InvestmentStatus.Active
-
-                val investment = Investment(
-                    investmentId = nextId ?: "",
-                    investeeType = investeeTypeEnum,
-                    investeeName = investeeName.ifBlank { null },
-                    ownershipType = selectedOwnership,
-                    partnerNames = if (partnerNames.isNotBlank()) {
-                        partnerNames.split(",").map { it.trim() }
-                    } else {
-                        null
-                    },
-                    investmentDate = investmentDate,
-                    investmentType = if (selectedInvestmentType == InvestmentType.Other && otherInvestmentType.isNotBlank()) {
-                        // Handle "Other" investment type
-                        // You might need to adjust your entity to handle this case
-                        selectedInvestmentType
-                    } else {
-                        selectedInvestmentType
-                    },
-                    investmentName = investmentName,
-                    amount = principal,
-                    expectedProfitPercent = profitPercent,
-                    expectedProfitAmount = expectedProfitAmount,
-                    expectedReturnPeriod = returnDays,
-                    returnDueDate = returnDueDate,
-                    modeOfPayment = paymentModeEnum,
-                    status = statusEnum,
-                    remarks = remarks.ifBlank { null }
+                viewModel.submitInvestment(
+                    onSuccess = onSuccess,
+                    onError = { validationError.value = it }
                 )
-
-                viewModel.submitInvestment(investment, onSuccess) {
-                    validationError.value = it
-                }
             },
-            enabled = !isSubmitting,
+            enabled = !state.isSubmitting,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (isSubmitting) "Submitting..." else "Submit Investment")
+            Text(if (state.isSubmitting) "Submitting..." else "Submit Investment")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // ----------------- Submission Result -----------------
         submissionResult?.let {
             when (it) {
-                is com.selfgrowthfund.sgf.utils.Result.Success -> {
+                is Result.Success -> {
                     Text(
                         "Investment submitted successfully!",
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                is com.selfgrowthfund.sgf.utils.Result.Error -> {
+                is Result.Error -> {
                     Text(
                         "Error: ${it.exception.message}",
                         color = MaterialTheme.colorScheme.error
@@ -378,23 +231,22 @@ fun AddInvestmentScreen(
             }
         }
 
-        // ✅ Add bottom spacer to ensure content isn't cut off
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
 @Composable
-fun <T : Enum<T>> DropdownMenuBox(
+fun <T> DropdownMenuBox(
     label: String,
     options: List<T>,
-    selected: T,
+    selected: T?,
     onSelected: (T) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
-            value = selected.toString(),
+            value = selected?.toString() ?: "",
             onValueChange = {},
             label = { Text(label) },
             readOnly = true,

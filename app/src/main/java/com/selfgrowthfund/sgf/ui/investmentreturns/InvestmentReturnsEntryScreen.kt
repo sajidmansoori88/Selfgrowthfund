@@ -46,7 +46,7 @@ fun InvestmentReturnsEntryScreen(
             amountReceived = amount,
             modeOfPayment = selectedPaymentMode,
             remarks = remarks.ifBlank { null },
-            entrySource = EntrySource.ADMIN,
+            entrySource = EntrySource.MemberAdmin,
             enteredBy = currentUserName
         )
         viewModel.previewReturn(entry)
@@ -153,7 +153,7 @@ fun InvestmentReturnsEntryScreen(
                         amountReceived = amount,
                         modeOfPayment = selectedPaymentMode,
                         remarks = remarks.ifBlank { null },
-                        entrySource = EntrySource.ADMIN,
+                        entrySource = EntrySource.MemberAdmin,
                         enteredBy = currentUserName
                     )
                     viewModel.submitReturn(
