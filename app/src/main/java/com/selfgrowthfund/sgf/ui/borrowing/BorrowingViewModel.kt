@@ -104,21 +104,23 @@ class BorrowingViewModel @Inject constructor(
 
     // ---------------- FIRESTORE SYNC ----------------
     private fun syncToFirestore(borrowing: Borrowing) {
+        val docId = borrowing.borrowId ?: borrowing.provisionalId // ✅ safe fallback
         firestore.collection("borrowings")
-            .document(borrowing.borrowId)
+            .document(docId)
             .set(borrowing.toFirestoreMap())
             .addOnSuccessListener {
-                Log.d("Firestore", "Borrowing synced: ${borrowing.borrowId}")
+                Log.d("Firestore", "Borrowing synced: $docId")
             }
             .addOnFailureListener { e ->
                 Log.e("Firestore", "Borrowing sync failed", e)
             }
     }
-
     private fun triggerApprovalNotification(borrowing: Borrowing) {
+        val docId = borrowing.borrowId ?: borrowing.provisionalId // ✅ use provisional ID
+
         val notification = mapOf(
             "type" to "BORROWING_REQUEST",
-            "borrowId" to borrowing.borrowId,
+            "borrowId" to docId,
             "shareholderId" to borrowing.shareholderId,
             "shareholderName" to borrowing.shareholderName,
             "amountRequested" to borrowing.amountRequested,
@@ -126,7 +128,7 @@ class BorrowingViewModel @Inject constructor(
         )
 
         firestore.collection("approvals")
-            .document(borrowing.borrowId)
+            .document(docId)
             .set(notification)
     }
 

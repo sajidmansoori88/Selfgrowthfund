@@ -7,22 +7,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.model.reports.ShareholderSummary
 import com.selfgrowthfund.sgf.model.reports.ShareholderSummaryViewModel
 import com.selfgrowthfund.sgf.session.UserSessionViewModel
 import com.selfgrowthfund.sgf.ui.theme.GradientBackground
-import com.selfgrowthfund.sgf.ui.theme.SGFTheme
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    modifier: Modifier = Modifier // ✅ Add modifier parameter
+    modifier: Modifier = Modifier
 ) {
     val userSessionViewModel: UserSessionViewModel = hiltViewModel()
     val user by userSessionViewModel.currentUser.collectAsState()
@@ -30,12 +26,10 @@ fun HomeScreen(
     val summaryViewModel: ShareholderSummaryViewModel = hiltViewModel()
     val summaries by summaryViewModel.summaries.collectAsState()
 
-    // Track loading + error
     var isLoading by remember { mutableStateOf(true) }
     var loadingError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        println("DEBUG: HomeScreen launched - loading summaries")
         try {
             summaryViewModel.loadAllSummaries()
         } catch (e: Exception) {
@@ -44,23 +38,19 @@ fun HomeScreen(
         }
     }
 
-    // ✅ update loading state automatically when summaries flow updates
     LaunchedEffect(summaries) {
         isLoading = false
-        loadingError = if (summaries.isEmpty()) {
-            "No summaries found in database"
-        } else {
-            null
-        }
+        loadingError = if (summaries.isEmpty()) "No summaries found in database" else null
     }
 
     val currentSummary = summaries.find { it.shareholderId == user.shareholderId }
+
     GradientBackground {
         Column(
             modifier = modifier
-                .verticalScroll(rememberScrollState()) // ✅ Make it scrollable
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            // Debug info (you might want to remove this in production)
             Text(
                 "DEBUG: User=${user.shareholderId}, Summaries=${summaries.size}, Loading=$isLoading",
                 style = MaterialTheme.typography.bodySmall,
@@ -98,7 +88,7 @@ fun HomeScreen(
                         name = user.name,
                         role = user.role.name,
                         summary = currentSummary,
-                        modifier = Modifier.padding(32.dp) // ✅ Add padding here instead
+                        modifier = Modifier.padding(32.dp)
                     )
                 }
 
@@ -121,107 +111,70 @@ fun HomeScreen(
                                     loadingError = null
                                     summaryViewModel.loadAllSummaries()
                                 }
-                            ) {
-                                Text("Retry Load")
-                            }
+                            ) { Text("Retry Load") }
                         }
                     }
                 }
             }
 
-            // ✅ Add bottom spacer to ensure content isn't cut off
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
-    @Composable
-    fun HomeScreenContent(
-        name: String,
-        role: String,
-        summary: ShareholderSummary,
-        modifier: Modifier = Modifier // ✅ Add modifier parameter
+@Composable
+fun HomeScreenContent(
+    name: String,
+    role: String,
+    summary: ShareholderSummary,
+    modifier: Modifier = Modifier
+) {
+    val formatter = remember { DateTimeFormatter.ofPattern("dd-MM-yyyy") }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
     ) {
-        val formatter = remember { DateTimeFormatter.ofPattern("dd-MM-yyyy") }
+        Text("Welcome, $name", style = MaterialTheme.typography.headlineMedium)
+        Text("Role: $role", style = MaterialTheme.typography.bodyMedium)
 
-        Column(
-            modifier = modifier,
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text("Welcome, $name", style = MaterialTheme.typography.headlineMedium)
-            Text("Role: $role", style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(32.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
+        Text("Total Share Contribution", style = MaterialTheme.typography.titleMedium)
+        Text("₹${summary.shareAmount}", style = MaterialTheme.typography.bodyLarge)
 
-            Text("Total Share Contribution", style = MaterialTheme.typography.titleMedium)
-            Text("₹${summary.shareAmount}", style = MaterialTheme.typography.bodyLarge)
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Text("Current Value", style = MaterialTheme.typography.titleMedium)
+        Text("₹${summary.shareValue}", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = "Growth: ${"%.2f".format(summary.absoluteReturn)}%",
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.bodyMedium
+        )
 
-            Text("Current Value", style = MaterialTheme.typography.titleMedium)
-            Text("₹${summary.shareValue}", style = MaterialTheme.typography.bodyLarge)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Last Contribution", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = "₹${summary.lastContributionAmount} (${summary.lastContributionDate.format(formatter)})",
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Next Due Contribution", style = MaterialTheme.typography.titleMedium)
+        Text(summary.nextDue.format(formatter), style = MaterialTheme.typography.bodyLarge)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        if (summary.outstandingBorrowing > 0) {
             Text(
-                text = "Growth: ${"%.2f".format(summary.absoluteReturn)}%",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Last Contribution", style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = "₹${summary.lastContributionAmount} (${
-                    summary.lastContributionDate.format(
-                        formatter
-                    )
-                })",
+                text = "⚠️ Outstanding Borrowing: ₹${summary.outstandingBorrowing}",
+                color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyLarge
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Next Due Contribution", style = MaterialTheme.typography.titleMedium)
-            Text(summary.nextDue.format(formatter), style = MaterialTheme.typography.bodyLarge)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            if (summary.outstandingBorrowing > 0) {
-                Text(
-                    text = "⚠️ Outstanding Borrowing: ₹${summary.outstandingBorrowing}",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
         }
     }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Preview(showBackground = true, name = "Home Screen Preview")
-    @Composable
-    fun HomeScreenPreview() {
-        SGFTheme {
-            val fakeSummary = ShareholderSummary(
-                shareholderId = "SH001",
-                name = "Sajid Mansoori",
-                shares = 15,
-                shareAmount = 30000.0,
-                shareValue = 250000.0,
-                percentContribution = 12.5,
-                netProfit = 220000.0,
-                absoluteReturn = 733.33,
-                annualizedReturn = 120.0,
-                lastContributionAmount = 6000.0,
-                lastContributionDate = LocalDate.of(2025, 8, 10),
-                nextDue = LocalDate.of(2025, 9, 10),
-                outstandingBorrowing = 7000.0
-            )
-
-            HomeScreenContent(
-                name = "Sajid",
-                role = MemberRole.MEMBER.name,
-                summary = fakeSummary,
-                modifier = Modifier.padding(32.dp)
-            )
-        }
-    }
+}

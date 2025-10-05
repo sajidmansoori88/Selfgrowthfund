@@ -77,8 +77,10 @@ class InvestmentReturnsViewModel @Inject constructor(
 
     // ---------------- FIRESTORE SYNC ----------------
     private fun syncToFirestore(returnEntity: InvestmentReturns) {
+        val docId = returnEntity.returnId ?: returnEntity.provisionalId // ✅ fallback to provisionalId
+
         val data = mapOf(
-            "returnId" to returnEntity.returnId,
+            "returnId" to (returnEntity.returnId ?: docId),
             "investmentId" to returnEntity.investmentId,
             "amountReceived" to returnEntity.amountReceived,
             "returnDate" to returnEntity.returnDate.toString(),
@@ -86,10 +88,10 @@ class InvestmentReturnsViewModel @Inject constructor(
         )
 
         firestore.collection("investment_returns")
-            .document(returnEntity.returnId)
+            .document(docId)
             .set(data)
             .addOnSuccessListener {
-                Log.d("Firestore", "Return synced: ${returnEntity.returnId}")
+                Log.d("Firestore", "Return synced: $docId")
             }
             .addOnFailureListener { e ->
                 Log.e("Firestore", "Return sync failed", e)

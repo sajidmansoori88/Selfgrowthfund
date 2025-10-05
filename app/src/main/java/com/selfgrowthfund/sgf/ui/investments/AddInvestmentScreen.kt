@@ -1,5 +1,6 @@
 package com.selfgrowthfund.sgf.ui.investments
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.selfgrowthfund.sgf.model.enums.*
-import com.selfgrowthfund.sgf.ui.components.DatePickerField
 import com.selfgrowthfund.sgf.utils.Result
 import java.time.LocalDate
 
@@ -32,6 +32,14 @@ fun AddInvestmentScreen(
         // ----------------- Provisional ID -----------------
         Text(
             "Provisional ID: ${state.provisionalId}",
+            style = MaterialTheme.typography.labelMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // ----------------- Application Date (read-only) -----------------
+        Text(
+            "Application Date: ${state.createdAt ?: LocalDate.now()}",
             style = MaterialTheme.typography.labelMedium
         )
 
@@ -61,7 +69,6 @@ fun AddInvestmentScreen(
                 }
             )
         } else {
-            // Free text entry
             OutlinedTextField(
                 value = state.investeeName,
                 onValueChange = { newValue ->
@@ -92,18 +99,6 @@ fun AddInvestmentScreen(
                 viewModel.updateField { s -> s.copy(partnerNames = newValue) }
             },
             label = { Text("Partner Names (comma-separated)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // ----------------- Investment Date -----------------
-        DatePickerField(
-            label = "Investment Date",
-            date = state.investmentDate,
-            onDateChange = { newDate ->
-                viewModel.updateField { s -> s.copy(investmentDate = newDate) }
-            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -250,12 +245,19 @@ fun <T> DropdownMenuBox(
             onValueChange = {},
             label = { Text(label) },
             readOnly = true,
-            modifier = Modifier.fillMaxWidth(),
             trailingIcon = {
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                 }
-            }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // ✅ Full-box clickable overlay (no menuAnchor dependency)
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable { expanded = true }
         )
 
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -271,3 +273,4 @@ fun <T> DropdownMenuBox(
         }
     }
 }
+

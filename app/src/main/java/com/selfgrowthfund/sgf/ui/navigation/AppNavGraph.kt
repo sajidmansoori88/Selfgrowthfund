@@ -41,7 +41,6 @@ import com.selfgrowthfund.sgf.ui.borrowing.*
 import com.selfgrowthfund.sgf.ui.auth.PinEntryScreen
 import com.selfgrowthfund.sgf.ui.auth.BiometricSetupScreen
 import com.selfgrowthfund.sgf.ui.components.SGFScaffoldWrapper
-import com.selfgrowthfund.sgf.ui.dashboard.TreasurerDashboardScreen
 import com.selfgrowthfund.sgf.ui.penalty.PenaltyReportScreen
 import com.selfgrowthfund.sgf.ui.investmentreturns.InvestmentReturnsEntryScreen
 import com.selfgrowthfund.sgf.ui.investmentreturns.InvestmentReturnsViewModel
@@ -66,6 +65,7 @@ import com.selfgrowthfund.sgf.ui.reports.ActiveBorrowingReportScreen
 import com.selfgrowthfund.sgf.ui.reports.ClosedBorrowingReportScreen
 import com.selfgrowthfund.sgf.ui.reports.FundOverviewScreen
 import com.selfgrowthfund.sgf.ui.reports.ReportsPlaceholderScreen
+import com.selfgrowthfund.sgf.ui.treasurer.TreasurerDashboardScreen
 import kotlinx.coroutines.flow.flowOf
 
 @Composable
@@ -91,6 +91,7 @@ fun AppNavGraph(
         composable(Screen.AccessDenied.route) { AccessDeniedScreen(navController) }
 
         // 🏠 Dashboards
+        // 🏠 Home Screen
         composable(Screen.Home.route) {
             SGFScaffoldWrapper(
                 title = "Home",
@@ -98,11 +99,12 @@ fun AppNavGraph(
                 snackbarHostState = remember { SnackbarHostState() },
                 content = { innerPadding ->
                     HomeScreen(
-                        modifier = Modifier.padding(innerPadding) // ✅ Pass the padding here
+                        modifier = Modifier.padding(innerPadding),
                     )
                 },
             )
         }
+
         // ───── Admin Dashboard ─────
         composable("admin_dashboard") {
             SGFScaffoldWrapper(
@@ -449,20 +451,20 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val provisionalId = backStackEntry.arguments?.getString("provisionalId") ?: return@composable
             val investmentViewModel: InvestmentViewModel = hiltViewModel()
-            val investment by investmentViewModel.getInvestmentByProvisionalId(provisionalId)
+            val investment by investmentViewModel
+                .getInvestmentByProvisionalId(provisionalId)
                 .collectAsState(initial = null)
 
-            investment?.let { inv ->
+            investment?.let { inv: com.selfgrowthfund.sgf.data.local.entities.Investment ->   // ✅ explicit type
                 val investmentReturnsViewModel: InvestmentReturnsViewModel = hiltViewModel()
 
-                // ✅ directly collect Flow<List<InvestmentReturns>>
-                val returns: List<InvestmentReturns> by if (inv.investmentId != null) {
+                // ✅ safely collect returns
+                val returns: List<InvestmentReturns> by if (!inv.investmentId.isNullOrBlank()) {
                     investmentReturnsViewModel
                         .getReturnsByInvestmentId(inv.investmentId!!)
                         .collectAsState(initial = emptyList())
                 } else {
-                    flowOf<List<InvestmentReturns>>(emptyList())
-                        .collectAsState(initial = emptyList())
+                    flowOf<List<InvestmentReturns>>(emptyList()).collectAsState(initial = emptyList())
                 }
 
                 SGFScaffoldWrapper(
@@ -526,12 +528,13 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val investmentId = backStackEntry.arguments?.getString("investmentId") ?: return@composable
             val investmentViewModel: InvestmentViewModel = hiltViewModel()
-            val investment by investmentViewModel.getInvestmentByInvestmentId(investmentId)
+            val investment by investmentViewModel
+                .getInvestmentByInvestmentId(investmentId)
                 .collectAsState(initial = null)
 
             val investmentReturnsViewModel: InvestmentReturnsViewModel = hiltViewModel()
 
-            investment?.let { inv ->
+            investment?.let { inv: com.selfgrowthfund.sgf.data.local.entities.Investment ->  // ✅ explicit type
                 SGFScaffoldWrapper(
                     title = "Add Investment Return",
                     onDrawerClick = onDrawerClick,
@@ -685,6 +688,7 @@ fun AppNavGraph(
             )
         }
     }
+
 }
 
 

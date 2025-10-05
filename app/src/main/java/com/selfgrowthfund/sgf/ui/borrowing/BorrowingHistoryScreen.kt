@@ -93,7 +93,7 @@ fun BorrowingHistoryScreen(
                     BorrowingCard(
                         borrowing = borrowing,
                         summary = summary as RepaymentSummary?,
-                        onRepay = { onAddRepayment(borrowing.borrowId) }
+                        onRepay = { onAddRepayment(borrowing.borrowId ?: borrowing.provisionalId) }
                     )
                 }
             }
@@ -125,7 +125,8 @@ fun BorrowingHistoryScreen(
                 onClick = {
                     expanded.value = false
                     allBorrowings.firstOrNull()?.let {
-                        onAddRepayment(it.borrowId)
+                        onAddRepayment(it.borrowId ?: it.provisionalId)
+
                     }
                 }
             )

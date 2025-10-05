@@ -37,9 +37,17 @@ interface BorrowingDao {
     @Query("SELECT * FROM borrowings WHERE status IN (:statuses) ORDER BY applicationDate DESC")
     fun getBorrowingsByStatuses(statuses: List<BorrowingStatus>): Flow<List<Borrowing>>
 
+    @Query("SELECT * FROM borrowings WHERE approvalStatus = :status")
+    suspend fun getByApprovalStatus(status: ApprovalStage): List<Borrowing>
     /* Update Operations */
     @Update
     suspend fun updateBorrowing(borrowing: Borrowing)
+
+    @Query("SELECT * FROM borrowings WHERE provisionalId = :provisionalId LIMIT 1")
+    suspend fun getByProvisionalId(provisionalId: String): Borrowing?
+
+        @Update
+        suspend fun update(borrowing: Borrowing)
 
     @Query("UPDATE borrowings SET status = :newStatus WHERE borrowId = :borrowId")
     suspend fun updateStatus(borrowId: String, newStatus: BorrowingStatus)

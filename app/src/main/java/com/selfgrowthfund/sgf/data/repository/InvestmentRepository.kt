@@ -97,6 +97,14 @@ class InvestmentRepository @Inject constructor(
         Result.Error(e)
     }
 
+    suspend fun getPendingForTreasurer(): List<Investment> {
+        return dao.getByApprovalStatus(ApprovalStage.PENDING)
+    }
+
+    suspend fun getApprovedPendingRelease(): List<Investment> {
+        return dao.getByApprovalStatus(ApprovalStage.TREASURER_APPROVED)
+    }
+
     // --- Approval Workflow ---
     suspend fun approve(
         provisionalId: String,
@@ -138,6 +146,27 @@ class InvestmentRepository @Inject constructor(
         true
     }
 
+    suspend fun markPaymentReleased(
+        provisionalId: String,
+        treasurerId: String?,
+        remarks: String?
+    ): Boolean {
+        return try {
+            val updatedAt = LocalDate.now()
+            val rows = dao.updateApprovalStatus(
+                provisionalId = provisionalId,
+                status = ApprovalStage.TREASURER_APPROVED,
+                approvedBy = treasurerId,
+                notes = remarks,
+                updatedAt = updatedAt
+            )
+            rows > 0
+        } catch (e: Exception) {
+            // No Timber in production; silently fail and return false
+            false
+        }
+    }
+
     // --- Reports ---
     suspend fun countApproved(start: LocalDate, end: LocalDate) =
         dao.countByStatus(ApprovalStage.APPROVED, start, end)
@@ -158,4 +187,5 @@ class InvestmentRepository @Inject constructor(
         // Look up by provisionalId first (since approvals happen before investmentId assignment)
         return dao.getByProvisionalId(id) ?: dao.getByInvestmentId(id)
     }
+
 }

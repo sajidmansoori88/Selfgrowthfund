@@ -1,9 +1,11 @@
 package com.selfgrowthfund.sgf.data.repository
 
 
+import com.selfgrowthfund.sgf.data.local.entities.ApprovalFlow
 import com.selfgrowthfund.sgf.model.ApprovalEntry
 import com.selfgrowthfund.sgf.model.ApprovalGroup
 import com.selfgrowthfund.sgf.model.ApprovalHistoryEntry
+import com.selfgrowthfund.sgf.model.enums.ApprovalAction
 import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.enums.ApprovalType
 import com.selfgrowthfund.sgf.model.enums.MemberRole
@@ -108,14 +110,15 @@ class ApprovalRepository @Inject constructor(
                 ApprovalType.DEPOSIT -> {
                     when (approverRole) {
                         MemberRole.MEMBER_TREASURER ->
-                            depositRepository.approveByTreasurer(provisionalId, approverId, notes)
+                            depositRepository.approveByTreasurer(provisionalId, approverId, notes ?: "")
                         MemberRole.MEMBER_ADMIN ->
-                            depositRepository.approveByAdmin(provisionalId, approverId, null, notes)
+                            depositRepository.approveByAdmin(provisionalId, approverId, null, notes ?: "")
                         else -> throw IllegalArgumentException("Invalid role for deposit approval")
                     }
                 }
 
-                ApprovalType.BORROWING -> borrowingRepository.approve(provisionalId, approverId, notes)
+                ApprovalType.BORROWING ->
+                    borrowingRepository.approve(provisionalId, approverId, notes ?: "")
 
                 ApprovalType.REPAYMENT -> {
                     val newStatus = when (approverRole) {
@@ -123,7 +126,7 @@ class ApprovalRepository @Inject constructor(
                         MemberRole.MEMBER_ADMIN -> ApprovalStage.ADMIN_APPROVED
                         else -> ApprovalStage.APPROVED
                     }
-                    repaymentRepository.approve(provisionalId, approverId, notes, newStatus)
+                    repaymentRepository.approve(provisionalId, approverId, notes ?: "", newStatus)
                 }
 
                 ApprovalType.INVESTMENT -> {
@@ -132,7 +135,7 @@ class ApprovalRepository @Inject constructor(
                         MemberRole.MEMBER_ADMIN -> ApprovalStage.ADMIN_APPROVED
                         else -> ApprovalStage.APPROVED
                     }
-                    investmentRepository.approve(provisionalId, approverId, notes, newStatus)
+                    investmentRepository.approve(provisionalId, approverId, notes ?: "", newStatus)
                 }
 
                 ApprovalType.INVESTMENT_RETURN -> {
@@ -141,7 +144,7 @@ class ApprovalRepository @Inject constructor(
                         MemberRole.MEMBER_ADMIN -> ApprovalStage.ADMIN_APPROVED
                         else -> ApprovalStage.APPROVED
                     }
-                    investmentReturnsRepository.approve(provisionalId, approverId, notes, newStatus)
+                    investmentReturnsRepository.approve(provisionalId, approverId, notes ?: "", newStatus)
                 }
 
                 ApprovalType.OTHER_INCOME -> {
@@ -150,7 +153,7 @@ class ApprovalRepository @Inject constructor(
                         MemberRole.MEMBER_ADMIN -> ApprovalStage.ADMIN_APPROVED
                         else -> ApprovalStage.APPROVED
                     }
-                    otherIncomeRepository.approve(provisionalId.toLong(), approverId, notes, newStatus)
+                    otherIncomeRepository.approve(provisionalId.toLong(), approverId, notes ?: "", newStatus)
                 }
 
                 ApprovalType.OTHER_EXPENSE -> {
@@ -159,7 +162,7 @@ class ApprovalRepository @Inject constructor(
                         MemberRole.MEMBER_ADMIN -> ApprovalStage.ADMIN_APPROVED
                         else -> ApprovalStage.APPROVED
                     }
-                    otherExpenseRepository.approve(provisionalId.toLong(), approverId, notes, newStatus)
+                    otherExpenseRepository.approve(provisionalId.toLong(), approverId, notes ?: "", newStatus)
                 }
 
                 ApprovalType.ALL -> {
@@ -171,7 +174,6 @@ class ApprovalRepository @Inject constructor(
             Result.Error(e)
         }
     }
-
     private suspend fun rejectEntryInternal(
         approvalType: ApprovalType,
         provisionalId: String,
@@ -191,6 +193,148 @@ class ApprovalRepository @Inject constructor(
             }
             Result.Success(Unit)
         } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    // --- Member Voting Logic (2/3 Rule) ---
+    suspend fun recordMemberVote(
+        approvalType: ApprovalType,
+        entityId: String,
+        memberId: String,
+        isApproved: Boolean,
+        remarks: String? = null
+    ): Result<Unit> {
+        return try {
+            // 1️⃣ Record this member’s vote
+            val flow = ApprovalFlow(
+                entityType = approvalType,
+                entityId = entityId,
+                role = MemberRole.MEMBER,
+                action = if (isApproved)
+                    ApprovalAction.APPROVE
+                else
+                    ApprovalAction.REJECT,
+                approvedBy = memberId,
+                remarks = remarks
+            )
+            approvalFlowRepository.recordApproval(flow)
+
+            // 2️⃣ Count votes
+            val approvedCount =
+                approvalFlowRepository.countApprovedByEntity(entityId, approvalType)
+            val totalMembers = sessionRepository.getTotalActiveMembers()  // We'll use DAO soon
+
+            // 3️⃣ Calculate threshold (2/3 of active members)
+            val required = kotlin.math.ceil(totalMembers * (2.0 / 3.0)).toInt()
+
+            // 4️⃣ Check if 2/3 approved
+            if (approvedCount >= required) {
+                when (approvalType) {
+                    ApprovalType.INVESTMENT -> {
+                        investmentRepository.approve(
+                            provisionalId = entityId,
+                            approverId = memberId,
+                            notes = "2/3 members approved",
+                            newStatus = ApprovalStage.APPROVED
+                        )
+                    }
+                    ApprovalType.BORROWING -> {
+                        borrowingRepository.approve(
+                            provisionalId = entityId,
+                            approverId = memberId,
+                            notes = "2/3 members approved"
+                        )
+                    }
+                    else -> {
+                        // Optional: Handle other entity types later
+                    }
+                }
+                timber.log.Timber.i("2/3 majority reached for $approvalType ($entityId). Auto-updated to MEMBER_APPROVED.")
+            } else {
+                timber.log.Timber.i("Vote recorded for $approvalType ($entityId): $approvedCount/$totalMembers approved so far.")
+            }
+
+            Result.Success(Unit)
+
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Error recording member vote for $approvalType ($entityId)")
+            Result.Error(e)
+        }
+    }
+
+    // --- Treasurer & Admin Finalization ---
+
+    // Treasurer marks payment released
+    suspend fun markTreasurerRelease(
+        entityId: String,
+        currentUser: CurrentUser,
+        remarks: String? = null
+    ): Result<Unit> {
+        return try {
+            val role = currentUser.role
+            if (role != MemberRole.MEMBER_TREASURER) {
+                throw IllegalAccessException("Only Treasurer can release payment.")
+            }
+
+            val success = investmentRepository.markPaymentReleased(entityId, currentUser.userId, remarks)
+            if (success) {
+                approvalFlowRepository.recordApproval(
+                    ApprovalFlow(
+                        entityType = ApprovalType.INVESTMENT,
+                        entityId = entityId,
+                        role = MemberRole.MEMBER_TREASURER,
+                        action = ApprovalAction.APPROVE,
+                        approvedBy = currentUser.userId,
+                        remarks = "Payment Released"
+                    )
+                )
+                timber.log.Timber.i("Treasurer marked payment released for $entityId")
+                Result.Success(Unit)
+            } else {
+                Result.Error(Exception("Failed to mark Treasurer approval"))
+            }
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Treasurer release failed for $entityId")
+            Result.Error(e)
+        }
+    }
+
+    // Admin finalizes the investment (assigns ID + date)
+    suspend fun finalizeAdminApproval(
+        entityId: String,
+        currentUser: CurrentUser,
+        remarks: String? = null
+    ): Result<Unit> {
+        return try {
+            if (currentUser.role != MemberRole.MEMBER_ADMIN) {
+                throw IllegalAccessException("Only Admin can finalize investment.")
+            }
+
+            val success = investmentRepository.approveAndAssignId(
+                provisionalId = entityId,
+                approverId = currentUser.userId,
+                notes = remarks
+            )
+
+            if (success) {
+                approvalFlowRepository.recordApproval(
+                    ApprovalFlow(
+                        entityType = ApprovalType.INVESTMENT,
+                        entityId = entityId,
+                        role = MemberRole.MEMBER_ADMIN,
+                        action = ApprovalAction.APPROVE,
+                        approvedBy = currentUser.userId,
+                        remarks = "Final Admin Approval"
+                    )
+                )
+                timber.log.Timber.i("Admin finalized investment: $entityId → ID assigned.")
+                Result.Success(Unit)
+            } else {
+                Result.Error(Exception("Failed to finalize investment"))
+            }
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Admin finalization failed for $entityId")
             Result.Error(e)
         }
     }

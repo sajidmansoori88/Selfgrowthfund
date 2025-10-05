@@ -215,9 +215,10 @@ class RepaymentViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val map = borrowings.associate { borrowing ->
-                    val principal = repository.getTotalPrincipalRepaid(borrowing.borrowId)
-                    val penalty = repository.getTotalPenaltyPaid(borrowing.borrowId)
-                    borrowing.borrowId to RepaymentSummary(principal, penalty)
+                    val key = borrowing.borrowId ?: borrowing.provisionalId // ✅ always non-null
+                    val principal = repository.getTotalPrincipalRepaid(key)
+                    val penalty = repository.getTotalPenaltyPaid(key)
+                    key to RepaymentSummary(principal, penalty)
                 }
                 _repaymentSummaries.value = map
             } catch (e: Exception) {

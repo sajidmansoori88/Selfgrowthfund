@@ -48,6 +48,15 @@ interface InvestmentReturnsDao {
     """)
     suspend fun getLatestReturn(investmentId: String): InvestmentReturns?
 
+    @Query("SELECT * FROM investment_returns WHERE approval_status = :status")
+    suspend fun getByApprovalStatus(status: ApprovalStage): List<InvestmentReturns>
+
+    @Query("SELECT * FROM investment_returns WHERE provisionalId = :provisionalId LIMIT 1")
+    suspend fun getByProvisionalId(provisionalId: String): InvestmentReturns?
+
+    @Update
+    suspend fun update(investmentReturns: InvestmentReturns)
+
     // --- Monthly Reports ---
     @Query("""
         SELECT SUM(amountReceived)

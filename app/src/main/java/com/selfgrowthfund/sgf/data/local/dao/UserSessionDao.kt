@@ -2,12 +2,12 @@ package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Query
-import com.selfgrowthfund.sgf.session.SessionEntry
 
 @Dao
 interface UserSessionDao {
 
-    @Query("""
+    @Query(
+        """
         SELECT 
             shareholderId,
             COUNT(*) as lifetimeSessions,
@@ -19,8 +19,12 @@ interface UserSessionDao {
             ) as currentMonthSessions
         FROM UserSessionHistory
         GROUP BY shareholderId
-    """)
+    """
+    )
     suspend fun getSessionSummary(): List<SessionSummaryDb>
+
+    @Query("SELECT COUNT(*) FROM shareholders WHERE exitDate IS NULL AND shareholderStatus = 'Active'")
+    suspend fun countActiveMembers(): Int
 }
 
 /**

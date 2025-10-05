@@ -10,24 +10,30 @@ import java.util.UUID
 
 @Entity(tableName = "borrowings")
 data class Borrowing(
-    @PrimaryKey
-    val borrowId: String = UUID.randomUUID().toString(),
 
+    // --- Primary Keys ---
+    @PrimaryKey(autoGenerate = false)
+    val provisionalId: String = UUID.randomUUID().toString(),  // ✅ Non-null primary key
+
+    // Final ID (assigned after Admin approval) ---
+    val borrowId: String? = null,
+
+
+    // --- Shareholder Info ---
     val shareholderId: String,
     val shareholderName: String,
 
-    val applicationDate: LocalDate,   // via converter
+    // --- Loan Details ---
+    val applicationDate: LocalDate,
     val amountRequested: Double,
-
     val borrowEligibility: Double,
     val approvedAmount: Double,
-
-    val borrowStartDate: LocalDate,   // via converter
-    val dueDate: LocalDate,           // via converter
+    val borrowStartDate: LocalDate,
+    val dueDate: LocalDate,
 
     // --- Loan Lifecycle ---
     val status: BorrowingStatus = BorrowingStatus.PENDING,
-    val closedDate: LocalDate? = null, // via converter
+    val closedDate: LocalDate? = null,
 
     // --- Approval Workflow ---
     val approvalStatus: ApprovalStage = ApprovalStage.PENDING,
@@ -39,7 +45,6 @@ data class Borrowing(
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now()
 ) {
-
     constructor(
         shareholderId: String,
         shareholderName: String,
@@ -51,7 +56,8 @@ data class Borrowing(
         createdBy: String,
         notes: String? = null
     ) : this(
-        borrowId = UUID.randomUUID().toString(),
+        borrowId = null, // no final ID yet
+        provisionalId = UUID.randomUUID().toString(),
         shareholderId = shareholderId,
         shareholderName = shareholderName,
         applicationDate = applicationDate,
@@ -75,14 +81,11 @@ data class Borrowing(
         fun calculateEligibility(shareholderAmount: Double): Double = shareholderAmount * 0.9
     }
 
-    // --- Validation ---
-    fun validate(): Boolean {
-        return approvedAmount <= borrowEligibility &&
-                amountRequested > 0 &&
+    // --- Validation & Lifecycle helpers (unchanged) ---
+    fun validate(): Boolean =
+        approvedAmount <= borrowEligibility && amountRequested > 0 &&
                 !borrowStartDate.isBefore(applicationDate)
-    }
 
-    // --- Lifecycle Checks ---
     fun isPending(): Boolean = status == BorrowingStatus.PENDING
     fun isApproved(): Boolean = status == BorrowingStatus.APPROVED
     fun isRejected(): Boolean = status == BorrowingStatus.REJECTED

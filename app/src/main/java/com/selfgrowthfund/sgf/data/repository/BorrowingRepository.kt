@@ -8,6 +8,7 @@ import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 import java.time.LocalDate
 import java.util.Locale
 import javax.inject.Inject
@@ -40,6 +41,23 @@ class BorrowingRepository @Inject constructor(
     } catch (e: Exception) {
         Result.Error(e)
     }
+    suspend fun markPaymentReleased(provisionalId: String, treasurerId: String, note: String): Boolean {
+        return try {
+            val borrowing = borrowingDao.getByProvisionalId(provisionalId) ?: return false
+            val updated = borrowing.copy(
+                approvalStatus = ApprovalStage.APPROVED,
+                approvedBy = treasurerId,
+                notes = note,
+                updatedAt = Instant.now()
+            )
+            borrowingDao.update(updated)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+
 
     // ==================== Query Operations ====================
     fun getAllBorrowings(): Flow<List<Borrowing>> = borrowingDao.getAllBorrowings()
@@ -62,6 +80,14 @@ class BorrowingRepository @Inject constructor(
 
     fun getBorrowingsByStatus(status: BorrowingStatus): Flow<List<Borrowing>> =
         borrowingDao.getBorrowingsByStatus(status.name)
+
+    suspend fun getPendingForTreasurer(): List<Borrowing> {
+        return borrowingDao.getByApprovalStatus(ApprovalStage.PENDING)
+    }
+
+    suspend fun getApprovedPendingRelease(): List<Borrowing> {
+        return borrowingDao.getByApprovalStatus(ApprovalStage.TREASURER_APPROVED)
+    }
 
     // ==================== Status Management ====================
     suspend fun updateBorrowingStatus(

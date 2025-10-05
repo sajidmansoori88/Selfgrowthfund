@@ -128,20 +128,6 @@ class DepositRepository @Inject constructor(
     }
 
     // --- Approval Flow ---
-    suspend fun approveByTreasurer(
-        provisionalId: String,
-        treasurerId: String,
-        notes: String? = null
-    ) {
-        depositDao.updateStatus(
-            provisionalId = provisionalId,
-            status = ApprovalStage.TREASURER_APPROVED,
-            approvedBy = treasurerId,
-            notes = notes,
-            timestamp = System.currentTimeMillis()
-        )
-    }
-
     suspend fun approveByAdmin(
         provisionalId: String,
         adminId: String,
@@ -167,6 +153,21 @@ class DepositRepository @Inject constructor(
             notes = notes,
             timestamp = System.currentTimeMillis()
         )
+    }
+
+    suspend fun approveByTreasurer(provisionalId: String, treasurerId: String, note: String): Boolean {
+        return try {
+            val deposit = depositDao.getByProvisionalId(provisionalId) ?: return false
+            val updated = deposit.copy(
+                approvalStatus = ApprovalStage.TREASURER_APPROVED,
+                approvedBy = treasurerId,
+                notes = note
+            )
+            depositDao.update(updated)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     suspend fun refreshFromFirestore() {
@@ -232,6 +233,14 @@ class DepositRepository @Inject constructor(
 
     suspend fun countTotal(start: LocalDate, end: LocalDate) =
         depositDao.countTotal(start, end)
+
+    suspend fun getPendingForTreasurer(): List<Deposit> {
+        return depositDao.getByApprovalStage(ApprovalStage.PENDING)
+    }
+
+    suspend fun getApprovedPendingRelease(): List<Deposit> {
+        return depositDao.getByApprovalStage(ApprovalStage.TREASURER_APPROVED)
+    }
 
     // --- Summaries ---
     fun getDepositEntrySummaries(): Flow<List<DepositEntrySummaryDTO>> =

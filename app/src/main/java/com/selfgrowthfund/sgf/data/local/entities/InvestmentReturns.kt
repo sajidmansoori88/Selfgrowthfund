@@ -19,13 +19,19 @@ import java.time.temporal.ChronoUnit
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("investmentId")]
+    indices = [Index("investmentId"), Index("provisionalId")]
 )
 @TypeConverters(AppTypeConverters::class)
 data class InvestmentReturns(
-    @PrimaryKey
-    val returnId: String,
 
+    // --- Identifiers ---
+    @PrimaryKey(autoGenerate = false)
+    val provisionalId: String = java.util.UUID.randomUUID().toString(),
+
+    // --- Final ID (assigned after Admin approval) ---
+    val returnId: String? = null, // Final ID after Admin approval
+
+    // --- Investment Info ---
     val investmentId: String,
     val investmentName: String,
 
@@ -70,9 +76,10 @@ data class InvestmentReturns(
     val isSynced: Boolean = false,
 
     // Legacy compatibility
-    @Deprecated("Use approvalStatus: ApprovalStage instead")
+    @Deprecated("Use approvalStatus instead")
     val legacyApprovalAction: ApprovalAction? = null
-) {
+)
+ {
     constructor(
         returnId: String,
         investment: Investment,

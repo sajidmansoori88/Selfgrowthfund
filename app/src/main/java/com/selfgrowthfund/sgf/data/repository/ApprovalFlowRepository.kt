@@ -23,4 +23,14 @@ class ApprovalFlowRepository @Inject constructor(
         start: Instant,
         end: Instant
     ): List<ApprovalFlow> = dao.getAllFlowsBetween(start, end)
+
+    suspend fun countApprovedByEntity(entityId: String, type: ApprovalType): Int =
+        dao.countApprovedVotes(entityId, type)
+
+    suspend fun countRejectedByEntity(entityId: String, type: ApprovalType): Int =
+        dao.countRejectedVotes(entityId, type)
+
+    suspend fun getVotesForEntity(entityId: String, type: ApprovalType): List<ApprovalFlow> =
+        dao.getVotesForEntity(entityId, type)
+
 }

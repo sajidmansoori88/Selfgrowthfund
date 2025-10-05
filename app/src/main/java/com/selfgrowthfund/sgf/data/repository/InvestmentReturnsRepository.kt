@@ -42,6 +42,36 @@ class InvestmentReturnsRepository @Inject constructor(
     suspend fun getTotalReturnedAmount(investmentId: String): Double =
         returnsDao.getReturnsByInvestmentId(investmentId).sumOf { it.amountReceived }
 
+    suspend fun getPendingForTreasurer(): List<InvestmentReturns> {
+        return returnsDao.getByApprovalStatus(ApprovalStage.PENDING)
+    }
+
+    suspend fun getApprovedPendingRelease(): List<InvestmentReturns> {
+        return returnsDao.getByApprovalStatus(ApprovalStage.TREASURER_APPROVED)
+    }
+
+    suspend fun approveByTreasurer(
+        provisionalId: String,
+        treasurerId: String,
+        note: String
+    ): Boolean {
+        return try {
+            val existing = returnsDao.getByProvisionalId(provisionalId) ?: return false
+            val updated = existing.copy(
+                approvalStatus = ApprovalStage.TREASURER_APPROVED,
+                approvedBy = treasurerId,
+                approvalNotes = note,
+                updatedAt = java.time.LocalDate.now()
+            )
+            returnsDao.update(updated)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+
+
     // ─────────────── Approval workflow ───────────────
     suspend fun approve(
         returnId: String,

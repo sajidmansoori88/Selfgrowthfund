@@ -5,6 +5,7 @@ import com.selfgrowthfund.sgf.data.local.dao.UserSessionDao
 import com.selfgrowthfund.sgf.session.SessionEntry
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.session.CurrentUser
+import timber.log.Timber
 import javax.inject.Inject
 
 class UserSessionRepository @Inject constructor(
@@ -33,5 +34,15 @@ class UserSessionRepository @Inject constructor(
             email = firebaseUser.email ?: "",
             role = MemberRole.MEMBER_ADMIN // 🔑 TEMP: assign based on your business rules
         )
+    }
+
+    // ✅ FIXED FUNCTION
+    suspend fun getTotalActiveMembers(): Int {
+        return try {
+            dao.countActiveMembers()
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to count active members")
+            0
+        }
     }
 }

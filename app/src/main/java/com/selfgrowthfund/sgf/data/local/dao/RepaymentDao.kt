@@ -138,6 +138,9 @@ interface RepaymentDao {
     @Query("SELECT * FROM repayments WHERE provisional_id = :provisionalId LIMIT 1")
     suspend fun findById(provisionalId: String): Repayment?
 
+    @Query("SELECT * FROM repayments WHERE approval_status = :status")
+    suspend fun getByApprovalStatus(status: ApprovalStage): List<Repayment>
+
     // --- Summaries ---
     data class BorrowingRepaymentSummary(
         @ColumnInfo(name = "count") val count: Int,

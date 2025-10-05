@@ -53,10 +53,33 @@ class RepaymentRepository @Inject constructor(
     suspend fun getRepaymentsByBorrowId(borrowId: String): List<Repayment> =
         dao.getByBorrowIdList(borrowId)
 
+    suspend fun approveByTreasurer(provisionalId: String, treasurerId: String, note: String): Boolean {
+        return try {
+            val repayment = dao.getByProvisionalId(provisionalId) ?: return false
+            val updated = repayment.copy(
+                approvalStatus = ApprovalStage.TREASURER_APPROVED,
+                approvedBy = treasurerId,
+                notes = note
+            )
+            dao.update(updated)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     // --- Reports & queries ---
     suspend fun getLateRepayments(): List<Repayment> = dao.getLateRepayments()
     suspend fun searchRepayments(query: String): List<Repayment> = dao.searchRepayments(query)
     suspend fun getLastRepaymentId(): String? = dao.getLastRepaymentId()
+
+    suspend fun getPendingForTreasurer(): List<Repayment> {
+        return dao.getByApprovalStatus(ApprovalStage.PENDING)
+    }
+
+    suspend fun getApprovedPendingRelease(): List<Repayment> {
+        return dao.getByApprovalStatus(ApprovalStage.TREASURER_APPROVED)
+    }
 
     // --- Approval workflow ---
     suspend fun approve(

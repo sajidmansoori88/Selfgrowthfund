@@ -141,8 +141,15 @@ interface DepositDao {
     @Query("SELECT * FROM deposits WHERE provisionalId = :id LIMIT 1")
     suspend fun getByProvisionalId(id: String): Deposit?
 
+    @Update
+    suspend fun update(deposit: Deposit)
+
     @Query("SELECT * FROM deposits WHERE depositId = :id LIMIT 1")
     suspend fun getByDepositId(id: String): Deposit?
+
+    @Query("SELECT * FROM deposits WHERE approvalStatus = :stage")
+    suspend fun getByApprovalStage(stage: ApprovalStage): List<Deposit>
+
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(deposit: Deposit)

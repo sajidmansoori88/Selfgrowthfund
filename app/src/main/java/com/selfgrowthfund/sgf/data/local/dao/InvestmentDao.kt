@@ -177,4 +177,7 @@ interface InvestmentDao {
 
     @Query("SELECT * FROM investments ORDER BY investmentDate DESC")
     fun getAllInvestmentsFlow(): Flow<List<Investment>>
+
+    @Query("SELECT * FROM investments WHERE approval_status = :status")
+    suspend fun getByApprovalStatus(status: ApprovalStage): List<Investment>
 }
