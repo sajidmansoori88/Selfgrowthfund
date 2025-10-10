@@ -130,16 +130,22 @@ fun AppNavGraph(
             val viewModel: AdminDashboardViewModel = hiltViewModel()
 
             SGFScaffoldWrapper(
-                title = "Shareholders",
+                title = "Shareholder Management",
                 onDrawerClick = onDrawerClick,
                 snackbarHostState = remember { SnackbarHostState() },
                 content = { innerPadding ->
                     AdminShareholderScreen(
+                        navController = navController, // ✅ pass navController down
                         modifier = Modifier.padding(innerPadding),
                         viewModel = viewModel,
                         onAddClick = { navController.navigate("add_shareholder_screen") },
-                        onModifyClick = { shareholder -> viewModel.modifyShareholder(shareholder) },
-                        onDeleteClick = { shareholder -> viewModel.deleteShareholder(shareholder) }
+                        onModifyClick = { shareholder ->
+                            // ✅ Navigate to EditShareholderScreen
+                            navController.navigate("edit_shareholder_screen/${shareholder.shareholderId}")
+                        },
+                        onDeleteClick = { shareholder ->
+                            viewModel.deleteShareholder(shareholder)
+                        }
                     )
                 }
             )

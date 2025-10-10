@@ -1,14 +1,11 @@
 package com.selfgrowthfund.sgf.ui.admin.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,58 +22,78 @@ fun ShareholdersTable(
     onDelete: (Shareholder) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val scrollState = rememberScrollState()
-
-    Column(
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 3.dp,
         modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(scrollState)
+            .fillMaxSize() // ✅ let the table use available height (fixes cut-off)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {
-        ShareholderTableHeader()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            // ───── Header ─────
+            ShareholderTableHeader()
 
-        if (shareholders.isEmpty()) {
-            // Show empty state
-            EmptyStateCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                icon = Icons.Default.Person,
-                title = "No shareholders found",
-                message = "Add new members to get started."
-            )
-        } else {
-            // Show data rows
-            shareholders.forEach { shareholder ->
-                ShareholderTableRow(
-                    shareholder = shareholder,        // ✅ already a Shareholder
-                    onModify = onModify,
-                    onDelete = onDelete
-                )
-                HorizontalDivider(
+            if (shareholders.isEmpty()) {
+                // ───── Empty State ─────
+                EmptyStateCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(1.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                        .padding(16.dp),
+                    icon = Icons.Default.Person,
+                    title = "No shareholders found",
+                    message = "Add new members to get started."
                 )
+            } else {
+                // ───── Data Rows ─────
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    verticalArrangement = Arrangement.Top,
+                ) {
+                    shareholders.forEachIndexed { index, shareholder ->
+                        ShareholderTableRow(
+                            shareholder = shareholder,
+                            index = index,
+                            onModify = onModify,
+                            onDelete = onDelete
+                        )
+                        if (index < shareholders.lastIndex) {
+                            HorizontalDivider(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                thickness = 1.dp
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
-
 @Composable
 fun ShareholderTableHeader() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .defaultMinSize(minWidth = 350.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        TableHeaderText("ID", Modifier.weight(1f), TextAlign.Start)
-        TableHeaderText("Name", Modifier.weight(2f), TextAlign.Start)
-        TableHeaderText("Role", Modifier.weight(1.5f), TextAlign.Start)
-        TableHeaderText("Actions", Modifier.weight(1f), TextAlign.Center)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .defaultMinSize(minWidth = 400.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TableHeaderText("ID", Modifier.weight(0.8f))
+            TableHeaderText("Name", Modifier.weight(1.6f))
+            TableHeaderText("Role", Modifier.weight(1.2f))
+            TableHeaderText("Status", Modifier.weight(1f))
+            TableHeaderText("Actions", Modifier.weight(1f), TextAlign.Center)
+        }
     }
 }
 

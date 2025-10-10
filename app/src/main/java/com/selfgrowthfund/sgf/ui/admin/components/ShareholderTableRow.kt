@@ -1,10 +1,8 @@
 package com.selfgrowthfund.sgf.ui.admin.components
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -16,167 +14,127 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
-import com.selfgrowthfund.sgf.model.enums.MemberRole
+import com.selfgrowthfund.sgf.model.enums.ShareholderStatus
 
 @Composable
 fun ShareholderTableRow(
     shareholder: Shareholder,
     onModify: (Shareholder) -> Unit,
     onDelete: (Shareholder) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    index: Int = 0
 ) {
-    var isEditing by remember { mutableStateOf(false) }
-    var editedName by remember(shareholder) { mutableStateOf(shareholder.fullName) }
-    var editedRole by remember(shareholder) { mutableStateOf(shareholder.role) }
-
-    // NEW: for confirmation dialog
     var showConfirmDialog by remember { mutableStateOf(false) }
+
+    val rowBackground =
+        if (index % 2 == 0) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+        else MaterialTheme.colorScheme.surface
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .clickable { /* Optional: row click */ },
+            .background(rowBackground)
+            .padding(horizontal = 16.dp)
+            .heightIn(min = 48.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // ✅ ID column
+        // ID
         Text(
-            text = shareholder.shareholderId,
+            text = shareholder.shareholderId.ifBlank { "-" },
+            modifier = Modifier.weight(0.8f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        // Name
+        Text(
+            text = shareholder.fullName.ifBlank { "Unnamed" },
+            modifier = Modifier.weight(1.6f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        // Role
+        Text(
+            text = shareholder.role.label,
+            modifier = Modifier.weight(1.2f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        // Status
+        Text(
+            text = shareholder.shareholderStatus.name,
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
+            color = getStatusColor(shareholder.shareholderStatus),
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
 
-        // ✅ Name column
-        if (isEditing) {
-            OutlinedTextField(
-                value = editedName,
-                onValueChange = { editedName = it },
-                modifier = Modifier.weight(2f),
-                textStyle = MaterialTheme.typography.bodyMedium,
-                singleLine = true,
-                label = { Text("Name") }
-            )
-        } else {
-            Text(
-                text = shareholder.fullName,
-                modifier = Modifier.weight(2f),
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-
-        // ✅ Role column
-        if (isEditing) {
-            RoleDropdown(
-                selectedRole = editedRole,
-                onRoleSelected = { editedRole = it },
-                modifier = Modifier.weight(1.5f)
-            )
-        } else {
-            Text(
-                text = shareholder.role.label,
-                modifier = Modifier.weight(1.5f),
-                style = MaterialTheme.typography.bodyMedium,
-                color = getRoleColor(shareholder.role),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-
-        // ✅ Actions column
+        // Actions
         Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.Center
+            modifier = Modifier
+                .weight(1f)
+                .requiredWidthIn(min = 100.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (isEditing) {
-                IconButton(
-                    onClick = {
-                        onModify(
-                            shareholder.copy(
-                                fullName = editedName,
-                                role = editedRole
-                            )
-                        )
-                        isEditing = false
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Save",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        isEditing = false
-                        editedName = shareholder.fullName
-                        editedRole = shareholder.role
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Cancel",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            } else {
-                IconButton(
-                    onClick = { isEditing = true },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                }
-
-                IconButton(
-                    onClick = { showConfirmDialog = true }, // open confirmation
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
+            IconButton(onClick = { onModify(shareholder) }) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(onClick = { showConfirmDialog = true }) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
 
-    // ✅ Confirmation dialog
+    // 🔔 Confirmation dialog
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Confirm Delete") },
-            text = { Text("Are you sure you want to delete shareholder '${shareholder.fullName}'? This action cannot be undone.") },
+            title = { Text("Confirm Deletion") },
+            text = {
+                Text(
+                    "Are you sure you want to delete ${shareholder.fullName.ifBlank { "this shareholder" }}?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showConfirmDialog = false
-                        onDelete(shareholder)
-                    }
-                ) { Text("Yes, Delete") }
+                TextButton(onClick = {
+                    showConfirmDialog = false
+                    onDelete(shareholder)
+                }) {
+                    Text("Yes, Delete", color = MaterialTheme.colorScheme.error)
+                }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = false }) {
                     Text("Cancel")
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
         )
     }
 }
-
-
 @Composable
-private fun getRoleColor(role: MemberRole): Color {
-    return when (role) {
-        MemberRole.MEMBER_ADMIN -> MaterialTheme.colorScheme.primary
-        MemberRole.MEMBER_TREASURER -> MaterialTheme.colorScheme.secondary
-        MemberRole.MEMBER -> MaterialTheme.colorScheme.onSurface
-    }
+fun getStatusColor(status: ShareholderStatus): Color = when (status) {
+    ShareholderStatus.Active -> MaterialTheme.colorScheme.primary
+    ShareholderStatus.Inactive -> MaterialTheme.colorScheme.error
 }

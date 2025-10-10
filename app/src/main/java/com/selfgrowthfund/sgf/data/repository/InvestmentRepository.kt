@@ -131,19 +131,24 @@ class InvestmentRepository @Inject constructor(
         provisionalId: String,
         approverId: String?,
         notes: String?
-    ): Boolean = withContext(Dispatchers.IO) {
-        val lastId = dao.getLastApprovedInvestmentId()
-        val newId = IdGenerator.nextInvestmentId(lastId)
-        val updatedAt = LocalDate.now()
-        dao.approveInvestment(
-            provisionalId = provisionalId,
-            newId = newId,
-            status = ApprovalStage.ADMIN_APPROVED,
-            approvedBy = approverId,
-            notes = notes,
-            updatedAt = updatedAt
-        )
-        true
+    ): Boolean {
+        return try {
+            val investment = dao.getByProvisionalId(provisionalId) ?: return false
+            val lastId = dao.getLastApprovedInvestmentId()
+            val newId = IdGenerator.nextInvestmentId(lastId)
+            val updatedInvestment = investment.copy(
+                investmentId = newId,
+                approvalStatus = ApprovalStage.ADMIN_APPROVED,
+                approvedBy = approverId,
+                approvalNotes = notes,                    // ✅ fixed field name
+                investmentDate = investment.investmentDate ?: LocalDate.now(),
+                updatedAt = LocalDate.now()
+            )
+            dao.update(updatedInvestment)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     suspend fun markPaymentReleased(
@@ -152,17 +157,17 @@ class InvestmentRepository @Inject constructor(
         remarks: String?
     ): Boolean {
         return try {
-            val updatedAt = LocalDate.now()
-            val rows = dao.updateApprovalStatus(
-                provisionalId = provisionalId,
-                status = ApprovalStage.TREASURER_APPROVED,
+            val investment = dao.getByProvisionalId(provisionalId) ?: return false
+            val updatedInvestment = investment.copy(
+                approvalStatus = ApprovalStage.TREASURER_APPROVED,
                 approvedBy = treasurerId,
-                notes = remarks,
-                updatedAt = updatedAt
+                approvalNotes = remarks,                  // ✅ fixed field name
+                investmentDate = LocalDate.now(),          // ✅ auto-set date
+                updatedAt = LocalDate.now()
             )
-            rows > 0
+            dao.update(updatedInvestment)
+            true
         } catch (e: Exception) {
-            // No Timber in production; silently fail and return false
             false
         }
     }

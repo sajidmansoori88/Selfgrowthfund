@@ -110,19 +110,66 @@ object AppTypeConverters {
     @TypeConverter @JvmStatic fun fromInvestmentStatus(value: InvestmentStatus?): String? = value?.name
     @TypeConverter @JvmStatic fun toInvestmentStatus(name: String?): InvestmentStatus? = name?.let { InvestmentStatus.valueOf(it) }
 
+    // ───── Member Role Converter (FIXED) ─────
     @TypeConverter @JvmStatic
-    fun fromMemberRoleList(list: List<MemberRole>?): String? = list?.joinToString(",") { it.name }
+    fun fromMemberRole(role: MemberRole?): String? = role?.name
 
     @TypeConverter @JvmStatic
-    fun toMemberRoleList(data: String?): List<MemberRole>? =
-        data?.split(",")?.map { MemberRole.valueOf(it) }
+    fun toMemberRole(value: String?): MemberRole? {
+        if (value.isNullOrBlank()) return MemberRole.MEMBER
+        // Try direct match first
+        return try {
+            MemberRole.valueOf(value)
+        } catch (e: IllegalArgumentException) {
+            // Try match by label (handles "Member Admin" etc.)
+            MemberRole.entries.firstOrNull { it.label.equals(value, ignoreCase = true) }
+                ?: MemberRole.MEMBER
+        }
+    }
+
+    // ───── MemberRole List Converter (Safe) ─────
+    @TypeConverter @JvmStatic
+    fun fromMemberRoleList(list: List<MemberRole>?): String =
+        list?.joinToString(",") { it.name } ?: ""
+
+    @TypeConverter @JvmStatic
+    fun toMemberRoleList(data: String?): List<MemberRole> {
+        if (data.isNullOrBlank()) return emptyList()
+
+        return data.split(",")
+            .mapNotNull { raw ->
+                val trimmed = raw.trim()
+                if (trimmed.isEmpty()) return@mapNotNull null
+
+                try {
+                    MemberRole.valueOf(trimmed)
+                } catch (e: IllegalArgumentException) {
+                    // Try label fallback
+                    MemberRole.entries.firstOrNull {
+                        it.label.equals(trimmed, ignoreCase = true)
+                    } ?: MemberRole.MEMBER
+                }
+            }
+    }
+
 
     @TypeConverter @JvmStatic
     fun fromShareholderStatusList(list: List<ShareholderStatus>?): String? = list?.joinToString(",") { it.name }
 
-    @TypeConverter @JvmStatic
-    fun toShareholderStatusList(data: String?): List<ShareholderStatus>? =
-        data?.split(",")?.map { ShareholderStatus.valueOf(it) }
+    @TypeConverter
+    fun toShareholderStatusList(value: String): List<ShareholderStatus> {
+        if (value.isBlank()) return emptyList()
+        return value.split(",")
+            .mapNotNull { raw ->
+                val trimmed = raw.trim()
+                try {
+                    ShareholderStatus.valueOf(trimmed)
+                } catch (e: IllegalArgumentException) {
+                    ShareholderStatus.fromLabel(trimmed)
+                }
+            }
+    }
+
 
     // ───── Approval Enums ─────
     @TypeConverter @JvmStatic

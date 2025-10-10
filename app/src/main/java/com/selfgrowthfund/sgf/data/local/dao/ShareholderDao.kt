@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
+import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.model.reports.ShareholderBasicInfo
 import com.selfgrowthfund.sgf.model.reports.ShareholderLoanStatus
 import com.selfgrowthfund.sgf.model.reports.ShareholderWithEligibility
@@ -17,7 +18,7 @@ interface ShareholderDao {
     suspend fun insertShareholder(shareholder: Shareholder)
 
     // ─────────────── READ ───────────────
-    @Query("SELECT * FROM shareholders ORDER BY fullName ASC")
+    @Query("SELECT * FROM shareholders ORDER BY CAST(SUBSTR(shareholderId, 3) AS INTEGER) ASC")
     fun getAllShareholdersFlow(): Flow<List<Shareholder>>
 
     @Query("SELECT * FROM shareholders WHERE shareholderId = :id")
@@ -84,7 +85,7 @@ interface ShareholderDao {
     suspend fun isEligibleForLoan(id: String): Boolean
 
     @Query("SELECT * FROM shareholders WHERE role = :role")
-    suspend fun getByRole(role: String): List<Shareholder>
+    suspend fun getByRole(role: MemberRole): List<Shareholder>
 
     // ─────────────── UPDATE ───────────────
     @Update

@@ -1,5 +1,6 @@
 package com.selfgrowthfund.sgf.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
@@ -7,6 +8,7 @@ import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import javax.inject.Inject
@@ -19,6 +21,10 @@ class ShareholderRepository @Inject constructor(
 
     // ──────────────── Reactive streams ────────────────
     fun getAllShareholdersStream(): Flow<List<Shareholder>> = dao.getAllShareholdersFlow()
+        .onEach { list ->
+            Log.d("ShareholderRepo", "Emitted ${list.size} shareholders from Room")
+        }
+
     fun getShareholderByIdStream(id: String): Flow<Shareholder?> = dao.getShareholderByIdFlow(id)
 
     // ──────────────── Direct DB access ────────────────
@@ -52,12 +58,15 @@ class ShareholderRepository @Inject constructor(
     } catch (e: Exception) {
         Result.Error(e)
     }
-
     suspend fun deleteShareholder(shareholder: Shareholder): Result<Unit> = try {
         dao.deleteShareholder(shareholder)
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
+    }
+    suspend fun insertShareholderWithRoleCheck(shareholder: Shareholder) {
+        val safeRole = shareholder.role
+        dao.insertShareholder(shareholder.copy(role = safeRole))
     }
 
     // ──────────────── Firestore sync ────────────────

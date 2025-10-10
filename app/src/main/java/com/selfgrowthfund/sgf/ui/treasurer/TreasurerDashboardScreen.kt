@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.selfgrowthfund.sgf.model.enums.MemberRole
+import com.selfgrowthfund.sgf.session.UserSessionViewModel
 import com.selfgrowthfund.sgf.ui.theme.GradientBackground
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,139 +22,197 @@ import kotlinx.coroutines.launch
 @Composable
 fun TreasurerDashboardScreen(
     viewModel: TreasurerDashboardViewModel = hiltViewModel(),
-    treasurerId: String = "TR001",
-    innerPadding: PaddingValues = PaddingValues(0.dp),
-    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
+    userSessionViewModel: UserSessionViewModel = hiltViewModel()
 ) {
+    // ─── Collect states ───────────────────────────────────────────────
+    val currentUser by userSessionViewModel.currentUser.collectAsState()
     val state by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Deposits", "Borrowings", "Repayments", "Investments", "Returns", "Others")
+    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) { viewModel.loadDashboardData() }
-    GradientBackground {
-    Column(
-        modifier = Modifier
-            .padding(innerPadding)
-            .verticalScroll(rememberScrollState())
-    ) {
-        // ───── Summary Row ─────
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            elevation = CardDefaults.cardElevation(4.dp)
-        ) {
-            SummaryRow(
-                deposits = state.deposits.size,
-                borrowings = state.borrowings.size,
-                repayments = state.repayments.size,
-                investments = state.investments.size,
-                returns = state.returns.size
-            )
-        }
-
-        // ───── Tabs ─────
-        TabRow(selectedTabIndex = selectedTab) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    text = { Text(title) },
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index }
-                )
+    // ─── Step 1: Wait for session to load ─────────────────────────────
+    if (currentUser.shareholderId.isNullOrEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Loading user session...")
             }
         }
+        return
+    }
 
-        // ───── Tab Content ─────
-        when (selectedTab) {
-            0 -> TreasurerListSection(
-                title = "Pending Deposits",
-                items = state.deposits.map { it.provisionalId to it.shareholderName },
-                onAction = { id ->
-                    viewModel.approveDeposit(id, treasurerId) { success ->
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                if (success) "Deposit approved ✅" else "Action failed ❌"
-                            )
-                        }
-                    }
-                },
-                actionLabel = "Approve"
+    // ─── Step 2: Restrict non-treasurer roles ─────────────────────────
+    if (currentUser.role != MemberRole.MEMBER_TREASURER) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                "Access Denied — Only Treasurer can access this screen.",
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+        return
+    }
+
+    val treasurerId = currentUser.shareholderId
+
+    // ─── Step 3: Show loading indicator while dashboard loads ─────────
+    if (state.isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Loading Treasurer Dashboard...")
+            }
+        }
+        return
+    }
+
+    // ─── Step 4: Main content ─────────────────────────────────────────
+    GradientBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
+            // Header
+            Text(
+                text = "Welcome Treasurer ${currentUser.name}",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            1 -> TreasurerListSection(
-                title = "Pending Borrowing Releases",
-                items = state.borrowings.map { it.provisionalId to "${it.shareholderName} - ₹${it.approvedAmount}" },
-                onAction = { id ->
-                    viewModel.releaseBorrowing(id, treasurerId) { success ->
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                if (success) "Borrowing released 💸" else "Action failed ❌"
-                            )
-                        }
-                    }
-                },
-                actionLabel = "Release"
-            )
-
-            2 -> TreasurerListSection(
-                title = "Pending Repayments",
-                items = state.repayments.map { it.provisionalId to "Borrow ID: ${it.borrowId}" },
-                onAction = { id ->
-                    viewModel.approveRepayment(id, treasurerId) { success ->
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                if (success) "Repayment verified ✅" else "Action failed ❌"
-                            )
-                        }
-                    }
-                },
-                actionLabel = "Approve"
-            )
-
-            3 -> TreasurerListSection(
-                title = "Pending Investments",
-                items = state.investments.map { it.provisionalId to it.investmentName },
-                onAction = { id ->
-                    viewModel.releaseInvestment(id, treasurerId) { success ->
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                if (success) "Investment released 💸" else "Action failed ❌"
-                            )
-                        }
-                    }
-                },
-                actionLabel = "Release"
-            )
-
-            4 -> TreasurerListSection(
-                title = "Pending Returns",
-                items = state.returns.map { it.provisionalId to it.investmentId },
-                onAction = { id ->
-                    viewModel.approveInvestmentReturn(id, treasurerId) { success ->
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                if (success) "Return approved ✅" else "Action failed ❌"
-                            )
-                        }
-                    }
-                },
-                actionLabel = "Approve"
-            )
-
-            5 -> Box(
+            // Summary
+            Card(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Text("Add Other Income / Expense via respective forms.")
+                SummaryRow(
+                    deposits = state.deposits.size,
+                    borrowings = state.borrowings.size,
+                    repayments = state.repayments.size,
+                    investments = state.investments.size,
+                    returns = state.returns.size
+                )
+            }
+
+            // Tabs
+            TabRow(selectedTabIndex = selectedTab) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        text = { Text(title) },
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index }
+                    )
+                }
+            }
+
+            // Tab content
+            when (selectedTab) {
+                // Deposits
+                0 -> TreasurerListSection(
+                    title = "Pending Deposits",
+                    items = state.deposits.map { it.provisionalId to it.shareholderName },
+                    onAction = { id ->
+                        viewModel.approveDeposit(id, treasurerId) { success ->
+                            coroutineScope.launch {
+                                showSnack(
+                                    snackbarHostState,
+                                    if (success) "Deposit approved ✅" else "Action failed ❌"
+                                )
+                            }
+                        }
+                    },
+                    actionLabel = "Approve"
+                )
+
+                // Borrowings
+                1 -> TreasurerListSection(
+                    title = "Pending Borrowing Releases",
+                    items = state.borrowings.map { it.provisionalId to "${it.shareholderName} - ₹${it.approvedAmount}" },
+                    onAction = { id ->
+                        viewModel.releaseBorrowing(id, treasurerId) { success ->
+                            coroutineScope.launch {
+                                showSnack(
+                                    snackbarHostState,
+                                    if (success) "Borrowing released 💸" else "Action failed ❌"
+                                )
+                            }
+                        }
+                    },
+                    actionLabel = "Release"
+                )
+
+                // Repayments
+                2 -> TreasurerListSection(
+                    title = "Pending Repayments",
+                    items = state.repayments.map { it.provisionalId to "Borrow ID: ${it.borrowId}" },
+                    onAction = { id ->
+                        viewModel.approveRepayment(id, treasurerId) { success ->
+                            coroutineScope.launch {
+                                showSnack(
+                                    snackbarHostState,
+                                    if (success) "Repayment verified ✅" else "Action failed ❌"
+                                )
+                            }
+                        }
+                    },
+                    actionLabel = "Approve"
+                )
+
+                // Investments
+                3 -> TreasurerListSection(
+                    title = "Pending Investments",
+                    items = state.investments.map { it.provisionalId to it.investmentName },
+                    onAction = { id ->
+                        viewModel.releaseInvestment(id, treasurerId) { success ->
+                            coroutineScope.launch {
+                                showSnack(
+                                    snackbarHostState,
+                                    if (success) "Investment released 💸" else "Action failed ❌"
+                                )
+                            }
+                        }
+                    },
+                    actionLabel = "Release"
+                )
+
+                // Returns
+                4 -> TreasurerListSection(
+                    title = "Pending Returns",
+                    items = state.returns.map { it.provisionalId to it.investmentId },
+                    onAction = { id ->
+                        viewModel.approveInvestmentReturn(id, treasurerId) { success ->
+                            coroutineScope.launch {
+                                showSnack(
+                                    snackbarHostState,
+                                    if (success) "Return approved ✅" else "Action failed ❌"
+                                )
+                            }
+                        }
+                    },
+                    actionLabel = "Approve"
+                )
+
+                // Others
+                5 -> Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Add Other Income / Expense via respective forms.")
+                }
             }
         }
     }
 }
-}
 
+// ─── Helper components ───────────────────────────────────────────────
 @Composable
 private fun TreasurerListSection(
     title: String,
@@ -193,7 +253,7 @@ private fun TreasurerListSection(
     }
 }
 
-// ✅ Non-suspending helper — safe to call from any context
+// Safe snackbar launcher
 private fun showSnack(snackbarHostState: SnackbarHostState, message: String) {
     CoroutineScope(Dispatchers.Main).launch {
         snackbarHostState.showSnackbar(message)

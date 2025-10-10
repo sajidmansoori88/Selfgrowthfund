@@ -57,7 +57,8 @@ fun InvestmentDetailScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 AdminActions(
                     onAddReturn = onAddReturn,
-                    onApplyInvestment = onApplyInvestment
+                    onApplyInvestment = onApplyInvestment,
+                    investment = investment
                 )
             }
 
@@ -103,16 +104,44 @@ private fun EmptyReturnsState() {
 private fun AdminActions(
     modifier: Modifier = Modifier,
     onAddReturn: () -> Unit,
-    onApplyInvestment: () -> Unit
+    onApplyInvestment: () -> Unit,
+    investment: Investment? = null  // 👈 add optional param
 ) {
+    val canAddReturn = investment?.let {
+        it.investmentDate != null && it.approvalStatus.name == "ADMIN_APPROVED"
+    } ?: false
+
     Column(modifier = modifier) {
         ExtendedFloatingActionButton(
             text = { Text("Add Return") },
             icon = { Icon(Icons.Default.Add, contentDescription = "Add Return") },
-            onClick = onAddReturn,
-            modifier = Modifier.fillMaxWidth()
+            onClick = {
+                if (canAddReturn) {
+                    onAddReturn()
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            containerColor = if (canAddReturn)
+                MaterialTheme.colorScheme.primary
+            else
+                MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = if (canAddReturn)
+                MaterialTheme.colorScheme.onPrimary
+            else
+                MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(12.dp))
+
+        if (!canAddReturn) {
+            Text(
+                text = "Add Return available after Admin approval",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+            )
+        }
+
         ExtendedFloatingActionButton(
             text = { Text("Apply Investment") },
             icon = {
@@ -126,6 +155,7 @@ private fun AdminActions(
         )
     }
 }
+
 
 // Extension function for role check
 fun MemberRole.isAdminOrTreasurer(): Boolean {

@@ -10,9 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.selfgrowthfund.sgf.model.enums.*
+import com.selfgrowthfund.sgf.session.UserSessionViewModel
 import com.selfgrowthfund.sgf.utils.Result
-import java.time.LocalDate
 
 @Composable
 fun AddInvestmentScreen(
@@ -20,6 +21,10 @@ fun AddInvestmentScreen(
     onSuccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 🔹 Get the user session (needed for submitInvestmentWithUser)
+    val userSessionViewModel: UserSessionViewModel = hiltViewModel()
+    val currentUser by userSessionViewModel.currentUser.collectAsState()
+
     val state by viewModel.uiState.collectAsState()
     val submissionResult by viewModel.submissionResult.collectAsState()
     val validationError = remember { mutableStateOf<String?>(null) }
@@ -29,6 +34,7 @@ fun AddInvestmentScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+
         // ----------------- Provisional ID -----------------
         Text(
             "Provisional ID: ${state.provisionalId}",
@@ -39,7 +45,7 @@ fun AddInvestmentScreen(
 
         // ----------------- Application Date (read-only) -----------------
         Text(
-            "Application Date: ${state.createdAt ?: LocalDate.now()}",
+            "Application Date: ${state.createdAt}",
             style = MaterialTheme.typography.labelMedium
         )
 
@@ -194,9 +200,10 @@ fun AddInvestmentScreen(
                 }
 
                 validationError.value = null
-                viewModel.submitInvestment(
+                viewModel.submitInvestmentWithUser(
+                    currentUser = currentUser,
                     onSuccess = onSuccess,
-                    onError = { validationError.value = it }
+                    onError = { errorMsg -> validationError.value = errorMsg }
                 )
             },
             enabled = !state.isSubmitting,

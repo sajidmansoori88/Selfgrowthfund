@@ -18,6 +18,7 @@ import com.selfgrowthfund.sgf.ui.components.reportingperiod.CustomPeriod
 import com.selfgrowthfund.sgf.utils.ExportUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -55,7 +56,11 @@ class AdminDashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val shareholderMap = _shareholders.value.associateBy({ it.shareholderId }, { it.fullName })
+                // ✅ Use new reactive shareholders flow instead of old _shareholders
+                val shareholderMap = shareholders.value.associateBy(
+                    { it.shareholderId },
+                    { it.fullName }
+                )
                 _sessionHistory.value = sessionRepository.getUserSessions(shareholderMap)
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
@@ -107,33 +112,21 @@ class AdminDashboardViewModel @Inject constructor(
         }
     }
 
-    // ── Shareholders ──
-    private val _shareholders = MutableStateFlow<List<Shareholder>>(emptyList())
-    val shareholders: StateFlow<List<Shareholder>> = _shareholders.asStateFlow()
+    // ── Shareholders (Reactive Live Flow) ──
+    val shareholders: StateFlow<List<Shareholder>> =
+        shareholderRepository.getAllShareholdersStream()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
 
-    fun loadShareholders() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                _shareholders.value = shareholderRepository.getAllShareholders()
-                _uiState.update { it.copy(isLoading = false) }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = "Failed to load shareholders: ${e.message}"
-                    )
-                }
-            }
-        }
-    }
 
     fun modifyShareholder(updated: Shareholder) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
                 shareholderRepository.updateShareholder(updated)
-                loadShareholders()
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -156,7 +149,6 @@ class AdminDashboardViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 shareholderRepository.deleteShareholder(shareholder)
-                loadShareholders()
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -347,8 +339,9 @@ class AdminDashboardViewModel @Inject constructor(
 
     // ── Init ──
     init {
-        loadShareholders()
+        // Removed loadShareholders() since Flow auto-updates
         loadApprovals()
         loadSessionHistory()
+
     }
 }

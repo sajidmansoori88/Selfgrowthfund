@@ -15,6 +15,12 @@ import timber.log.Timber
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
+import com.selfgrowthfund.sgf.data.repository.ApprovalFlowRepository
+import com.selfgrowthfund.sgf.data.local.entities.ApprovalFlow
+import com.selfgrowthfund.sgf.model.enums.ApprovalAction
+import com.selfgrowthfund.sgf.model.enums.ApprovalType
+import com.selfgrowthfund.sgf.model.User
+
 
 // ---------------- UI STATE ----------------
 data class AddInvestmentUiState(
@@ -41,6 +47,7 @@ data class AddInvestmentUiState(
 class InvestmentViewModel @Inject constructor(
     private val repository: InvestmentRepository,
     private val shareholderRepository: ShareholderRepository,
+    private val approvalFlowRepository: ApprovalFlowRepository,
     private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
@@ -121,10 +128,11 @@ class InvestmentViewModel @Inject constructor(
                     remarks = state.remarks,
                     approvalStatus = ApprovalStage.PENDING,
                     returnDueDate = state.investmentDate.plusDays(state.expectedReturnPeriod.toLong()),
-                    createdAt = state.createdAt                       // ✅ NEW: persist application date
+                    createdAt = state.createdAt
                 )
 
                 val result = repository.createInvestment(investment)
+
                 if (result is Result.Success) {
                     syncToFirestore(investment)
                     Timber.i("✅ Investment submitted. ProvisionalId = ${investment.provisionalId}")
@@ -141,6 +149,69 @@ class InvestmentViewModel @Inject constructor(
             _uiState.update { it.copy(isSubmitting = false) }
         }
     }
+    fun submitInvestmentWithUser(
+        currentUser: User,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmitting = true) }
+            submissionResult.value = null
+
+            try {
+                val state = _uiState.value
+
+                val investment = Investment(
+                    investmentId = null,
+                    provisionalId = state.provisionalId,
+                    shareholderId = state.shareholderId ?: "",
+                    investeeType = state.investeeType,
+                    investeeName = state.investeeName,
+                    ownershipType = state.ownershipType,
+                    partnerNames = state.partnerNames,
+                    investmentDate = state.investmentDate,
+                    investmentType = state.investmentType,
+                    investmentName = state.investmentName,
+                    amount = state.amount,
+                    expectedProfitPercent = state.expectedProfitPercent,
+                    expectedProfitAmount = state.expectedProfitAmount,
+                    expectedReturnPeriod = state.expectedReturnPeriod,
+                    remarks = state.remarks,
+                    approvalStatus = ApprovalStage.PENDING,
+                    returnDueDate = state.investmentDate.plusDays(state.expectedReturnPeriod.toLong()),
+                    createdAt = state.createdAt
+                )
+
+                val result = repository.createInvestment(investment)
+
+                if (result is Result.Success) {
+                    // ✅ Create ApprovalFlow entry
+                    val approvalFlow = ApprovalFlow(
+                        entityType = ApprovalType.INVESTMENT,
+                        entityId = investment.provisionalId,
+                        role = MemberRole.MEMBER,
+                        action = ApprovalAction.APPROVE,
+                        approvedBy = currentUser.shareholderId,
+                        remarks = "Investment application submitted"
+                    )
+                    approvalFlowRepository.recordApproval(approvalFlow)
+
+                    syncToFirestore(investment)
+                    submissionResult.value = Result.Success(Unit)
+                    onSuccess()
+                } else if (result is Result.Error) {
+                    throw result.exception
+                }
+            } catch (e: Exception) {
+                submissionResult.value = Result.Error(e)
+                onError(e.message ?: "Investment submission failed")
+            }
+
+            _uiState.update { it.copy(isSubmitting = false) }
+        }
+    }
+
+
 
     // ---------------- FIRESTORE SYNC ----------------
     private fun syncToFirestore(investment: Investment) {

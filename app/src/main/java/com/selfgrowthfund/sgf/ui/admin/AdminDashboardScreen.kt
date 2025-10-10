@@ -26,14 +26,6 @@ fun AdminDashboardScreen(
                 .verticalScroll(rememberScrollState()) // ✅ Make it scrollable
                 .padding(24.dp)
         ) {
-            Text("Welcome, Admin", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Role: ${role.name}", style = MaterialTheme.typography.bodyLarge)
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text("Admin Actions", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(16.dp))
 
             // ✅ Use the provided callbacks
             Button(

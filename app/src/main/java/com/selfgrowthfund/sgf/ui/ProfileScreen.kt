@@ -7,7 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,18 +62,4 @@ fun ProfileScreen(
             Text("Logout")
         }
     }
-}
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewProfileScreen() {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
-    ProfileScreen(
-        shareholderId = "SH001",
-        onLogout = {}
-    )
 }
