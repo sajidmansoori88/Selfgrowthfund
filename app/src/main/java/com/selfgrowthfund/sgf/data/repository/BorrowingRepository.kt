@@ -165,4 +165,11 @@ class BorrowingRepository @Inject constructor(
         val numeric = lastId?.removePrefix("BR")?.toIntOrNull() ?: 0
         return "BR" + String.format(Locale.US, "%04d", numeric + 1)
     }
+
+    fun getByBorrowIdFlow(id: String): Flow<Borrowing?> = borrowingDao.getByBorrowIdFlow(id)
+
+    suspend fun updateApprovalStage(borrowId: String, newStage: ApprovalStage) {
+        borrowingDao.updateApprovalStage(borrowId, newStage.name)
+    }
+
 }

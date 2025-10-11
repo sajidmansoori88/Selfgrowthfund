@@ -24,11 +24,13 @@ data class ApprovalFlow(
 
     val role: MemberRole,
 
-    @ColumnInfo(name = "approval_action")  // ✅ Fix: avoid SQLite keyword conflict
-    val action: ApprovalAction,
+    @ColumnInfo(name = "approval_action")
+    val action: ApprovalAction,   // APPROVE, REJECT, or PENDING
 
     val approvedBy: String,
     val remarks: String? = null,
-    val approvedAt: Instant = Instant.now()
+
+    val createdAt: Instant = Instant.now(),  // when this record was created
+    val approvedAt: Instant? = null          // null = not yet acted upon
 )
 

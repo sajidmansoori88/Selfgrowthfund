@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
 import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.data.local.AppDatabase
 import com.selfgrowthfund.sgf.data.local.Migrations
@@ -32,7 +33,8 @@ object AppModule {
                 Migrations.MIGRATION_1_2,
                 Migrations.MIGRATION_2_3,
                 Migrations.MIGRATION_3_4,
-                Migrations.MIGRATION_4_5
+                Migrations.MIGRATION_4_5,
+                Migrations.MIGRATION_5_6
             )
             .addCallback(AppDatabase.DatabaseCallback())
             .build()

@@ -5,6 +5,7 @@ import com.selfgrowthfund.sgf.data.local.entities.ApprovalFlow
 import com.selfgrowthfund.sgf.model.enums.ApprovalType
 import java.time.Instant
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 
 class ApprovalFlowRepository @Inject constructor(
     private val dao: ApprovalFlowDao
@@ -24,6 +25,8 @@ class ApprovalFlowRepository @Inject constructor(
         end: Instant
     ): List<ApprovalFlow> = dao.getAllFlowsBetween(start, end)
 
+    fun getAllApprovals(): Flow<List<ApprovalFlow>> = dao.getAllApprovals()
+
     suspend fun countApprovedByEntity(entityId: String, type: ApprovalType): Int =
         dao.countApprovedVotes(entityId, type)
 
@@ -32,5 +35,10 @@ class ApprovalFlowRepository @Inject constructor(
 
     suspend fun getVotesForEntity(entityId: String, type: ApprovalType): List<ApprovalFlow> =
         dao.getVotesForEntity(entityId, type)
+
+    // ---------- NEW: expose pending approvals as a Flow ----------
+    fun getPendingApprovals(): Flow<List<ApprovalFlow>> = dao.getPendingApprovals()
+
+    fun getCompletedApprovals(): Flow<List<ApprovalFlow>> = dao.getCompletedApprovals()
 
 }

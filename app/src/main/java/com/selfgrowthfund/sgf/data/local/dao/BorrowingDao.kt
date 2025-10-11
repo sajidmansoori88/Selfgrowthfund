@@ -204,4 +204,11 @@ interface BorrowingDao {
 
     @Query("SELECT * FROM borrowings WHERE borrowId = :borrowingId LIMIT 1")
     suspend fun findById(borrowingId: String): Borrowing?
+
+    @Query("SELECT * FROM borrowings WHERE borrowId = :id LIMIT 1")
+    fun getByBorrowIdFlow(id: String): Flow<Borrowing?>
+
+    @Query("UPDATE borrowings SET approvalStatus = :stage WHERE borrowId = :id")
+    suspend fun updateApprovalStage(id: String, stage: String)
+
 }

@@ -190,9 +190,10 @@ class InvestmentViewModel @Inject constructor(
                         entityType = ApprovalType.INVESTMENT,
                         entityId = investment.provisionalId,
                         role = MemberRole.MEMBER,
-                        action = ApprovalAction.APPROVE,
+                        action = ApprovalAction.PENDING, // ✅ initial submission = awaiting approval
                         approvedBy = currentUser.shareholderId,
-                        remarks = "Investment application submitted"
+                        remarks = "Investment application submitted",
+                        approvedAt = null // ✅ pending = not acted yet
                     )
                     approvalFlowRepository.recordApproval(approvalFlow)
 
@@ -210,8 +211,6 @@ class InvestmentViewModel @Inject constructor(
             _uiState.update { it.copy(isSubmitting = false) }
         }
     }
-
-
 
     // ---------------- FIRESTORE SYNC ----------------
     private fun syncToFirestore(investment: Investment) {

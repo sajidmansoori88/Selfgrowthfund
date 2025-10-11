@@ -176,7 +176,14 @@ object AppTypeConverters {
     fun fromApprovalAction(value: ApprovalAction?): String? = value?.name
 
     @TypeConverter @JvmStatic
-    fun toApprovalAction(value: String?): ApprovalAction? = value?.let { ApprovalAction.valueOf(it) }
+    fun toApprovalAction(value: String?): ApprovalAction? {
+        if (value.isNullOrBlank()) return ApprovalAction.PENDING
+        return try {
+            ApprovalAction.valueOf(value)
+        } catch (e: IllegalArgumentException) {
+            ApprovalAction.PENDING
+        }
+    }
 
     @TypeConverter @JvmStatic
     fun fromApprovalStage(value: ApprovalStage?): String? = value?.name   // 👈 NEW

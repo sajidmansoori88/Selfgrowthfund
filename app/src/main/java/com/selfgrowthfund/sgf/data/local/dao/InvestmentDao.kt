@@ -180,4 +180,7 @@ interface InvestmentDao {
 
     @Query("SELECT * FROM investments WHERE approval_status = :status")
     suspend fun getByApprovalStatus(status: ApprovalStage): List<Investment>
+
+    @Query("UPDATE investments SET approval_status = :stage WHERE provisionalId = :id")
+    suspend fun updateApprovalStage(id: String, stage: String)
 }

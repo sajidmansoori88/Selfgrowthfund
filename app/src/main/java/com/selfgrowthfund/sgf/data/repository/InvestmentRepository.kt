@@ -193,4 +193,9 @@ class InvestmentRepository @Inject constructor(
         return dao.getByProvisionalId(id) ?: dao.getByInvestmentId(id)
     }
 
+    suspend fun updateApprovalStage(provisionalId: String, newStage: ApprovalStage) {
+        dao.updateApprovalStage(provisionalId, newStage.name)
+    }
+
+
 }

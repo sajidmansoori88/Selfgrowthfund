@@ -28,7 +28,7 @@ fun SGFApp() {
     val mockUser = User(
         shareholderId = "SH001",
         name = "Test User",
-        role = MemberRole.MEMBER_ADMIN,
+        role = MemberRole.MEMBER_TREASURER,
         id = "123",
     )
     val activeUser = currentUser ?: mockUser

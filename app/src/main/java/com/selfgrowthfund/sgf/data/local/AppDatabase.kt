@@ -28,7 +28,7 @@ import com.selfgrowthfund.sgf.data.local.entities.*
 abstract class AppDatabase : RoomDatabase() {
 
     companion object {
-        const val VERSION = 5
+        const val VERSION = 6
 
     }
 

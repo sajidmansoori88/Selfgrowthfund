@@ -125,4 +125,11 @@ object Migrations {
             db.execSQL("CREATE INDEX IF NOT EXISTS idx_approval_flow_role ON approval_flow(role)")
         }
     }
+    val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE approval_flow ADD COLUMN createdAt INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE approval_flow ADD COLUMN approvedAt INTEGER")
+        }
+    }
+
 }
