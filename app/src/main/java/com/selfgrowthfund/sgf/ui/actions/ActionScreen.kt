@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -146,23 +143,28 @@ fun ActionScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // ---------------- Combined Filter Logic ----------------
+                        // ---------------- Fixed Filter Logic ----------------
                         val filteredPair: Pair<List<ActionItem>, List<ApprovalFlow>> =
                             when (selectedFilter) {
                                 "Responded" -> {
                                     val respondedActions = pendingActions.filter {
                                         it.responses.containsKey(currentShareholderId)
                                     }
-                                    val respondedApprovals =
-                                        allApprovalFlows.filter { it.approvedAt != null }
+                                    val respondedApprovals = allApprovalFlows.filter {
+                                        it.approvedAt != null ||
+                                                (it.action?.name ?: "PENDING") != "PENDING"
+                                    }
                                     respondedActions to respondedApprovals
                                 }
 
-                                else -> {
+                                else -> { // Unresponded
                                     val unrespondedActions = pendingActions.filter {
                                         !it.responses.containsKey(currentShareholderId)
                                     }
-                                    val unrespondedApprovals = pendingApprovals
+                                    val unrespondedApprovals = allApprovalFlows.filter {
+                                        it.approvedAt == null &&
+                                                (it.action?.name ?: "PENDING") == "PENDING"
+                                    }
                                     unrespondedActions to unrespondedApprovals
                                 }
                             }
@@ -185,7 +187,7 @@ fun ActionScreen(
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                                 modifier = Modifier.padding(vertical = 8.dp)
                             ) {
-                                // ---------- Existing Action Items ----------
+                                // ---------- Pending Actions ----------
                                 if (filteredActions.isNotEmpty()) {
                                     Text(
                                         "Pending Actions",
@@ -223,11 +225,14 @@ fun ActionScreen(
                                     }
                                 }
 
-                                // ---------- Pending / Responded Approval Flows ----------
+                                // ---------- Approval Flows ----------
                                 if (filteredApprovals.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(30.dp))
 
                                     filteredApprovals.forEach { approval: ApprovalFlow ->
+                                        val isResponded = approval.approvedAt != null ||
+                                                (approval.action?.name ?: "PENDING") != "PENDING"
+
                                         when (approval.entityType) {
                                             ApprovalType.INVESTMENT -> {
                                                 val investment by viewModel
@@ -235,45 +240,46 @@ fun ActionScreen(
                                                     .collectAsState(initial = null)
 
                                                 val amount = investment?.amount ?: 0.0
-                                                val expectedPercent =
-                                                    investment?.expectedProfitPercent ?: 0.0
-                                                val expectedReturnAmount =
-                                                    (amount * expectedPercent) / 100.0
+                                                val expectedPercent = investment?.expectedProfitPercent ?: 0.0
+                                                val expectedReturnAmount = (amount * expectedPercent) / 100.0
                                                 val xirr = calculateXirr(
                                                     amount,
                                                     expectedReturnAmount,
                                                     investment?.expectedReturnPeriod ?: 0
                                                 )
 
-                                                val isRespondedView = selectedFilter == "Responded"
-
                                                 InvestmentApprovalCard(
-                                                    investeeName = investment?.investeeName
-                                                        ?: "Loading...",
+                                                    investeeName = investment?.investeeName ?: "Loading...",
                                                     dateOfApplication = investment?.createdAt.toString(),
                                                     amount = amount,
                                                     expectedReturnAmount = expectedReturnAmount,
                                                     expectedReturnPercent = expectedPercent,
                                                     expectedReturnDate = investment?.returnDueDate.toString(),
-                                                    returnDays = investment?.expectedReturnPeriod
-                                                        ?: 0,
+                                                    returnDays = investment?.expectedReturnPeriod ?: 0,
                                                     xirr = xirr,
                                                     statusLabel = when {
                                                         approval.approvedAt == null -> "Pending"
-                                                        approval.action.name == "APPROVE" -> "Approved"
-                                                        approval.action.name == "REJECT" -> "Rejected"
+                                                        (approval.action?.name ?: "") == "APPROVE" -> "Approved"
+                                                        (approval.action?.name ?: "") == "REJECT" -> "Rejected"
                                                         else -> "Pending"
                                                     },
-                                                    onReject = if (isRespondedView) null else {
+                                                    onReject = if (isResponded) null else {
                                                         {
                                                             viewModel.rejectApproval(approval)
                                                             coroutineScope.launch {
                                                                 snackbarHostState.showSnackbar("Rejected Investment")
                                                             }
                                                         }
+                                                    },
+                                                    onApprove = if (isResponded) null else {
+                                                        {
+                                                            viewModel.approveApproval(approval)
+                                                            coroutineScope.launch {
+                                                                snackbarHostState.showSnackbar("Approved Investment")
+                                                            }
+                                                        }
                                                     }
                                                 )
-
                                             }
 
                                             ApprovalType.BORROWING -> {
@@ -281,27 +287,30 @@ fun ActionScreen(
                                                     .getBorrowingById(approval.entityId)
                                                     .collectAsState(initial = null)
 
-                                                val isRespondedView = selectedFilter == "Responded"
-
                                                 BorrowingApprovalCard(
-                                                    borrowerName = borrowing?.shareholderName
-                                                        ?: "Loading...",
+                                                    borrowerName = borrowing?.shareholderName ?: "Loading...",
                                                     dateOfApplication = borrowing?.applicationDate.toString(),
-                                                    borrowEligibility = borrowing?.borrowEligibility
-                                                        ?: 0.0,
-                                                    amountRequested = borrowing?.amountRequested
-                                                        ?: 0.0,
+                                                    borrowEligibility = borrowing?.borrowEligibility ?: 0.0,
+                                                    amountRequested = borrowing?.amountRequested ?: 0.0,
                                                     statusLabel = when {
                                                         approval.approvedAt == null -> "Pending"
-                                                        approval.action.name == "APPROVE" -> "Approved"
-                                                        approval.action.name == "REJECT" -> "Rejected"
+                                                        (approval.action?.name ?: "") == "APPROVE" -> "Approved"
+                                                        (approval.action?.name ?: "") == "REJECT" -> "Rejected"
                                                         else -> "Pending"
                                                     },
-                                                    onReject = if (isRespondedView) null else {
+                                                    onReject = if (isResponded) null else {
                                                         {
                                                             viewModel.rejectApproval(approval)
                                                             coroutineScope.launch {
                                                                 snackbarHostState.showSnackbar("Rejected Borrowing")
+                                                            }
+                                                        }
+                                                    },
+                                                    onApprove = if (isResponded) null else {
+                                                        {
+                                                            viewModel.approveApproval(approval)
+                                                            coroutineScope.launch {
+                                                                snackbarHostState.showSnackbar("Approved Borrowing")
                                                             }
                                                         }
                                                     }
@@ -344,10 +353,8 @@ fun ActionScreen(
                                                 .collectAsState(initial = null)
 
                                             val amount = investment?.amount ?: 0.0
-                                            val expectedPercent =
-                                                investment?.expectedProfitPercent ?: 0.0
-                                            val expectedReturnAmount =
-                                                (amount * expectedPercent) / 100.0
+                                            val expectedPercent = investment?.expectedProfitPercent ?: 0.0
+                                            val expectedReturnAmount = (amount * expectedPercent) / 100.0
                                             val xirr = calculateXirr(
                                                 amount,
                                                 expectedReturnAmount,
@@ -355,8 +362,7 @@ fun ActionScreen(
                                             )
 
                                             InvestmentApprovalCard(
-                                                investeeName = investment?.investeeName
-                                                    ?: "Loading...",
+                                                investeeName = investment?.investeeName ?: "Loading...",
                                                 dateOfApplication = investment?.createdAt.toString(),
                                                 amount = amount,
                                                 expectedReturnAmount = expectedReturnAmount,
@@ -364,7 +370,7 @@ fun ActionScreen(
                                                 expectedReturnDate = investment?.returnDueDate.toString(),
                                                 returnDays = investment?.expectedReturnPeriod ?: 0,
                                                 xirr = xirr,
-                                                statusLabel = when (approval.action.name) {
+                                                statusLabel = when ((approval.action?.name ?: "")) {
                                                     "APPROVE" -> "Approved"
                                                     "REJECT" -> "Rejected"
                                                     else -> "Pending"
@@ -380,13 +386,11 @@ fun ActionScreen(
                                                 .collectAsState(initial = null)
 
                                             BorrowingApprovalCard(
-                                                borrowerName = borrowing?.shareholderName
-                                                    ?: "Loading...",
+                                                borrowerName = borrowing?.shareholderName ?: "Loading...",
                                                 dateOfApplication = borrowing?.applicationDate.toString(),
-                                                borrowEligibility = borrowing?.borrowEligibility
-                                                    ?: 0.0,
+                                                borrowEligibility = borrowing?.borrowEligibility ?: 0.0,
                                                 amountRequested = borrowing?.amountRequested ?: 0.0,
-                                                statusLabel = when (approval.action.name) {
+                                                statusLabel = when ((approval.action?.name ?: "")) {
                                                     "APPROVE" -> "Approved"
                                                     "REJECT" -> "Rejected"
                                                     else -> "Pending"
@@ -396,14 +400,11 @@ fun ActionScreen(
                                             )
                                         }
 
-                                        // ✅ Handle all other types gracefully (won’t show, but keeps compiler happy)
-                                        else -> { /* No-op: other approval types not shown on ActionScreen */
-                                        }
+                                        else -> { /* No-op for unhandled types */ }
                                     }
                                 }
                             }
                         }
-
 
                         // ---------------- Response State Handling ----------------
                         when (responseState) {

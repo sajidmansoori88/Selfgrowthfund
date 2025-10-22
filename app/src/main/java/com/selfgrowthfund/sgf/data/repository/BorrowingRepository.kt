@@ -2,9 +2,14 @@ package com.selfgrowthfund.sgf.data.repository
 
 import com.selfgrowthfund.sgf.data.local.dao.BorrowingDao
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
+import com.selfgrowthfund.sgf.data.local.dto.MemberBorrowingStatus
+import com.selfgrowthfund.sgf.data.local.entities.ApprovalFlow
 import com.selfgrowthfund.sgf.data.local.entities.Borrowing
+import com.selfgrowthfund.sgf.model.enums.ApprovalAction
 import com.selfgrowthfund.sgf.model.enums.ApprovalStage
+import com.selfgrowthfund.sgf.model.enums.ApprovalType
 import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
+import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
@@ -15,10 +20,127 @@ import javax.inject.Inject
 
 class BorrowingRepository @Inject constructor(
     private val borrowingDao: BorrowingDao,
-    private val shareholderDao: ShareholderDao,
+    val shareholderDao: ShareholderDao,
+    private val approvalFlowRepository: ApprovalFlowRepository,
     private val dates: Dates
 ) {
-    // ==================== CRUD Operations ====================
+
+    // ============================================================
+    // ===============  B2 — Application (Provisional)  ============
+    // ============================================================
+
+    /**
+     * Member applies for a borrowing request.
+     * - Generates a provisionalId (PV<timestamp>).
+     * - Keeps borrowId = null until Treasurer/Admin final approval.
+     * - Computes eligibility = 90% of total share value (auto-calculated from DB).
+     */
+    suspend fun applyForBorrowing(
+        shareholderId: String,
+        shareholderName: String,
+        amountRequested: Double,
+        createdBy: String,
+        notes: String? = null
+    ): Result<Borrowing> = try {
+        // ✅ Automatically compute total share value from Shareholder table
+        val shareholder = shareholderDao.getShareholderById(shareholderId)
+            ?: throw Exception("Shareholder not found")
+
+        val shareValue = shareholder.shareBalance * shareholder.sharePrice
+        val eligibility = Borrowing.calculateEligibility(shareValue)
+        val today = dates.today()
+
+        val provisional = Borrowing(
+            provisionalId = "PV${System.currentTimeMillis()}",
+            borrowId = null,
+            shareholderId = shareholderId,
+            shareholderName = shareholderName,
+            applicationDate = today,
+            amountRequested = amountRequested,
+            borrowEligibility = eligibility,
+            approvedAmount = 0.0,
+            borrowStartDate = today, // placeholder, updated on release
+            dueDate = Borrowing.calculateDueDate(today),
+            status = BorrowingStatus.PENDING,
+            approvalStatus = ApprovalStage.PENDING,
+            approvedBy = null,
+            notes = notes,
+            createdBy = createdBy,
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
+        )
+
+        borrowingDao.insertBorrowing(provisional)
+
+        // ✅ Create ApprovalFlow entry for multi-member review
+        approvalFlowRepository.recordApproval(
+            ApprovalFlow(
+                entityType = ApprovalType.BORROWING,
+                entityId = provisional.provisionalId,
+                role = MemberRole.MEMBER,
+                action = ApprovalAction.PENDING,
+                approvedBy = shareholderId,
+                remarks = "Borrowing request pending review"
+            )
+        )
+
+        Result.Success(provisional)
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
+
+    // ============================================================
+    // ===============  B4 — Finalization (Treasurer/Admin)  ======
+    // ============================================================
+
+    suspend fun finalizeBorrowing(
+        provisionalId: String,
+        approvedBy: String,
+        paymentReleaseDate: LocalDate = dates.today()
+    ): Result<Borrowing> = try {
+        val borrowing = borrowingDao.getByProvisionalId(provisionalId)
+            ?: throw Exception("Borrowing not found for provisionalId: $provisionalId")
+
+        val finalId = generateNextBorrowingId()
+        val dueDate = Borrowing.calculateDueDate(paymentReleaseDate)
+
+        val finalized = borrowing.copy(
+            borrowId = finalId,
+            borrowStartDate = paymentReleaseDate,
+            dueDate = dueDate,
+            approvalStatus = ApprovalStage.APPROVED,
+            status = BorrowingStatus.ACTIVE,
+            approvedBy = approvedBy,
+            updatedAt = Instant.now()
+        )
+
+        borrowingDao.updateBorrowing(finalized)
+        Result.Success(finalized)
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
+
+    // ============================================================
+    // ===============  B3 — Quorum Calculation ===================
+    // ============================================================
+
+    suspend fun isBorrowingApprovalQuorumMet(provisionalId: String): Boolean {
+        val totalMembers = shareholderDao.getActiveMemberCount()
+        if (totalMembers == 0) return false
+
+        val approvedCount = approvalFlowRepository.countApprovedByEntity(
+            provisionalId,
+            ApprovalType.BORROWING
+        )
+
+        val required = kotlin.math.ceil(totalMembers * (2.0 / 3.0)).toInt()
+        return approvedCount >= required
+    }
+
+    // ============================================================
+    // ===============  CRUD Operations  ===========================
+    // ============================================================
+
     suspend fun createBorrowing(borrowing: Borrowing): Result<String> = try {
         val newId = generateNextBorrowingId()
         val borrowingWithId = borrowing.copy(borrowId = newId)
@@ -41,25 +163,33 @@ class BorrowingRepository @Inject constructor(
     } catch (e: Exception) {
         Result.Error(e)
     }
-    suspend fun markPaymentReleased(provisionalId: String, treasurerId: String, note: String): Boolean {
-        return try {
-            val borrowing = borrowingDao.getByProvisionalId(provisionalId) ?: return false
-            val updated = borrowing.copy(
-                approvalStatus = ApprovalStage.APPROVED,
-                approvedBy = treasurerId,
-                notes = note,
-                updatedAt = Instant.now()
-            )
-            borrowingDao.update(updated)
-            true
-        } catch (e: Exception) {
-            false
-        }
+
+    // ============================================================
+    // ===============  Treasurer Release / Approval  =============
+    // ============================================================
+
+    suspend fun markPaymentReleased(
+        provisionalId: String,
+        treasurerId: String,
+        note: String
+    ): Boolean = try {
+        val borrowing = borrowingDao.getByProvisionalId(provisionalId) ?: return false
+        val updated = borrowing.copy(
+            approvalStatus = ApprovalStage.APPROVED,
+            approvedBy = treasurerId,
+            notes = note,
+            updatedAt = Instant.now()
+        )
+        borrowingDao.update(updated)
+        true
+    } catch (e: Exception) {
+        false
     }
 
+    // ============================================================
+    // ===============  Query Operations  ==========================
+    // ============================================================
 
-
-    // ==================== Query Operations ====================
     fun getAllBorrowings(): Flow<List<Borrowing>> = borrowingDao.getAllBorrowings()
 
     suspend fun getBorrowingById(borrowId: String): Borrowing {
@@ -81,15 +211,16 @@ class BorrowingRepository @Inject constructor(
     fun getBorrowingsByStatus(status: BorrowingStatus): Flow<List<Borrowing>> =
         borrowingDao.getBorrowingsByStatus(status.name)
 
-    suspend fun getPendingForTreasurer(): List<Borrowing> {
-        return borrowingDao.getByApprovalStatus(ApprovalStage.PENDING)
-    }
+    suspend fun getPendingForTreasurer(): List<Borrowing> =
+        borrowingDao.getByApprovalStatus(ApprovalStage.PENDING)
 
-    suspend fun getApprovedPendingRelease(): List<Borrowing> {
-        return borrowingDao.getByApprovalStatus(ApprovalStage.TREASURER_APPROVED)
-    }
+    suspend fun getApprovedPendingRelease(): List<Borrowing> =
+        borrowingDao.getByApprovalStatus(ApprovalStage.TREASURER_APPROVED)
 
-    // ==================== Status Management ====================
+    // ============================================================
+    // ===============  Status Management  ========================
+    // ============================================================
+
     suspend fun updateBorrowingStatus(
         borrowId: String,
         status: BorrowingStatus
@@ -103,7 +234,6 @@ class BorrowingRepository @Inject constructor(
         Result.Error(e)
     }
 
-    // ==================== Business Logic ====================
     fun getOverdueBorrowings(): Flow<List<Borrowing>> {
         val today = dates.today()
         return borrowingDao.getOverdueBorrowings(today)
@@ -121,7 +251,10 @@ class BorrowingRepository @Inject constructor(
         Result.Error(e)
     }
 
-    // ==================== Approval Flow ====================
+    // ============================================================
+    // ===============  Approval Flow Methods  ====================
+    // ============================================================
+
     suspend fun approve(provisionalId: String, approverId: String? = null, notes: String? = null) {
         borrowingDao.updateApprovalStatus(
             provisionalId = provisionalId,
@@ -159,7 +292,10 @@ class BorrowingRepository @Inject constructor(
 
     suspend fun findById(borrowingId: String) = borrowingDao.findById(borrowingId)
 
-    // ==================== ID Generation ====================
+    // ============================================================
+    // ===============  ID Generation Utilities  ==================
+    // ============================================================
+
     private suspend fun generateNextBorrowingId(): String {
         val lastId = borrowingDao.getLastBorrowingId()
         val numeric = lastId?.removePrefix("BR")?.toIntOrNull() ?: 0
@@ -171,5 +307,7 @@ class BorrowingRepository @Inject constructor(
     suspend fun updateApprovalStage(borrowId: String, newStage: ApprovalStage) {
         borrowingDao.updateApprovalStage(borrowId, newStage.name)
     }
-
+    suspend fun getMemberBorrowingStatus(): List<MemberBorrowingStatus> {
+        return borrowingDao.getMemberBorrowingStatus()
+    }
 }

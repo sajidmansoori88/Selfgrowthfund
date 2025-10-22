@@ -70,8 +70,6 @@ sealed class Screen(val route: String) {
             return "add_investment_return?investmentId=$investmentId&investeeType=$investeeType&ownershipType=$ownershipType&investmentType=$investmentType"
         }
     }
-
-
     // Deposits flow
     object AddDeposit : Screen("add_deposit?shareholderId={shareholderId}&shareholderName={shareholderName}&role={role}&lastDepositId={lastDepositId}") {
         fun createRoute(
@@ -118,4 +116,7 @@ sealed class Screen(val route: String) {
     object QuickDeposit : Screen("quick_deposit")
     object QuickBorrowing : Screen("quick_borrowing")
     object QuickInvestment : Screen("quick_investment")
+
+    object MemberBorrowingStatus : Screen("memberBorrowingStatus")
+
 }

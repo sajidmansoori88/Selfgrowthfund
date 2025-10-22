@@ -1,9 +1,11 @@
 package com.selfgrowthfund.sgf
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -24,21 +26,50 @@ fun SGFApp() {
     val userSessionViewModel: UserSessionViewModel = hiltViewModel()
     val currentUser by userSessionViewModel.currentUser.collectAsState()
 
-    // Temporary mock user (remove later)
-    val mockUser = User(
-        shareholderId = "SH001",
-        name = "Test User",
-        role = MemberRole.MEMBER_TREASURER,
-        id = "123",
-    )
-    val activeUser = currentUser ?: mockUser
+    // Ensure user set synchronously if empty
+    if (currentUser.shareholderId.isBlank()) {
+        // Synchronous set to avoid race
+        userSessionViewModel.setMockUserSync(
+            User(
+                id = "U002",
+                shareholderId = "SH002",
+                name = "Treasurer Test",
+                role = MemberRole.MEMBER_TREASURER
+            )
+        )
+    }
+
+    // Wait until user is populated before continuing
+    if (currentUser.shareholderId.isBlank()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator()
+                Spacer(Modifier.height(8.dp))
+                Text("Loading user session...")
+            }
+        }
+        return
+    }
 
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    val drawerItems = remember(activeUser) {
-        getDrawerItems(activeUser.role, activeUser.shareholderId)
+    val drawerItems = remember(currentUser) {
+        getDrawerItems(currentUser.role, currentUser.shareholderId)
+    }
+
+    // compute start destination from current role
+    val startDestination = when (currentUser.role) {
+        MemberRole.MEMBER_ADMIN -> "admin_dashboard"
+        MemberRole.MEMBER_TREASURER -> Screen.TreasurerDashboard.route
+        else -> Screen.Home.route
+    }
+
+    // Logging for debugging
+    LaunchedEffect(currentUser) {
+        Log.d("SGFApp", "currentUser: $currentUser")
+        Log.d("SGFApp", "determined startDestination: $startDestination")
     }
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -60,23 +91,16 @@ fun SGFApp() {
                         DrawerItem(
                             item = item,
                             textColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            badgeCount = if (item.route == Screen.Actions.route) {
-                                // TODO: Replace with real pendingCount from ActionScreenViewModel
-                                0
-                            } else null,
                             onClick = {
                                 scope.launch { drawerState.close() }
                                 navController.navigate(item.route) {
                                     launchSingleTop = true
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
                                     restoreState = true
                                 }
                             }
                         )
                     }
-
                 }
             }
         }
@@ -85,7 +109,8 @@ fun SGFApp() {
             AppNavGraph(
                 navController = navController,
                 onDrawerClick = { scope.launch { drawerState.open() } },
-                currentUser = activeUser
+                currentUser = currentUser,
+                startDestination = startDestination
             )
         }
     }

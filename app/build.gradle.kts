@@ -77,111 +77,94 @@ configurations.all {
 }
 
 dependencies {
-    // ✅ Compose
+
+    // ---------- Compose ----------
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
     implementation(libs.compose.foundation)
     implementation(libs.compose.runtime)
+    implementation(libs.compose.runtime.livedata)
     implementation(libs.activity.compose)
     implementation(libs.navigation.compose)
     implementation(libs.compose.tooling.preview)
-    implementation(libs.room.testing)
-    implementation(libs.androidx.junit.ktx)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.foundation.layout)
-    implementation(libs.androidx.lifecycle.viewmodel.savedstate)
     debugImplementation(libs.compose.tooling)
 
-    // ✅ AndroidX Core
+    // ---------- AndroidX Core ----------
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.savedstate)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.foundation.layout)
 
-    // ✅ Room
+    // ---------- Room ----------
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.ksp)
 
-    // ✅ Hilt
+    // ---------- Hilt ----------
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.fragment)
     implementation(libs.hilt.navigation.compose)
 
-    // ✅ Lifecycle
+    // ---------- Lifecycle ----------
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.runtime.compose)
 
-    // ✅ Coroutines
+    // ---------- Coroutines ----------
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
 
-    // ✅ Networking
+    // ---------- Networking ----------
     implementation(libs.retrofit)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
-
-    // ✅ Gson
     implementation(libs.gson)
 
-    // ✅ Logging
-    implementation(libs.timber)
-
-    // ✅ Material (classic, for things missing in M3)
-    implementation(libs.material)
-
-    // ✅ Desugaring
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
-
-    // ✅ Unit Tests
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    testImplementation(libs.coroutines.test)
-    testImplementation(libs.room.testing)
-
-    // ✅ Instrumentation Tests
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.espresso.core)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.coroutines.test)
-    androidTestImplementation(libs.room.testing)
-
-    // ✅ Firebase BOM
+    // ---------- Firebase ----------
     implementation(platform(libs.firebase.bom))
-
-    // ✅Firestore
     implementation(libs.firebase.firestore)
-
-    // ✅ Optional: Firebase Auth
     implementation(libs.firebase.auth)
 
-    androidTestImplementation(libs.room.testing) // or your Room version
-    androidTestImplementation(libs.androidx.core)
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.junit)
+    // ---------- Logging ----------
+    implementation(libs.timber)
 
-    // ✅ PDF libs
+    // ---------- UI / Material ----------
+    implementation(libs.material)
+    implementation(libs.material.icons.extended)
+    implementation(libs.accompanist.systemuicontroller)
+
+    // ---------- Security / Auth ----------
+    implementation(libs.androidx.security)
+    implementation(libs.androidx.biometric)
+    implementation(libs.google.auth)
+
+    // ---------- PDF / Documents ----------
     implementation(libs.itext7.kernel)
     implementation(libs.itext7.layout)
     implementation(libs.itext7.core)
 
-    // ✅ Accompanist
-    implementation(libs.accompanist.systemuicontroller)
+    // ---------- Desugaring ----------
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
-    // ✅ Biometrics
-    implementation(libs.androidx.biometric)
+    // ---------- Testing ----------
+    // ✅ Unit Tests
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("com.google.truth:truth:1.4.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation("androidx.room:room-testing:2.7.2")
 
-    // ✅ Google Auth
-    implementation(libs.google.auth)
-
-    // ✅ Security
-    implementation(libs.androidx.security)
-
-    // ✅ Material Icons Extended
-    implementation(libs.material.icons.extended)
+    // ✅ Instrumentation Tests
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("com.google.truth:truth:1.4.2")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    androidTestImplementation("androidx.room:room-testing:2.7.2")
 }
+

@@ -102,7 +102,8 @@ enum class BorrowingStatus(override val label: String) : LabelledEnum {
 
 enum class ShareholderStatus(override val label: String) : LabelledEnum {
     Active("Active"),
-    Inactive("Inactive");
+    Inactive("Inactive"),
+    Exited("Exited");
 
     companion object {
         fun fromLabel(label: String): ShareholderStatus =

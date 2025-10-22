@@ -237,9 +237,4 @@ class RepaymentViewModel @Inject constructor(
         val dueDate: LocalDate,
         val previousRepayments: List<Repayment>
     )
-
-    data class RepaymentSummary(
-        val totalPrincipal: Double,
-        val totalPenalty: Double
-    )
 }

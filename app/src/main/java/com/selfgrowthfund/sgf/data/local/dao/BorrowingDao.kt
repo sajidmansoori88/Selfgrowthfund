@@ -4,6 +4,7 @@ import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.dto.ActiveBorrowingDTO
 import com.selfgrowthfund.sgf.data.local.dto.ClosedBorrowingDTO
 import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
+import com.selfgrowthfund.sgf.data.local.dto.MemberBorrowingStatus
 import com.selfgrowthfund.sgf.data.local.entities.Borrowing
 import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
@@ -210,5 +211,22 @@ interface BorrowingDao {
 
     @Query("UPDATE borrowings SET approvalStatus = :stage WHERE borrowId = :id")
     suspend fun updateApprovalStage(id: String, stage: String)
+
+    @Query("""
+    SELECT 
+        b.shareholderId AS shareholderId,
+        b.shareholderName AS shareholderName,
+        IFNULL(SUM(b.amountRequested), 0) AS totalBorrowed,
+        IFNULL(SUM(r.principalRepaid), 0) AS totalRepaid,
+        MIN(b.dueDate) AS nextDueDate
+    FROM borrowings AS b
+    LEFT JOIN repayments AS r
+        ON b.borrowId = r.borrowId OR b.provisionalId = r.borrowId
+    WHERE b.status != 'CLOSED'
+    GROUP BY b.shareholderId, b.shareholderName
+""")
+    suspend fun getMemberBorrowingStatus(): List<MemberBorrowingStatus>
+
+
 
 }

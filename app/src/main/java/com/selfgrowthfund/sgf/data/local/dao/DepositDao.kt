@@ -56,10 +56,13 @@ interface DepositDao {
     suspend fun getTotalShareAmount(): Double
 
     @Query("""
-        SELECT DISTINCT strftime('%Y-%m', paymentDate)
-        FROM deposits
-        ORDER BY paymentDate ASC
-    """)
+    SELECT DISTINCT strftime('%Y-%m', paymentDate/1000, 'unixepoch') as month 
+    FROM deposits 
+    WHERE paymentStatus = 'ACTIVE' 
+    AND paymentDate IS NOT NULL 
+    AND paymentDate > 0
+    ORDER BY month DESC
+""")
     suspend fun getActiveMonths(): List<String>
 
     @Query("""

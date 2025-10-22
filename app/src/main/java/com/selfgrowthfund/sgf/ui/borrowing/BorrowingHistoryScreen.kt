@@ -11,9 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import androidx.compose.runtime.livedata.observeAsState
 import com.selfgrowthfund.sgf.data.local.entities.Borrowing
 import com.selfgrowthfund.sgf.ui.repayments.RepaymentSummary
 import com.selfgrowthfund.sgf.ui.repayments.RepaymentViewModel
+import com.selfgrowthfund.sgf.ui.theme.GradientBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,73 +66,132 @@ fun BorrowingCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BorrowingHistoryScreen(
     onAddBorrowing: () -> Unit,
     onAddRepayment: (String) -> Unit,
+    navController: NavHostController,
     viewModel: BorrowingViewModel = hiltViewModel(),
     repaymentViewModel: RepaymentViewModel = hiltViewModel()
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
     val allBorrowings by viewModel.allBorrowings.collectAsState()
     val summaries by repaymentViewModel.repaymentSummaries.collectAsState()
     val expanded = remember { mutableStateOf(false) }
 
+    val refreshTrigger = navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.getLiveData<Boolean>("refreshBorrowings")
+        ?.observeAsState()
+
+    // Refresh once when loaded
+    LaunchedEffect(Unit) {
+        viewModel.refreshAllBorrowings()
+    }
+
+    // Update repayment summaries when borrowings change
     LaunchedEffect(allBorrowings) {
         repaymentViewModel.loadSummaries(allBorrowings)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Main content
-        if (allBorrowings.isEmpty()) {
-            Text(
-                text = "No borrowings yet",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(allBorrowings) { borrowing ->
-                    val summary = summaries[borrowing.borrowId]
-                    BorrowingCard(
-                        borrowing = borrowing,
-                        summary = summary as RepaymentSummary?,
-                        onRepay = { onAddRepayment(borrowing.borrowId ?: borrowing.provisionalId) }
+    // React to refresh flag from ApplyBorrowingScreen
+    LaunchedEffect(refreshTrigger?.value) {
+        if (refreshTrigger?.value == true) {
+            viewModel.refreshAllBorrowings()
+            snackbarHostState.showSnackbar("New borrowing added ✅")
+            navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.set("refreshBorrowings", false)
+        }
+    }
+
+    GradientBackground {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { expanded.value = !expanded.value },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Actions")
+                }
+            }
+        ) { paddingValues ->
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                if (allBorrowings.isEmpty()) {
+                    Text(
+                        text = "No borrowings yet. Tap + to apply.",
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .align(Alignment.Center),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
+                    ) {
+                        item {
+                            Text(
+                                text = "Borrowing History",
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
+                            )
+                        }
+
+                        items(allBorrowings.sortedByDescending { it.createdAt }) { borrowing ->
+                            val summary = summaries[borrowing.borrowId ?: borrowing.provisionalId]
+                            BorrowingCard(
+                                borrowing = borrowing,
+                                summary = summary as? RepaymentSummary,
+                                onRepay = {
+                                    onAddRepayment(
+                                        borrowing.borrowId ?: borrowing.provisionalId
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = expanded.value,
+                    onDismissRequest = { expanded.value = false },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 24.dp, bottom = 72.dp)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Borrow") },
+                        onClick = {
+                            expanded.value = false
+                            onAddBorrowing()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Repay") },
+                        onClick = {
+                            expanded.value = false
+                            allBorrowings.firstOrNull()?.let {
+                                onAddRepayment(it.borrowId ?: it.provisionalId)
+                            }
+                        }
                     )
                 }
             }
         }
-
-        // Floating Action Button with dropdown
-        ExtendedFloatingActionButton(
-            text = { Text("Actions") },
-            icon = { Icon(Icons.Default.Add, contentDescription = null) },
-            onClick = { expanded.value = true },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        )
-
-        DropdownMenu(
-            expanded = expanded.value,
-            onDismissRequest = { expanded.value = false }
-        ) {
-            DropdownMenuItem(
-                text = { Text("Add Borrowing") },
-                onClick = {
-                    expanded.value = false
-                    onAddBorrowing()
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Add Repayment") },
-                onClick = {
-                    expanded.value = false
-                    allBorrowings.firstOrNull()?.let {
-                        onAddRepayment(it.borrowId ?: it.provisionalId)
-
-                    }
-                }
-            )
-        }
     }
 }
+
+

@@ -58,12 +58,23 @@ private fun SummaryChip(label: String, count: Int) {
     }
 }
 
+/**
+ * 📊 Holds all Treasurer dashboard data across tabs.
+ * Updated for quorum-based borrowing & dynamic approval tracking.
+ */
 data class TreasurerDashboardUiState(
     val deposits: List<Deposit> = emptyList(),
     val borrowings: List<Borrowing> = emptyList(),
     val repayments: List<Repayment> = emptyList(),
     val investments: List<Investment> = emptyList(),
     val returns: List<InvestmentReturns> = emptyList(),
+
+    // 🔹 Metadata / State Control
     val isLoading: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+
+    // 🔹 New optional summary fields (used in future)
+    val totalActiveMembers: Int = 0,
+    val quorumRequired: Int = 0,
+    val approvalProgressMap: Map<String, Int> = emptyMap() // borrowingId -> approvals count
 )

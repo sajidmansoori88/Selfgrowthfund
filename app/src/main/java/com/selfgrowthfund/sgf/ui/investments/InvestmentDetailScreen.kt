@@ -1,5 +1,6 @@
 package com.selfgrowthfund.sgf.ui.investments
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,6 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.selfgrowthfund.sgf.data.local.entities.Investment
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturns
+import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.ui.components.InvestmentCard
 import com.selfgrowthfund.sgf.ui.components.InvestmentReturnSummaryCard
@@ -105,19 +107,33 @@ private fun AdminActions(
     modifier: Modifier = Modifier,
     onAddReturn: () -> Unit,
     onApplyInvestment: () -> Unit,
-    investment: Investment? = null  // 👈 add optional param
+    investment: Investment? = null
 ) {
+    // ✅ Explicitly log what’s happening
+    Log.d("INVESTMENT_UI", "AdminActions check: investmentDate=${investment?.investmentDate}, approval=${investment?.approvalStatus}")
+
+    // ✅ Use string-safe comparison (works whether approvalStatus is enum or string)
     val canAddReturn = investment?.let {
-        it.investmentDate != null && it.approvalStatus.name == "ADMIN_APPROVED"
+        it.investmentDate != null &&
+                (
+                        it.approvalStatus.toString().equals("APPROVED", ignoreCase = true) ||
+                                it.approvalStatus.toString().equals("ADMIN_APPROVED", ignoreCase = true)
+                        )
     } ?: false
+
+    Log.d("INVESTMENT_UI", "canAddReturn = $canAddReturn")
 
     Column(modifier = modifier) {
         ExtendedFloatingActionButton(
             text = { Text("Add Return") },
             icon = { Icon(Icons.Default.Add, contentDescription = "Add Return") },
             onClick = {
+                // ✅ Always log before navigation
+                Log.d("INVESTMENT_UI", "Add Return button clicked, canAddReturn=$canAddReturn")
                 if (canAddReturn) {
                     onAddReturn()
+                } else {
+                    Log.w("INVESTMENT_UI", "Add Return disabled — status=${investment?.approvalStatus}")
                 }
             },
             modifier = Modifier
@@ -155,13 +171,6 @@ private fun AdminActions(
         )
     }
 }
-
-
-// Extension function for role check
-fun MemberRole.isAdminOrTreasurer(): Boolean {
-    return this == MemberRole.MEMBER_TREASURER || this == MemberRole.MEMBER_ADMIN
-}
-
 // Optional: Loading state composable if you need it later
 @Composable
 private fun LoadingState() {
@@ -197,4 +206,8 @@ private fun ErrorState(
             Text("Retry")
         }
     }
+}
+
+fun MemberRole.isAdminOrTreasurer(): Boolean {
+    return this == MemberRole.MEMBER_TREASURER || this == MemberRole.MEMBER_ADMIN
 }

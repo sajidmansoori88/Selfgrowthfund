@@ -1,24 +1,24 @@
 package com.selfgrowthfund.sgf.ui.borrowing
+
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
-import com.selfgrowthfund.sgf.data.local.dao.BorrowingDao
+import com.selfgrowthfund.sgf.data.local.dto.MemberBorrowingStatus
 import com.selfgrowthfund.sgf.data.local.entities.Borrowing
 import com.selfgrowthfund.sgf.data.local.entities.BorrowingEntry
-import com.selfgrowthfund.sgf.utils.Result
+import com.selfgrowthfund.sgf.data.repository.BorrowingRepository
 import com.selfgrowthfund.sgf.model.enums.BorrowingStatus
-import com.selfgrowthfund.sgf.utils.IdGenerator
+import com.selfgrowthfund.sgf.utils.Result
 import com.selfgrowthfund.sgf.utils.mappers.toFirestoreMap
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class BorrowingViewModel @Inject constructor(
-    private val borrowingDao: BorrowingDao,
+    private val repository: BorrowingRepository,
     private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
@@ -36,18 +36,21 @@ class BorrowingViewModel @Inject constructor(
     private val _submissionResult = MutableStateFlow<Result<Unit>?>(null)
     val submissionResult: StateFlow<Result<Unit>?> = _submissionResult.asStateFlow()
 
-    // ---------------- ID PREVIEW ----------------
-    private val _nextBorrowId = MutableStateFlow<String?>(null)
-    val nextBorrowId: StateFlow<String?> = _nextBorrowId.asStateFlow()
+    // ---------------- FORM DATA ----------------
+    private val _eligibility = MutableStateFlow(0.0)
+    val eligibility: StateFlow<Double> = _eligibility.asStateFlow()
 
     init {
         loadAllBorrowings()
         loadOverdueBorrowings()
     }
 
+    // ============================================================
+    // ===============   DATA LOADERS   ============================
+    // ============================================================
     private fun loadAllBorrowings() {
         viewModelScope.launch {
-            borrowingDao.getAllBorrowings().collect { borrowings ->
+            repository.getAllBorrowings().collect { borrowings ->
                 _allBorrowings.value = borrowings
             }
         }
@@ -55,56 +58,82 @@ class BorrowingViewModel @Inject constructor(
 
     private fun loadOverdueBorrowings() {
         viewModelScope.launch {
-            borrowingDao.getOverdueBorrowings(LocalDate.now()).collect { borrowings ->
+            repository.getOverdueBorrowings().collect { borrowings ->
                 _overdueBorrowings.value = borrowings
             }
         }
     }
+    private val _memberStatuses = MutableStateFlow<List<MemberBorrowingStatus>>(emptyList())
+    val memberStatuses: StateFlow<List<MemberBorrowingStatus>> = _memberStatuses
 
-    fun fetchNextBorrowId() {
+    fun loadMemberBorrowingStatuses() {
         viewModelScope.launch {
-            val lastId = borrowingDao.getLastBorrowingId()
-            _nextBorrowId.value = IdGenerator.nextBorrowId(lastId)
+            _memberStatuses.value = repository.getMemberBorrowingStatus()
         }
     }
 
-    // ---------------- SUBMIT ----------------
-    fun submitBorrowing(
+
+    // ============================================================
+    // ===============   APPLY BORROWING (B2)   ===================
+    // ============================================================
+    fun applyBorrowing(
         entry: BorrowingEntry,
-        onSuccess: () -> Unit,
+        onSuccess: (Borrowing) -> Unit,
         onError: (String) -> Unit
     ) {
-        viewModelScope.launch {
-            if (_isSubmitting.value) return@launch
+        if (_isSubmitting.value) return
 
+        viewModelScope.launch {
             _isSubmitting.value = true
-            _submissionResult.value = null
+            _submissionResult.value = Result.Loading
 
             try {
-                val lastId = borrowingDao.getLastBorrowingId()
-                val borrowId = IdGenerator.nextBorrowId(lastId)
+                val result = repository.applyForBorrowing(
+                    shareholderId = entry.shareholderId,
+                    shareholderName = entry.shareholderName,
+                    amountRequested = entry.amountRequested,
+                    createdBy = entry.createdBy,
+                    notes = entry.notes
+                )
 
-                val borrowing = entry.toBorrowing(borrowId)
+                when (result) {
+                    is Result.Success -> {
+                        val borrowing = result.data
+                        syncToFirestore(borrowing)
+                        triggerApprovalNotification(borrowing)
+                        listenForApprovalUpdates(borrowing.provisionalId)
 
-                borrowingDao.insertBorrowing(borrowing)
-                syncToFirestore(borrowing)
-                triggerApprovalNotification(borrowing)
-                listenForApprovalUpdates(borrowId)
+                        _submissionResult.value = Result.Success(Unit)
+                        onSuccess(borrowing)
+                        Log.d("BorrowingVM", "Borrowing submitted: ${borrowing.provisionalId}")
+                    }
 
-                _submissionResult.value = Result.Success(Unit)
-                onSuccess()
+                    is Result.Error -> {
+                        _submissionResult.value = Result.Error(result.exception)
+                        val msg = result.exception.message ?: "Borrowing application failed"
+                        Log.e("BorrowingVM", msg, result.exception)
+                        onError(msg)
+                    }
+
+                    is Result.Loading -> {
+                        Log.d("BorrowingVM", "Applying for borrowing...")
+                    }
+                }
             } catch (e: Exception) {
+                Log.e("BorrowingVM", "Error applying for borrowing", e)
                 _submissionResult.value = Result.Error(e)
-                onError(e.message ?: "Borrowing submission failed")
+                onError(e.message ?: "Unexpected error during application")
             } finally {
                 _isSubmitting.value = false
             }
         }
     }
 
-    // ---------------- FIRESTORE SYNC ----------------
+    // ============================================================
+    // ===============   FIRESTORE SYNC   ==========================
+    // ============================================================
     private fun syncToFirestore(borrowing: Borrowing) {
-        val docId = borrowing.borrowId ?: borrowing.provisionalId // ✅ safe fallback
+        val docId = borrowing.provisionalId
         firestore.collection("borrowings")
             .document(docId)
             .set(borrowing.toFirestoreMap())
@@ -115,12 +144,12 @@ class BorrowingViewModel @Inject constructor(
                 Log.e("Firestore", "Borrowing sync failed", e)
             }
     }
-    private fun triggerApprovalNotification(borrowing: Borrowing) {
-        val docId = borrowing.borrowId ?: borrowing.provisionalId // ✅ use provisional ID
 
+    private fun triggerApprovalNotification(borrowing: Borrowing) {
+        val docId = borrowing.provisionalId
         val notification = mapOf(
             "type" to "BORROWING_REQUEST",
-            "borrowId" to docId,
+            "provisionalId" to docId,
             "shareholderId" to borrowing.shareholderId,
             "shareholderName" to borrowing.shareholderName,
             "amountRequested" to borrowing.amountRequested,
@@ -132,15 +161,16 @@ class BorrowingViewModel @Inject constructor(
             .set(notification)
     }
 
-    // ---------------- FIRESTORE LISTENER ----------------
-    fun listenForApprovalUpdates(borrowId: String) {
+    // ============================================================
+    // ===============   APPROVAL LISTENER   =======================
+    // ============================================================
+    fun listenForApprovalUpdates(provisionalId: String) {
         firestore.collection("approvals")
-            .document(borrowId)
+            .document(provisionalId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null || !snapshot.exists()) return@addSnapshotListener
 
                 val status = snapshot.getString("status") ?: return@addSnapshotListener
-                val closedDate = snapshot.getString("closedDate")?.let { LocalDate.parse(it) }
 
                 val newStatus = when (status.lowercase()) {
                     "approved" -> BorrowingStatus.APPROVED
@@ -150,28 +180,21 @@ class BorrowingViewModel @Inject constructor(
                 }
 
                 viewModelScope.launch {
-                    // FIXED: Convert enum to string for DAO method
-                    borrowingDao.updateBorrowingStatus(borrowId, newStatus.name, closedDate)
+                    repository.updateBorrowingStatus(
+                        borrowId = provisionalId,
+                        status = newStatus
+                    )
                     Log.d("Firestore", "Borrowing status updated: $newStatus")
-
-                    // Refresh the lists after status update
                     loadAllBorrowings()
                     loadOverdueBorrowings()
                 }
             }
     }
 
-    // ---------------- REFRESH METHODS ----------------
-    fun refreshAllBorrowings() {
-        loadAllBorrowings()
-    }
-
-    fun refreshOverdueBorrowings() {
-        loadOverdueBorrowings()
-    }
-
-    // ---------------- CLEAR STATE ----------------
-    fun clearSubmissionState() {
-        _submissionResult.value = null
-    }
+    // ============================================================
+    // ===============   REFRESH / CLEAR   =========================
+    // ============================================================
+    fun refreshAllBorrowings() = loadAllBorrowings()
+    fun refreshOverdueBorrowings() = loadOverdueBorrowings()
+    fun clearSubmissionState() { _submissionResult.value = null }
 }

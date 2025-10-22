@@ -22,7 +22,9 @@ fun TransactionForm(
     var description by remember { mutableStateOf("") }
     val date = remember { mutableStateOf(LocalDate.now()) }
 
-    Column(modifier = modifier) {
+    Column(modifier = modifier
+                .fillMaxSize()
+                .padding(16.dp),) {
         EnumDropdown(
             label = "Transaction Type",
             options = TransactionType.getAllLabels(),

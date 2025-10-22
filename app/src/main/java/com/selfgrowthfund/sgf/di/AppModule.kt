@@ -2,7 +2,6 @@ package com.selfgrowthfund.sgf.di
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.migration.Migration
 import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.data.local.AppDatabase
 import com.selfgrowthfund.sgf.data.local.Migrations
@@ -20,15 +19,14 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    /* Database */
+    // ============================================================
+    // ===============  DATABASE & DAOs  ==========================
+    // ============================================================
+
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            "self_growth_fund.db"
-        )
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
+        Room.databaseBuilder(context, AppDatabase::class.java, "self_growth_fund.db")
             .addMigrations(
                 Migrations.MIGRATION_1_2,
                 Migrations.MIGRATION_2_3,
@@ -38,9 +36,7 @@ object AppModule {
             )
             .addCallback(AppDatabase.DatabaseCallback())
             .build()
-    }
 
-    /* DAOs */
     @Provides fun provideShareholderDao(db: AppDatabase): ShareholderDao = db.shareholderDao()
     @Provides fun provideDepositDao(db: AppDatabase): DepositDao = db.depositDao()
     @Provides fun provideBorrowingDao(db: AppDatabase): BorrowingDao = db.borrowingDao()
@@ -54,15 +50,18 @@ object AppModule {
     @Provides fun provideApprovalFlowDao(db: AppDatabase): ApprovalFlowDao = db.approvalFlowDao()
     @Provides fun provideUserSessionDao(db: AppDatabase): UserSessionDao = db.userSessionDao()
 
+    // ============================================================
+    // ===============  UTILITIES  ================================
+    // ============================================================
 
-
-    /* Utilities */
     @Provides
     @Singleton
     fun provideDates(): Dates = Dates
 
+    // ============================================================
+    // ===============  REPOSITORIES  ==============================
+    // ============================================================
 
-    /* Repositories */
     @Provides
     @Singleton
     fun provideShareholderRepository(
@@ -70,6 +69,12 @@ object AppModule {
         dates: Dates,
         firestore: FirebaseFirestore
     ): ShareholderRepository = ShareholderRepository(shareholderDao, dates, firestore)
+
+    @Provides
+    @Singleton
+    fun provideApprovalFlowRepository(
+        dao: ApprovalFlowDao
+    ): ApprovalFlowRepository = ApprovalFlowRepository(dao)
 
     @Provides
     @Singleton
@@ -84,8 +89,14 @@ object AppModule {
     fun provideBorrowingRepository(
         borrowingDao: BorrowingDao,
         shareholderDao: ShareholderDao,
+        approvalFlowRepository: ApprovalFlowRepository,
         dates: Dates
-    ): BorrowingRepository = BorrowingRepository(borrowingDao, shareholderDao, dates)
+    ): BorrowingRepository = BorrowingRepository(
+        borrowingDao = borrowingDao,
+        shareholderDao = shareholderDao,
+        approvalFlowRepository = approvalFlowRepository,
+        dates = dates
+    )
 
     @Provides
     @Singleton
@@ -109,7 +120,4 @@ object AppModule {
         borrowingRepository: BorrowingRepository,
         firestore: FirebaseFirestore
     ): RepaymentRepository = RepaymentRepository(repaymentDao, borrowingRepository, firestore)
-
-
-
 }

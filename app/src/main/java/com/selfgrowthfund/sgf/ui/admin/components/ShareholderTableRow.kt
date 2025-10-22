@@ -137,4 +137,5 @@ fun ShareholderTableRow(
 fun getStatusColor(status: ShareholderStatus): Color = when (status) {
     ShareholderStatus.Active -> MaterialTheme.colorScheme.primary
     ShareholderStatus.Inactive -> MaterialTheme.colorScheme.error
+    ShareholderStatus.Exited -> MaterialTheme.colorScheme.onSurface
 }

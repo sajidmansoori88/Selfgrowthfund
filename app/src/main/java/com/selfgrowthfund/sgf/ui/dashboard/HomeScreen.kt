@@ -15,6 +15,48 @@ import com.selfgrowthfund.sgf.session.UserSessionViewModel
 import com.selfgrowthfund.sgf.ui.theme.GradientBackground
 import java.time.format.DateTimeFormatter
 
+@Composable
+fun RoleToggleCard(userSessionViewModel: UserSessionViewModel) {
+    val currentUser by userSessionViewModel.currentUser.collectAsState()
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    "Current Role: ${currentUser.role.name}",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    "Tap below to switch between Admin & Treasurer",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            Button(
+                onClick = { userSessionViewModel.toggleUserRole() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Switch Role")
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -51,6 +93,7 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            RoleToggleCard(userSessionViewModel = userSessionViewModel)
             Text(
                 "DEBUG: User=${user.shareholderId}, Summaries=${summaries.size}, Loading=$isLoading",
                 style = MaterialTheme.typography.bodySmall,

@@ -36,6 +36,12 @@ interface ShareholderDao {
     @Query("SELECT shareholderId, fullName, shareBalance, joiningDate FROM shareholders")
     suspend fun getAllShareholders(): List<ShareholderBasicInfo>
 
+    @Query("SELECT COUNT(*) FROM shareholders WHERE shareholderStatus = 'Active'")
+    suspend fun getActiveMemberCount(): Int
+
+    @Query("SELECT * FROM shareholders WHERE shareholderStatus = 'Active'")
+    fun getActiveMembers(): Flow<List<Shareholder>>
+
     // ❌ FIXED: Removed suspend from Flow-returning method
     @Query("""
     SELECT *, (shareBalance * 2000 * 0.9) AS maxBorrowAmount

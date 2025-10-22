@@ -1,5 +1,6 @@
 package com.selfgrowthfund.sgf.ui.navigation
 
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -9,6 +10,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -54,8 +56,6 @@ import com.selfgrowthfund.sgf.ui.reports.ReportsDashboardScreen
 import com.selfgrowthfund.sgf.ui.transactions.AddOtherExpenseScreen
 import com.selfgrowthfund.sgf.ui.transactions.AddOtherIncomeScreen
 import com.selfgrowthfund.sgf.ui.transactions.TransactionForm
-import com.selfgrowthfund.sgf.ui.transactions.TransactionViewModel
-import java.time.LocalDate
 import com.selfgrowthfund.sgf.ui.admin.AdminDashboardScreen
 import com.selfgrowthfund.sgf.ui.admin.AdminDashboardViewModel
 import com.selfgrowthfund.sgf.ui.editshareholders.EditShareholderScreen
@@ -67,15 +67,16 @@ import com.selfgrowthfund.sgf.ui.reports.FundOverviewScreen
 import com.selfgrowthfund.sgf.ui.reports.ReportsPlaceholderScreen
 import com.selfgrowthfund.sgf.ui.treasurer.TreasurerDashboardScreen
 import kotlinx.coroutines.flow.flowOf
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     onDrawerClick: () -> Unit,
-    currentUser: User
+    currentUser: User,
+    startDestination: String = "home"
 ) {
-    val startDestination = "home"
-
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -150,7 +151,6 @@ fun AppNavGraph(
                 }
             )
         }
-
 
         composable("add_shareholder_screen") {
             SGFScaffoldWrapper(
@@ -332,22 +332,25 @@ fun AppNavGraph(
         }
         // 🧾 Borrowing
         composable(Screen.Borrowings.route) {
+            val navController = navController
             SGFScaffoldWrapper(
                 title = "Borrowings",
                 onDrawerClick = onDrawerClick,
-                content = {
+                content = {innerPadding ->
                     BorrowingHistoryScreen(
                         onAddBorrowing = {
                             navController.navigate("addBorrowing/${currentUser.shareholderId}/${currentUser.name}")
                         },
                         onAddRepayment = { borrowId ->
                             navController.navigate("addRepayment/$borrowId")
-                        }
+                        },
+                        navController = navController // ✅ pass it here
                     )
                 },
                 snackbarHostState = remember { SnackbarHostState() }
             )
         }
+
 
         composable("addBorrowing/{shareholderId}/{shareholderName}") { backStackEntry ->
             val shareholderId = backStackEntry.arguments?.getString("shareholderId") ?: ""
@@ -355,15 +358,20 @@ fun AppNavGraph(
             val viewModel: BorrowingViewModel = hiltViewModel()
 
             SGFScaffoldWrapper(
-                title = "Add Borrowing",
+                title = "Apply Borrowing", // ✅ Updated title
                 onDrawerClick = onDrawerClick,
                 content = { innerPadding ->
-                    AddBorrowingScreen(
+                    ApplyBorrowingScreen(
                         shareholderId = shareholderId,
                         shareholderName = shareholderName,
-                        createdBy = "Current User", // Get from auth
+                        createdBy = "Current User",
                         viewModel = viewModel,
-                        onSuccess = { navController.popBackStack() },
+                        onSuccess = {
+                            navController.previousBackStackEntry
+                                ?.savedStateHandle
+                                ?.set("refreshBorrowings", true)
+                            navController.popBackStack()
+                        },
                         modifier = Modifier.padding(innerPadding)
                     )
                 },
@@ -461,17 +469,17 @@ fun AppNavGraph(
                 .getInvestmentByProvisionalId(provisionalId)
                 .collectAsState(initial = null)
 
-            investment?.let { inv: com.selfgrowthfund.sgf.data.local.entities.Investment ->   // ✅ explicit type
+            investment?.let { inv ->
                 val investmentReturnsViewModel: InvestmentReturnsViewModel = hiltViewModel()
 
-                // ✅ safely collect returns
-                val returns: List<InvestmentReturns> by if (!inv.investmentId.isNullOrBlank()) {
-                    investmentReturnsViewModel
-                        .getReturnsByInvestmentId(inv.investmentId!!)
-                        .collectAsState(initial = emptyList())
+                // ✅ Fix: Explicit type so Kotlin can infer correctly
+                val returnsFlow = if (!inv.investmentId.isNullOrBlank()) {
+                    investmentReturnsViewModel.getReturnsByInvestmentId(inv.investmentId!!)
                 } else {
-                    flowOf<List<InvestmentReturns>>(emptyList()).collectAsState(initial = emptyList())
+                    flowOf<List<InvestmentReturns>>(emptyList())
                 }
+
+                val returns: List<InvestmentReturns> by returnsFlow.collectAsState(initial = emptyList())
 
                 SGFScaffoldWrapper(
                     title = "Investment Details",
@@ -483,16 +491,21 @@ fun AppNavGraph(
                             returns = returns,
                             currentUserRole = currentUser.role,
                             onAddReturn = {
-                                inv.investmentId?.let { approvedId ->
-                                    navController.navigate(
-                                        Screen.AddInvestmentReturn.createRoute(
-                                            investmentId = approvedId,
-                                            investeeType = inv.investeeType.name,
-                                            ownershipType = inv.ownershipType.name,
-                                            investmentType = inv.investmentType.name
-                                        )
+                                inv.investmentId?.let { investmentId ->
+                                    val encodedInvesteeType = URLEncoder.encode(inv.investeeType.name, StandardCharsets.UTF_8.toString())
+                                    val encodedOwnershipType = URLEncoder.encode(inv.ownershipType.name, StandardCharsets.UTF_8.toString())
+                                    val encodedInvestmentType = URLEncoder.encode(inv.investmentType.name, StandardCharsets.UTF_8.toString())
+
+                                    val route = Screen.AddInvestmentReturn.createRoute(
+                                        investmentId = investmentId,
+                                        investeeType = encodedInvesteeType,
+                                        ownershipType = encodedOwnershipType,
+                                        investmentType = encodedInvestmentType
                                     )
-                                }
+
+                                    Log.d("INVESTMENT_NAV", "Navigating to route: $route")
+                                    navController.navigate(route)
+                                } ?: Log.w("INVESTMENT_NAV", "Skipping navigation — investmentId is null")
                             },
                             onApplyInvestment = {
                                 navController.navigate(Screen.AddInvestment.route)
@@ -501,10 +514,10 @@ fun AppNavGraph(
                             modifier = Modifier.padding(innerPadding)
                         )
                     }
-                )
+
+                        )
             }
         }
-
 // ➕ Add Investment Screen
         composable(Screen.AddInvestment.route) {
             val investmentViewModel: InvestmentViewModel = hiltViewModel()
@@ -524,15 +537,13 @@ fun AppNavGraph(
 
 // 💰 Add Investment Return (approved investments only)
         composable(
-            route = Screen.AddInvestmentReturn.route,
-            arguments = listOf(
-                navArgument("investmentId") { type = NavType.StringType },
-                navArgument("investeeType") { type = NavType.StringType },
-                navArgument("ownershipType") { type = NavType.StringType },
-                navArgument("investmentType") { type = NavType.StringType }
-            )
+            route = Screen.AddInvestmentReturn.route
         ) { backStackEntry ->
             val investmentId = backStackEntry.arguments?.getString("investmentId") ?: return@composable
+            val investeeType = backStackEntry.arguments?.getString("investeeType") ?: ""
+            val ownershipType = backStackEntry.arguments?.getString("ownershipType") ?: ""
+            val investmentType = backStackEntry.arguments?.getString("investmentType") ?: ""
+
             val investmentViewModel: InvestmentViewModel = hiltViewModel()
             val investment by investmentViewModel
                 .getInvestmentByInvestmentId(investmentId)
@@ -540,7 +551,7 @@ fun AppNavGraph(
 
             val investmentReturnsViewModel: InvestmentReturnsViewModel = hiltViewModel()
 
-            investment?.let { inv: com.selfgrowthfund.sgf.data.local.entities.Investment ->  // ✅ explicit type
+            investment?.let { inv ->
                 SGFScaffoldWrapper(
                     title = "Add Investment Return",
                     onDrawerClick = onDrawerClick,
@@ -668,20 +679,27 @@ fun AppNavGraph(
         }
 
         // 🔁 Transactions
-        composable("addTransaction") {
-            val transactionViewModel: TransactionViewModel = hiltViewModel()
+        composable("add_transaction") {
             SGFScaffoldWrapper(
                 title = "Add Transaction",
                 onDrawerClick = onDrawerClick,
-                content = {
-                    TransactionForm(onSubmit = { txn ->
-                        transactionViewModel.addTransaction(txn)
-                        navController.popBackStack()
-                    })
-                },
-                snackbarHostState = remember { SnackbarHostState() }
+                snackbarHostState = remember { SnackbarHostState() },
+                content = {innerPadding ->
+                    // Use your existing TransactionForm or screen here
+                    TransactionForm(
+                        modifier = Modifier.padding(innerPadding),
+                        onSubmit = { txn ->
+                            // handle transaction submission
+                        }
+                    )
+                }
             )
         }
+
+        composable(Screen.MemberBorrowingStatus.route) {
+            MemberBorrowingStatusScreen(navController = navController)
+        }
+
 
         composable(Screen.FundOverviewReport.route) {
             SGFScaffoldWrapper(
@@ -694,15 +712,48 @@ fun AppNavGraph(
             )
         }
     }
+    LaunchedEffect(startDestination) {
+        try {
+            // ✅ Public-safe list of routes (no .nodes or internal APIs)
+            val routes = mutableListOf<String>()
+
+            fun collectRoutes(destination: androidx.navigation.NavDestination) {
+                destination.route?.let { routes.add(it) }
+                if (destination is androidx.navigation.NavGraph) {
+                    // Safe iteration via forEach { d -> ... } using public iterator()
+                    destination.iterator().forEach { child ->
+                        collectRoutes(child)
+                    }
+                }
+            }
+
+            navController.graph.let { collectRoutes(it) }
+
+            val exists = routes.contains(startDestination)
+
+            Log.d("AppNavGraph", "Available routes: $routes")
+            Log.d("AppNavGraph", "Requested startDestination='$startDestination' exists=$exists")
+
+            if (!exists) {
+                Log.e(
+                    "AppNavGraph",
+                    "❌ Start destination '$startDestination' not found in nav graph. Check Screen constants / route strings."
+                )
+            } else {
+                // ✅ Force navigation to guarantee correct landing
+                navController.navigate(startDestination) {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AppNavGraph", "Error inspecting nav graph", e)
+        }
+
+    }
+
+
+
 
 }
 
-
-        // Temporary mock context — replace with repository call
-        data class BorrowingContext(
-            val borrowId: String,
-            val shareholderName: String,
-            val outstandingAmount: Double,
-            val borrowStartDate: LocalDate,
-            val dueDate: LocalDate
-        )
