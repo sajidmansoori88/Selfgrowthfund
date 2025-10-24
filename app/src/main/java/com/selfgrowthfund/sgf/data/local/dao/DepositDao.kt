@@ -29,7 +29,7 @@ interface DepositDao {
     suspend fun getTotalShareCount(): Int
 
     @Query("SELECT * FROM deposits ORDER BY dueMonth DESC")
-    fun getAllDeposits(): List<Deposit>
+    fun getAllDepositsFlow(): List<Deposit>
 
     @Query("SELECT SUM(additionalContribution) FROM deposits")
     suspend fun getAdditionalContributions(): Double
@@ -144,9 +144,6 @@ interface DepositDao {
     @Query("SELECT * FROM deposits WHERE provisionalId = :id LIMIT 1")
     suspend fun getByProvisionalId(id: String): Deposit?
 
-    @Update
-    suspend fun update(deposit: Deposit)
-
     @Query("SELECT * FROM deposits WHERE depositId = :id LIMIT 1")
     suspend fun getByDepositId(id: String): Deposit?
 
@@ -181,4 +178,14 @@ interface DepositDao {
         ORDER BY createdAt DESC
     """)
     fun getDepositEntrySummaries(): Flow<List<DepositEntrySummaryDTO>>
+
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM deposits WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<Deposit>
+
+    @Query("SELECT * FROM deposits ORDER BY paymentDate DESC")
+    suspend fun getAllDepositsList(): List<Deposit>
+
+    @Update
+    suspend fun update(deposit: Deposit)
 }

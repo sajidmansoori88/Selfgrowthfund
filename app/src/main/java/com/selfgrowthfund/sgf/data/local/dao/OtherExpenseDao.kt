@@ -77,4 +77,14 @@ interface OtherExpenseDao {
 
     @Query("SELECT * FROM other_expenses WHERE createdAt BETWEEN :start AND :end")
     suspend fun getApprovalsBetween(start: LocalDate, end: LocalDate): List<OtherExpense>
+
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM other_expenses WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<OtherExpense>
+
+    @Query("SELECT * FROM other_expenses ORDER BY date DESC")
+    suspend fun getAllExpensesList(): List<OtherExpense>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(expenses: List<OtherExpense>)
 }

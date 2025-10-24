@@ -22,7 +22,7 @@ class DepositRepository @Inject constructor(
     private val firestore: FirebaseFirestore, // ✅ injected instance
     dates: Dates
 ) {
-    suspend fun getAllDeposits(): List<Deposit> = depositDao.getAllDeposits()
+    suspend fun getAllDeposits(): List<Deposit> = depositDao.getAllDepositsList()
 
     // --- Create Deposits ---
     suspend fun submitByShareholder(

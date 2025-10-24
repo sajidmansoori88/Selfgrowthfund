@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.selfgrowthfund.sgf.data.local.entities.ApprovalFlow
 import com.selfgrowthfund.sgf.model.enums.ApprovalType
 import kotlinx.coroutines.flow.Flow
@@ -98,6 +99,19 @@ interface ApprovalFlowDao {
     ORDER BY approvedAt DESC
 """)
     fun getCompletedApprovals(): Flow<List<ApprovalFlow>>
+
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM approval_flow WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<ApprovalFlow>
+
+    @Query("SELECT * FROM approval_flow ORDER BY createdAt DESC")
+    suspend fun getAllApprovalsOnce(): List<ApprovalFlow>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(approvals: List<ApprovalFlow>)
+
+    @Update
+    suspend fun update(approvalFlow: ApprovalFlow)
 
 }
 

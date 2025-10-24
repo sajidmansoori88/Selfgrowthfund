@@ -20,6 +20,7 @@ data class ActionItem(
     val createdAt: LocalDateTime,
     val deadline: LocalDateTime?,
     val response: ActionResponse,
+    val isSynced: Boolean = false,
 
     // Add explicit column info for the map
     @ColumnInfo(name = "responses")

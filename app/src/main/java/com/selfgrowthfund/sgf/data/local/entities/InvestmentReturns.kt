@@ -72,7 +72,7 @@ data class InvestmentReturns(
     val entrySource: EntrySource = EntrySource.MemberAdmin,
     val enteredBy: String? = null,
 
-    @ColumnInfo(name = "is_synced")
+    @ColumnInfo(name = "isSynced")
     val isSynced: Boolean = false,
 
     // Legacy compatibility

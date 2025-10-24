@@ -189,8 +189,6 @@ androidx-foundation-layout = { group = "androidx.compose.foundation", name = "fo
 androidx-lifecycle-viewmodel-savedstate = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-savedstate", version.ref = "lifecycleViewmodelSavedstate" }
 truth-v142 = { module = "com.google.truth:truth", version.ref = "truthVersion" }
 
-
-
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
 android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }

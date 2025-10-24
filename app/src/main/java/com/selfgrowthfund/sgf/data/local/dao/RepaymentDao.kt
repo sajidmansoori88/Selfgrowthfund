@@ -13,9 +13,6 @@ interface RepaymentDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(repayment: Repayment)
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insertAll(repayments: List<Repayment>)
-
     @Update
     suspend fun update(repayment: Repayment)
 
@@ -188,5 +185,14 @@ interface RepaymentDao {
 """)
     fun getRepaymentSummaries(): Flow<List<com.selfgrowthfund.sgf.data.local.dto.RepaymentSummaryDTO>>
 
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM repayments WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<Repayment>
+
+    @Query("SELECT * FROM repayments ORDER BY repaymentDate DESC")
+    suspend fun getAllRepaymentsList(): List<Repayment>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(repayments: List<Repayment>)
 }
 

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 6,
-    "identityHash": "9afe3c774f827d5ead5b1e0034fc39fe",
+    "identityHash": "c91a543fa3250915bd51c2c519c17a95",
     "entities": [
       {
         "tableName": "shareholders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`shareholderId` TEXT NOT NULL, `fullName` TEXT NOT NULL, `dob` INTEGER, `email` TEXT NOT NULL, `mobileNumber` TEXT NOT NULL, `address` TEXT NOT NULL, `shareBalance` REAL NOT NULL, `sharePrice` REAL NOT NULL, `joiningDate` INTEGER, `exitDate` INTEGER, `role` TEXT NOT NULL, `shareholderStatus` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `roleHistory` TEXT NOT NULL, `statusHistory` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`shareholderId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`shareholderId` TEXT NOT NULL, `fullName` TEXT NOT NULL, `dob` INTEGER, `email` TEXT NOT NULL, `mobileNumber` TEXT NOT NULL, `address` TEXT NOT NULL, `shareBalance` REAL NOT NULL, `sharePrice` REAL NOT NULL, `joiningDate` INTEGER, `exitDate` INTEGER, `role` TEXT NOT NULL, `shareholderStatus` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `roleHistory` TEXT NOT NULL, `statusHistory` TEXT NOT NULL, `isSynced` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`shareholderId`))",
         "fields": [
           {
             "fieldPath": "shareholderId",
@@ -93,6 +93,12 @@
             "fieldPath": "statusHistory",
             "columnName": "statusHistory",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -265,7 +271,7 @@
       },
       {
         "tableName": "borrowings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisionalId` TEXT NOT NULL, `borrowId` TEXT, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `applicationDate` INTEGER NOT NULL, `amountRequested` REAL NOT NULL, `borrowEligibility` REAL NOT NULL, `approvedAmount` REAL NOT NULL, `borrowStartDate` INTEGER NOT NULL, `dueDate` INTEGER NOT NULL, `status` TEXT NOT NULL, `closedDate` INTEGER, `approvalStatus` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`provisionalId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisionalId` TEXT NOT NULL, `borrowId` TEXT, `shareholderId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `applicationDate` INTEGER NOT NULL, `amountRequested` REAL NOT NULL, `borrowEligibility` REAL NOT NULL, `approvedAmount` REAL NOT NULL, `borrowStartDate` INTEGER NOT NULL, `dueDate` INTEGER NOT NULL, `status` TEXT NOT NULL, `closedDate` INTEGER, `approvalStatus` TEXT NOT NULL, `approvedBy` TEXT, `notes` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, PRIMARY KEY(`provisionalId`))",
         "fields": [
           {
             "fieldPath": "provisionalId",
@@ -370,6 +376,12 @@
             "columnName": "updatedAt",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -381,7 +393,7 @@
       },
       {
         "tableName": "repayments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisional_id` TEXT NOT NULL, `repayment_id` TEXT, `borrowId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `outstandingBefore` REAL NOT NULL, `penaltyDue` REAL NOT NULL, `repaymentDate` INTEGER NOT NULL, `principalRepaid` REAL NOT NULL, `penaltyPaid` REAL NOT NULL, `totalAmountPaid` REAL NOT NULL, `modeOfPayment` TEXT NOT NULL, `finalOutstanding` REAL NOT NULL, `borrowingStatus` TEXT NOT NULL, `penaltyCalculationNotes` TEXT, `notes` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `is_synced` INTEGER NOT NULL, `entry_source` TEXT, `legacy_approval_action` TEXT, PRIMARY KEY(`provisional_id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisional_id` TEXT NOT NULL, `repayment_id` TEXT, `borrowId` TEXT NOT NULL, `shareholderName` TEXT NOT NULL, `outstandingBefore` REAL NOT NULL, `penaltyDue` REAL NOT NULL, `repaymentDate` INTEGER NOT NULL, `principalRepaid` REAL NOT NULL, `penaltyPaid` REAL NOT NULL, `totalAmountPaid` REAL NOT NULL, `modeOfPayment` TEXT NOT NULL, `finalOutstanding` REAL NOT NULL, `borrowingStatus` TEXT NOT NULL, `penaltyCalculationNotes` TEXT, `notes` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `entry_source` TEXT, `legacy_approval_action` TEXT, PRIMARY KEY(`provisional_id`))",
         "fields": [
           {
             "fieldPath": "provisionalId",
@@ -506,7 +518,7 @@
           },
           {
             "fieldPath": "isSynced",
-            "columnName": "is_synced",
+            "columnName": "isSynced",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -550,7 +562,7 @@
       },
       {
         "tableName": "investments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisionalId` TEXT NOT NULL, `investmentId` TEXT, `investeeType` TEXT NOT NULL, `investeeName` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `ownershipType` TEXT NOT NULL, `partnerNames` TEXT, `investmentDate` INTEGER NOT NULL, `investmentType` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `amount` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `returnDueDate` INTEGER, `status` TEXT NOT NULL, `remarks` TEXT, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, `enteredBy` TEXT, `is_synced` INTEGER NOT NULL, `legacyApprovalAction` TEXT, PRIMARY KEY(`provisionalId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisionalId` TEXT NOT NULL, `investmentId` TEXT, `investeeType` TEXT NOT NULL, `investeeName` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `ownershipType` TEXT NOT NULL, `partnerNames` TEXT, `investmentDate` INTEGER NOT NULL, `investmentType` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `amount` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `returnDueDate` INTEGER, `status` TEXT NOT NULL, `remarks` TEXT, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, `enteredBy` TEXT, `isSynced` INTEGER NOT NULL, `legacyApprovalAction` TEXT, PRIMARY KEY(`provisionalId`))",
         "fields": [
           {
             "fieldPath": "provisionalId",
@@ -691,7 +703,7 @@
           },
           {
             "fieldPath": "isSynced",
-            "columnName": "is_synced",
+            "columnName": "isSynced",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -721,7 +733,7 @@
       },
       {
         "tableName": "investment_returns",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisionalId` TEXT NOT NULL, `returnId` TEXT, `investmentId` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `actualReturnPeriod` INTEGER NOT NULL, `amountInvested` REAL NOT NULL, `amountReceived` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `actualProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `actualProfitAmount` REAL NOT NULL, `profitPercentVariance` REAL NOT NULL, `profitAmountVariance` REAL NOT NULL, `returnDate` INTEGER NOT NULL, `modeOfPayment` TEXT NOT NULL, `remarks` TEXT, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, `enteredBy` TEXT, `is_synced` INTEGER NOT NULL, `legacyApprovalAction` TEXT, PRIMARY KEY(`provisionalId`), FOREIGN KEY(`investmentId`) REFERENCES `investments`(`investmentId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provisionalId` TEXT NOT NULL, `returnId` TEXT, `investmentId` TEXT NOT NULL, `investmentName` TEXT NOT NULL, `expectedReturnPeriod` INTEGER NOT NULL, `actualReturnPeriod` INTEGER NOT NULL, `amountInvested` REAL NOT NULL, `amountReceived` REAL NOT NULL, `expectedProfitPercent` REAL NOT NULL, `actualProfitPercent` REAL NOT NULL, `expectedProfitAmount` REAL NOT NULL, `actualProfitAmount` REAL NOT NULL, `profitPercentVariance` REAL NOT NULL, `profitAmountVariance` REAL NOT NULL, `returnDate` INTEGER NOT NULL, `modeOfPayment` TEXT NOT NULL, `remarks` TEXT, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `entrySource` TEXT NOT NULL, `enteredBy` TEXT, `isSynced` INTEGER NOT NULL, `legacyApprovalAction` TEXT, PRIMARY KEY(`provisionalId`), FOREIGN KEY(`investmentId`) REFERENCES `investments`(`investmentId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "provisionalId",
@@ -864,7 +876,7 @@
           },
           {
             "fieldPath": "isSynced",
-            "columnName": "is_synced",
+            "columnName": "isSynced",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -916,7 +928,7 @@
       },
       {
         "tableName": "action_items",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`actionId` TEXT NOT NULL, `type` TEXT NOT NULL, `relatedEntityId` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `deadline` INTEGER, `response` TEXT NOT NULL, `responses` TEXT NOT NULL, `finalized` INTEGER NOT NULL, PRIMARY KEY(`actionId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`actionId` TEXT NOT NULL, `type` TEXT NOT NULL, `relatedEntityId` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `deadline` INTEGER, `response` TEXT NOT NULL, `isSynced` INTEGER NOT NULL, `responses` TEXT NOT NULL, `finalized` INTEGER NOT NULL, PRIMARY KEY(`actionId`))",
         "fields": [
           {
             "fieldPath": "actionId",
@@ -972,6 +984,12 @@
             "notNull": true
           },
           {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "responses",
             "columnName": "responses",
             "affinity": "TEXT",
@@ -993,7 +1011,7 @@
       },
       {
         "tableName": "penalties",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `reason` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `reason` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1042,6 +1060,12 @@
             "columnName": "createdAt",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -1053,7 +1077,7 @@
       },
       {
         "tableName": "other_incomes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `is_synced` INTEGER NOT NULL, `legacyApprovalAction` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `legacyApprovalAction` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1121,7 +1145,7 @@
           },
           {
             "fieldPath": "isSynced",
-            "columnName": "is_synced",
+            "columnName": "isSynced",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -1227,7 +1251,7 @@
       },
       {
         "tableName": "approval_flow",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, `role` TEXT NOT NULL, `approval_action` TEXT NOT NULL, `approvedBy` TEXT NOT NULL, `remarks` TEXT, `createdAt` INTEGER NOT NULL, `approvedAt` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, `role` TEXT NOT NULL, `approval_action` TEXT NOT NULL, `approvedBy` TEXT NOT NULL, `remarks` TEXT, `createdAt` INTEGER NOT NULL, `approvedAt` INTEGER, `isSynced` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1280,6 +1304,12 @@
             "fieldPath": "approvedAt",
             "columnName": "approvedAt",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -1322,7 +1352,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9afe3c774f827d5ead5b1e0034fc39fe')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c91a543fa3250915bd51c2c519c17a95')"
     ]
   }
 }

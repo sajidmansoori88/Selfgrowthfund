@@ -16,5 +16,6 @@ data class Penalty(
     val reason: String,
     val recordedBy: String, // adminId or system user
     val shareholderId: String, // NEW: links penalty to a shareholder
-    val createdAt: Instant = Instant.now()
+    val createdAt: Instant = Instant.now(),
+    val isSynced: Boolean = false
 )

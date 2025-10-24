@@ -49,7 +49,7 @@ data class Deposit(
     val isSynced: Boolean = false,           // for offline sync
     val entrySource: EntrySource = EntrySource.User, // who entered: USER, TREASURER, ADMIN, SYSTEM
     val createdAt: Instant = Instant.now(),
-    val updatedAt: Instant = Instant.now()
+    val updatedAt: Instant = Instant.now(),
 ) {
     companion object {
         fun generateNextId(lastId: String?): String {

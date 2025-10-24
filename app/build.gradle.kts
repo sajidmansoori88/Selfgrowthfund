@@ -88,6 +88,9 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.navigation.compose)
     implementation(libs.compose.tooling.preview)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth)
     debugImplementation(libs.compose.tooling)
 
     // ---------- AndroidX Core ----------
@@ -167,4 +170,3 @@ dependencies {
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     androidTestImplementation("androidx.room:room-testing:2.7.2")
 }
-

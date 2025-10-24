@@ -28,7 +28,9 @@ data class ShareholderEntry(
 
     // ✅ Now enum-based, consistent with Shareholder
     val role: MemberRole = MemberRole.MEMBER,
-    val status: ShareholderStatus = ShareholderStatus.Active
+    val status: ShareholderStatus = ShareholderStatus.Active,
+
+    val isSynced: Boolean = false
 ) {
 
     fun toShareholder(lastId: String?): Shareholder {

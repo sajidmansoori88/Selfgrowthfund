@@ -13,11 +13,11 @@ import java.time.LocalDate
 @Dao
 interface ShareholderDao {
 
-    // ─────────────── CREATE ───────────────
+    // CREATE
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertShareholder(shareholder: Shareholder)
 
-    // ─────────────── READ ───────────────
+    // READ
     @Query("SELECT * FROM shareholders ORDER BY CAST(SUBSTR(shareholderId, 3) AS INTEGER) ASC")
     fun getAllShareholdersFlow(): Flow<List<Shareholder>>
 
@@ -42,14 +42,13 @@ interface ShareholderDao {
     @Query("SELECT * FROM shareholders WHERE shareholderStatus = 'Active'")
     fun getActiveMembers(): Flow<List<Shareholder>>
 
-    // ❌ FIXED: Removed suspend from Flow-returning method
     @Query("""
-    SELECT *, (shareBalance * 2000 * 0.9) AS maxBorrowAmount
-    FROM shareholders
-    WHERE shareholderStatus = 'Active'
-    AND shareBalance >= 1
-    AND shareholderId = :id
-""")
+        SELECT *, (shareBalance * 2000 * 0.9) AS maxBorrowAmount
+        FROM shareholders
+        WHERE shareholderStatus = 'Active'
+        AND shareBalance >= 1
+        AND shareholderId = :id
+    """)
     fun getWithBorrowEligibilityFlow(id: String): Flow<ShareholderWithEligibility?>
 
     @Query("""
@@ -93,9 +92,9 @@ interface ShareholderDao {
     @Query("SELECT * FROM shareholders WHERE role = :role")
     suspend fun getByRole(role: MemberRole): List<Shareholder>
 
-    // ─────────────── UPDATE ───────────────
+    // UPDATE
     @Update
-    suspend fun updateShareholder(shareholder: Shareholder)
+    suspend fun update(shareholder: Shareholder)
 
     @Query("""
         UPDATE shareholders
@@ -121,16 +120,21 @@ interface ShareholderDao {
         timestamp: Instant
     )
 
-    // ─────────────── DELETE ───────────────
+    // DELETE
     @Delete
     suspend fun deleteShareholder(shareholder: Shareholder)
 
     @Query("DELETE FROM shareholders WHERE shareholderId = :id")
     suspend fun deleteById(id: String)
 
-    @Query("SELECT * FROM shareholders")
+    // SYNC HELPERS
+    @Query("SELECT * FROM shareholders WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<Shareholder>
+
+    @Query("SELECT * FROM shareholders ORDER BY shareholderId ASC")
     suspend fun getAll(): List<Shareholder>
 
-    @Update
-    suspend fun update(shareholder: Shareholder)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(shareholders: List<Shareholder>)
 }
+

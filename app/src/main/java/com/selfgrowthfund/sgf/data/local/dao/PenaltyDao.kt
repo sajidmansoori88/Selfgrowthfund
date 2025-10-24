@@ -2,6 +2,7 @@ package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.selfgrowthfund.sgf.data.local.entities.Penalty
 import com.selfgrowthfund.sgf.model.reports.MonthlyAmount
@@ -57,4 +58,13 @@ interface PenaltyDao {
     @Query("SELECT * FROM penalties WHERE date BETWEEN :startDate AND :endDate")
     suspend fun getPenaltiesBetween(startDate: LocalDate, endDate: LocalDate): List<Penalty>
 
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM penalties WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<Penalty>
+
+    @Query("SELECT * FROM penalties ORDER BY date DESC")
+    suspend fun getAllPenaltiesList(): List<Penalty>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(penalties: List<Penalty>)
 }

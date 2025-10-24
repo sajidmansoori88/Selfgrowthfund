@@ -31,6 +31,7 @@ data class ApprovalFlow(
     val remarks: String? = null,
 
     val createdAt: Instant = Instant.now(),  // when this record was created
-    val approvedAt: Instant? = null          // null = not yet acted upon
+    val approvedAt: Instant? = null,          // null = not yet acted upon
+    val isSynced: Boolean = false
 )
 

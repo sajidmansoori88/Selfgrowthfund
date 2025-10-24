@@ -40,6 +40,7 @@ data class Shareholder(
 
     val roleHistory: List<MemberRole> = emptyList(),
     val statusHistory: List<ShareholderStatus> = emptyList(),
+    val isSynced: Boolean = false,
 
 
     // Audit Fields

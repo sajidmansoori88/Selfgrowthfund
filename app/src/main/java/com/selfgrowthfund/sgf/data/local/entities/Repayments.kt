@@ -89,7 +89,7 @@
         val updatedAt: Instant = Instant.now(),
 
         // Optional sync info
-        @ColumnInfo(name = "is_synced")
+        @ColumnInfo(name = "isSynced")
         val isSynced: Boolean = false,
 
         @ColumnInfo(name = "entry_source")

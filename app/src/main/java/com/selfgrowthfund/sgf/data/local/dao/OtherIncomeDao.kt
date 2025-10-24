@@ -74,4 +74,14 @@ interface OtherIncomeDao {
 
     @Query("SELECT * FROM other_incomes WHERE createdAt BETWEEN :start AND :end")
     suspend fun getApprovalsBetween(start: LocalDate, end: LocalDate): List<OtherIncome>
+
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM other_incomes WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<OtherIncome>
+
+    @Query("SELECT * FROM other_incomes ORDER BY date DESC")
+    suspend fun getAllIncomesList(): List<OtherIncome>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(incomes: List<OtherIncome>)
 }

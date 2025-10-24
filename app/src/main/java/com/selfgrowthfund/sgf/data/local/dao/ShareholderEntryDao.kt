@@ -25,4 +25,14 @@ interface ShareholderEntryDao {
 
     @Query("DELETE FROM shareholder_entries WHERE entryId = :id")
     suspend fun deleteById(id: Long)
+
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM shareholder_entries WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<ShareholderEntry>
+
+    @Query("SELECT * FROM shareholder_entries ORDER BY entryId DESC")
+    suspend fun getAllEntriesList(): List<ShareholderEntry>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entries: List<ShareholderEntry>)
 }

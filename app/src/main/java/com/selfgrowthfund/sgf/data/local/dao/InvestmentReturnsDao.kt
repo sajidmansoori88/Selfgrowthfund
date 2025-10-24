@@ -27,9 +27,6 @@ interface InvestmentReturnsDao {
     @Query("SELECT * FROM investment_returns WHERE investmentId = :investmentId")
     fun getReturnsByInvestmentId(investmentId: String): List<InvestmentReturns>
 
-    @Query("SELECT * FROM investment_returns")
-    fun getAllReturns(): Flow<List<InvestmentReturns>>
-
     @Query("SELECT * FROM investment_returns WHERE returnId = :returnId")
     suspend fun getReturnById(returnId: String): InvestmentReturns?
 
@@ -105,4 +102,14 @@ interface InvestmentReturnsDao {
     // --- Flows ---
     @Query("SELECT * FROM investment_returns WHERE investmentId = :investmentId ORDER BY returnDate DESC")
     fun getReturnsByInvestmentIdFlow(investmentId: String): Flow<List<InvestmentReturns>>
+
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM investment_returns WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<InvestmentReturns>
+
+    @Query("SELECT * FROM investment_returns ORDER BY returnDate DESC")
+    suspend fun getAllReturns(): List<InvestmentReturns>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(returns: List<InvestmentReturns>)
 }

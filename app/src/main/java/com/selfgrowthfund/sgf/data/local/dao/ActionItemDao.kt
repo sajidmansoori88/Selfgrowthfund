@@ -50,4 +50,18 @@ interface ActionItemDao {
         pendingLabel: String = ActionResponse.PENDING.label,
         now: LocalDateTime
     ): Flow<Int>
+
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM action_items WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<ActionItem>
+
+    @Query("SELECT * FROM action_items ORDER BY createdAt DESC")
+    suspend fun getAllActionItemsList(): List<ActionItem>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(actions: List<ActionItem>)
+
+    @Update
+    suspend fun update(action: ActionItem)
+
 }

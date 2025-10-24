@@ -36,7 +36,6 @@ data class OtherIncome(
     val recordedBy: String, // shareholderId or adminId
     val createdAt: Instant = Instant.now(),
 
-    @ColumnInfo(name = "is_synced")
     val isSynced: Boolean = false,
 
     // Legacy compatibility

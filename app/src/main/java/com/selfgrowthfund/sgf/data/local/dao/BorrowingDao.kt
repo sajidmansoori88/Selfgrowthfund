@@ -19,9 +19,6 @@ interface BorrowingDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertBorrowing(borrowing: Borrowing)
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insertAll(borrowings: List<Borrowing>)
-
     /* Read Operations */
     @Query("SELECT * FROM borrowings ORDER BY applicationDate DESC")
     fun getAllBorrowings(): Flow<List<Borrowing>>
@@ -46,9 +43,6 @@ interface BorrowingDao {
 
     @Query("SELECT * FROM borrowings WHERE provisionalId = :provisionalId LIMIT 1")
     suspend fun getByProvisionalId(provisionalId: String): Borrowing?
-
-        @Update
-        suspend fun update(borrowing: Borrowing)
 
     @Query("UPDATE borrowings SET status = :newStatus WHERE borrowId = :borrowId")
     suspend fun updateStatus(borrowId: String, newStatus: BorrowingStatus)
@@ -227,6 +221,18 @@ interface BorrowingDao {
 """)
     suspend fun getMemberBorrowingStatus(): List<MemberBorrowingStatus>
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(borrowings: List<Borrowing>)
+
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM borrowings WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<Borrowing>
+
+    @Query("SELECT * FROM borrowings ORDER BY applicationDate DESC")
+    suspend fun getAllBorrowingsList(): List<Borrowing>
+
+    @Update
+    suspend fun update(borrowing: Borrowing)
 
 
 }

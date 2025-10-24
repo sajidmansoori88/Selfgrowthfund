@@ -183,4 +183,14 @@ interface InvestmentDao {
 
     @Query("UPDATE investments SET approval_status = :stage WHERE provisionalId = :id")
     suspend fun updateApprovalStage(id: String, stage: String)
+
+    // --- 🔁 SYNC HELPERS ---
+    @Query("SELECT * FROM investments WHERE isSynced = 0")
+    suspend fun getUnsynced(): List<Investment>
+
+    @Query("SELECT * FROM investments ORDER BY investmentDate DESC")
+    suspend fun getAllInvestmentsOnce(): List<Investment>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(investments: List<Investment>)
 }

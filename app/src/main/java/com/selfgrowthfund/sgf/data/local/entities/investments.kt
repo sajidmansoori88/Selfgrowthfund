@@ -63,7 +63,7 @@ data class Investment(
     val entrySource: EntrySource = EntrySource.User,
     val enteredBy: String? = null,
 
-    @ColumnInfo(name = "is_synced")
+    @ColumnInfo(name = "isSynced")
     val isSynced: Boolean = false,
 
     // Legacy compatibility for smooth migration

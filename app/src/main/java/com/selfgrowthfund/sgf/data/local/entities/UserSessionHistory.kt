@@ -7,5 +7,5 @@ import androidx.room.PrimaryKey
 data class UserSessionHistory(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val shareholderId: String,
-    val timestamp: Long // store System.currentTimeMillis() when app is opened
+    val timestamp: Long, // store System.currentTimeMillis() when app is opened
 )

@@ -42,7 +42,7 @@ class ShareholderRepository @Inject constructor(
     }
 
     suspend fun updateShareholder(shareholder: Shareholder): Result<Unit> = try {
-        dao.updateShareholder(
+        dao.update(
             shareholder.copy(updatedAt = Instant.ofEpochMilli(dates.now()))
         )
         Result.Success(Unit)
