@@ -231,7 +231,8 @@ enum class ActionResponse(override val label: String) : LabelledEnum {
     REJECT("Reject"),
     CONSENT("Consent"),
     DISSENT("Dissent"),
-    PENDING("Pending");
+    PENDING("Pending"),
+    COMPLETED("Completed");
 
     companion object {
         fun fromLabel(label: String): ActionResponse =

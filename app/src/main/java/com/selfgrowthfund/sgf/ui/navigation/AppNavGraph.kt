@@ -22,7 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.selfgrowthfund.sgf.data.local.entities.InvestmentReturns
-import com.selfgrowthfund.sgf.ui.WelcomeScreen
+import com.selfgrowthfund.sgf.ui.dashboard.WelcomeScreen
 import com.selfgrowthfund.sgf.ui.dashboard.HomeScreen
 import com.selfgrowthfund.sgf.ui.auth.*
 import com.selfgrowthfund.sgf.ui.deposits.*
@@ -31,7 +31,7 @@ import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.model.enums.*
 import com.selfgrowthfund.sgf.model.reports.BorrowingSummaryViewModel
 import com.selfgrowthfund.sgf.session.UserSessionViewModel
-import com.selfgrowthfund.sgf.ui.ProfileScreen
+import com.selfgrowthfund.sgf.ui.dashboard.ProfileScreen
 import com.selfgrowthfund.sgf.ui.actions.ActionScreen
 import com.selfgrowthfund.sgf.ui.actions.ActionScreenViewModel
 import com.selfgrowthfund.sgf.ui.addshareholders.AddShareholderScreen
@@ -69,13 +69,21 @@ import com.selfgrowthfund.sgf.ui.treasurer.TreasurerDashboardScreen
 import kotlinx.coroutines.flow.flowOf
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import androidx.navigation.NavGraphBuilder
+
+fun NavGraphBuilder.authEntryPoint(navController: androidx.navigation.NavHostController) {
+    composable(Screen.AuthEntry.route) {
+        AuthEntryPoint(navController)
+    }
+}
+
 
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     onDrawerClick: () -> Unit,
     currentUser: User,
-    startDestination: String = "home"
+    startDestination: String = Screen.Welcome.route
 ) {
     NavHost(
         navController = navController,
@@ -85,6 +93,7 @@ fun AppNavGraph(
 
         // 🔐 Auth & Onboarding (no drawer, no scaffold)
         composable(Screen.Welcome.route) { WelcomeScreen(navController) }
+        authEntryPoint(navController)
         composable(Screen.Login.route) { LoginScreen(navController) }
         composable(Screen.CreatePin.route) { CreatePinScreen(navController) }
         composable(Screen.PinEntry.route) { PinEntryScreen(navController) }
@@ -712,45 +721,49 @@ fun AppNavGraph(
             )
         }
     }
-    LaunchedEffect(startDestination) {
-        try {
-            // ✅ Public-safe list of routes (no .nodes or internal APIs)
-            val routes = mutableListOf<String>()
-
-            fun collectRoutes(destination: androidx.navigation.NavDestination) {
-                destination.route?.let { routes.add(it) }
-                if (destination is androidx.navigation.NavGraph) {
-                    // Safe iteration via forEach { d -> ... } using public iterator()
-                    destination.iterator().forEach { child ->
-                        collectRoutes(child)
-                    }
-                }
-            }
-
-            navController.graph.let { collectRoutes(it) }
-
-            val exists = routes.contains(startDestination)
-
-            Log.d("AppNavGraph", "Available routes: $routes")
-            Log.d("AppNavGraph", "Requested startDestination='$startDestination' exists=$exists")
-
-            if (!exists) {
-                Log.e(
-                    "AppNavGraph",
-                    "❌ Start destination '$startDestination' not found in nav graph. Check Screen constants / route strings."
-                )
-            } else {
-                // ✅ Force navigation to guarantee correct landing
-                navController.navigate(startDestination) {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                    launchSingleTop = true
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("AppNavGraph", "Error inspecting nav graph", e)
-        }
-
+    LaunchedEffect(Unit) {
+        Log.d("AppNavGraph", "✅ Start destination = ${Screen.Welcome.route}")
     }
+
+//    LaunchedEffect(startDestination) {
+//        try {
+//            // ✅ Public-safe list of routes (no .nodes or internal APIs)
+//            val routes = mutableListOf<String>()
+//
+//            fun collectRoutes(destination: androidx.navigation.NavDestination) {
+//                destination.route?.let { routes.add(it) }
+//                if (destination is androidx.navigation.NavGraph) {
+//                    // Safe iteration via forEach { d -> ... } using public iterator()
+//                    destination.iterator().forEach { child ->
+//                        collectRoutes(child)
+//                    }
+//                }
+//            }
+//
+//            navController.graph.let { collectRoutes(it) }
+//
+//            val exists = routes.contains(startDestination)
+//
+//            Log.d("AppNavGraph", "Available routes: $routes")
+//            Log.d("AppNavGraph", "Requested startDestination='$startDestination' exists=$exists")
+//
+//            if (!exists) {
+//                Log.e(
+//                    "AppNavGraph",
+//                    "❌ Start destination '$startDestination' not found in nav graph. Check Screen constants / route strings."
+//                )
+//            } else {
+//                // ✅ Force navigation to guarantee correct landing
+//                navController.navigate(startDestination) {
+//                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+//                    launchSingleTop = true
+//                }
+//            }
+//        } catch (e: Exception) {
+//            Log.e("AppNavGraph", "Error inspecting nav graph", e)
+//        }
+//
+//    }
 
 
 

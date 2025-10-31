@@ -1,6 +1,7 @@
 package com.selfgrowthfund.sgf.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -15,7 +16,7 @@ interface PenaltyDao {
     @Insert
     suspend fun insert(penalty: Penalty)
 
-    @Query("SELECT SUM(amount) FROM penalties WHERE type = 'SHARE_DEPOSIT'")
+        @Query("SELECT SUM(amount) FROM penalties WHERE type = 'SHARE_DEPOSIT'")
     suspend fun getShareDepositPenalties(): Double
 
     @Query("SELECT SUM(amount) FROM penalties WHERE type = 'BORROWING'")
@@ -67,4 +68,8 @@ interface PenaltyDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(penalties: List<Penalty>)
+
+    @Delete
+    suspend fun deletePenalty(penalty: Penalty)
+
 }

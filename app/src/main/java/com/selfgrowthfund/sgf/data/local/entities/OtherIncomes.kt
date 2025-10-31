@@ -7,12 +7,17 @@ import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import java.time.Instant
 import java.time.LocalDate
+import java.util.UUID
 
 @Entity(tableName = "other_incomes")
 @TypeConverters(AppTypeConverters::class)
 data class OtherIncome(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    // ✅ Unique local ID used for Firestore document sync
+    @ColumnInfo(name = "provisional_id")
+    val provisionalId: String = UUID.randomUUID().toString(),
 
     val date: LocalDate,
     val amount: Double,

@@ -33,45 +33,64 @@ class ApprovalRepository @Inject constructor(
 
     // --- Summary Dashboard ---
     suspend fun getApprovalSummary(start: LocalDate, end: LocalDate): List<ApprovalSummaryRow> {
+
+        // Generic unwrap that works for both Int and Result<Int>
+        fun unwrapCount(result: Any?): Int = when (result) {
+            is com.selfgrowthfund.sgf.utils.Result<*> -> when (result) {
+                is com.selfgrowthfund.sgf.utils.Result.Success<*> -> result.data as? Int ?: 0
+                is com.selfgrowthfund.sgf.utils.Result.Error -> 0
+                else -> 0  // 🔸 covers “when expression must be exhaustive”
+            }
+            is Int -> result
+            else -> 0
+        }
+
+
         return listOf(
-            ApprovalSummaryRow("Deposits",
-                approved = depositRepository.countApproved(start, end),
-                rejected = depositRepository.countRejected(start, end),
-                pending = depositRepository.countPending(start, end)
+            ApprovalSummaryRow(
+                "Deposits",
+                approved = unwrapCount(depositRepository.countApproved(start, end)),
+                rejected = unwrapCount(depositRepository.countRejected(start, end)),
+                pending = unwrapCount(depositRepository.countPending(start, end))
             ),
-            ApprovalSummaryRow("Borrowing",
-                approved = borrowingRepository.countApproved(start, end),
-                rejected = borrowingRepository.countRejected(start, end),
-                pending = borrowingRepository.countPending(start, end)
+            ApprovalSummaryRow(
+                "Borrowing",
+                approved = unwrapCount(borrowingRepository.countApproved(start, end)),
+                rejected = unwrapCount(borrowingRepository.countRejected(start, end)),
+                pending = unwrapCount(borrowingRepository.countPending(start, end))
             ),
-            ApprovalSummaryRow("Repayments",
-                approved = repaymentRepository.countApproved(start, end),
-                rejected = repaymentRepository.countRejected(start, end),
-                pending = repaymentRepository.countPending(start, end)
+            ApprovalSummaryRow(
+                "Repayments",
+                approved = unwrapCount(repaymentRepository.countApproved(start, end)),
+                rejected = unwrapCount(repaymentRepository.countRejected(start, end)),
+                pending = unwrapCount(repaymentRepository.countPending(start, end))
             ),
-            ApprovalSummaryRow("Investments",
-                approved = investmentRepository.countApproved(start, end),
-                rejected = investmentRepository.countRejected(start, end),
-                pending = investmentRepository.countPending(start, end)
+            ApprovalSummaryRow(
+                "Investments",
+                approved = unwrapCount(investmentRepository.countApproved(start, end)),
+                rejected = unwrapCount(investmentRepository.countRejected(start, end)),
+                pending = unwrapCount(investmentRepository.countPending(start, end))
             ),
-            ApprovalSummaryRow("Investment Returns",
-                approved = investmentReturnsRepository.countApproved(start, end),
-                rejected = investmentReturnsRepository.countRejected(start, end),
-                pending = investmentReturnsRepository.countPending(start, end)
+            ApprovalSummaryRow(
+                "Investment Returns",
+                approved = unwrapCount(investmentReturnsRepository.countApproved(start, end)),
+                rejected = unwrapCount(investmentReturnsRepository.countRejected(start, end)),
+                pending = unwrapCount(investmentReturnsRepository.countPending(start, end))
             ),
-            ApprovalSummaryRow("Other Incomes",
-                approved = otherIncomeRepository.countApproved(start, end),
-                rejected = otherIncomeRepository.countRejected(start, end),
-                pending = otherIncomeRepository.countPending(start, end)
+            ApprovalSummaryRow(
+                "Other Incomes",
+                approved = unwrapCount(otherIncomeRepository.countApproved(start, end)),
+                rejected = unwrapCount(otherIncomeRepository.countRejected(start, end)),
+                pending = unwrapCount(otherIncomeRepository.countPending(start, end))
             ),
-            ApprovalSummaryRow("Other Expenses",
-                approved = otherExpenseRepository.countApproved(start, end),
-                rejected = otherExpenseRepository.countRejected(start, end),
-                pending = otherExpenseRepository.countPending(start, end)
+            ApprovalSummaryRow(
+                "Other Expenses",
+                approved = unwrapCount(otherExpenseRepository.countApproved(start, end)),
+                rejected = unwrapCount(otherExpenseRepository.countRejected(start, end)),
+                pending = unwrapCount(otherExpenseRepository.countPending(start, end))
             )
         )
     }
-
     suspend fun getGroupedApprovals(): List<ApprovalGroup> {
         // TODO: aggregate from all repositories when you design group logic
         return emptyList()
@@ -277,28 +296,38 @@ class ApprovalRepository @Inject constructor(
                 throw IllegalAccessException("Only Treasurer can release payment.")
             }
 
-            val success = investmentRepository.markPaymentReleased(entityId, currentUser.userId, remarks)
-            if (success) {
-                approvalFlowRepository.recordApproval(
-                    ApprovalFlow(
-                        entityType = ApprovalType.INVESTMENT,
-                        entityId = entityId,
-                        role = MemberRole.MEMBER_TREASURER,
-                        action = ApprovalAction.APPROVE,
-                        approvedBy = currentUser.userId,
-                        remarks = "Payment Released"
+            when (val result = investmentRepository.markPaymentReleased(
+                entityId,
+                currentUser.userId,
+                remarks
+            )) {
+                is com.selfgrowthfund.sgf.utils.Result.Success -> {
+                    approvalFlowRepository.recordApproval(
+                        ApprovalFlow(
+                            entityType = ApprovalType.INVESTMENT,
+                            entityId = entityId,
+                            role = MemberRole.MEMBER_TREASURER,
+                            action = ApprovalAction.APPROVE,
+                            approvedBy = currentUser.userId,
+                            remarks = "Payment Released"
+                        )
                     )
-                )
-                timber.log.Timber.i("Treasurer marked payment released for $entityId")
-                Result.Success(Unit)
-            } else {
-                Result.Error(Exception("Failed to mark Treasurer approval"))
+                    timber.log.Timber.i("Treasurer marked payment released for $entityId")
+                    Result.Success(Unit)
+                }
+                is com.selfgrowthfund.sgf.utils.Result.Error -> {
+                    Result.Error(Exception("Failed to mark Treasurer approval: ${result.exception.message}"))
+                }
+                com.selfgrowthfund.sgf.utils.Result.Loading -> {
+                    Result.Error(Exception("Payment release still in progress. Try again."))
+                }
             }
         } catch (e: Exception) {
             timber.log.Timber.e(e, "Treasurer release failed for $entityId")
             Result.Error(e)
         }
     }
+
 
     // Admin finalizes the investment (assigns ID + date)
     suspend fun finalizeAdminApproval(
@@ -311,33 +340,38 @@ class ApprovalRepository @Inject constructor(
                 throw IllegalAccessException("Only Admin can finalize investment.")
             }
 
-            val success = investmentRepository.approveAndAssignId(
+            when (val result = investmentRepository.approveAndAssignId(
                 provisionalId = entityId,
                 approverId = currentUser.userId,
                 notes = remarks
-            )
-
-            if (success) {
-                approvalFlowRepository.recordApproval(
-                    ApprovalFlow(
-                        entityType = ApprovalType.INVESTMENT,
-                        entityId = entityId,
-                        role = MemberRole.MEMBER_ADMIN,
-                        action = ApprovalAction.APPROVE,
-                        approvedBy = currentUser.userId,
-                        remarks = "Final Admin Approval"
+            )) {
+                is com.selfgrowthfund.sgf.utils.Result.Success -> {
+                    approvalFlowRepository.recordApproval(
+                        ApprovalFlow(
+                            entityType = ApprovalType.INVESTMENT,
+                            entityId = entityId,
+                            role = MemberRole.MEMBER_ADMIN,
+                            action = ApprovalAction.APPROVE,
+                            approvedBy = currentUser.userId,
+                            remarks = "Final Admin Approval"
+                        )
                     )
-                )
-                timber.log.Timber.i("Admin finalized investment: $entityId → ID assigned.")
-                Result.Success(Unit)
-            } else {
-                Result.Error(Exception("Failed to finalize investment"))
+                    timber.log.Timber.i("Admin finalized investment: $entityId → ID assigned.")
+                    Result.Success(Unit)
+                }
+                is com.selfgrowthfund.sgf.utils.Result.Error -> {
+                    Result.Error(Exception("Failed to finalize investment: ${result.exception.message}"))
+                }
+                com.selfgrowthfund.sgf.utils.Result.Loading -> {
+                    Result.Error(Exception("Finalization still in progress. Try again."))
+                }
             }
         } catch (e: Exception) {
             timber.log.Timber.e(e, "Admin finalization failed for $entityId")
             Result.Error(e)
         }
     }
+
 
     // --- History ---
     suspend fun getApprovalHistory(
@@ -361,7 +395,10 @@ class ApprovalRepository @Inject constructor(
         val history = flows.map { flow ->
             val shareholderId: String? = when (flow.entityType) {
                 ApprovalType.DEPOSIT -> depositRepository.findById(flow.entityId)?.shareholderId
-                ApprovalType.BORROWING -> borrowingRepository.findById(flow.entityId)?.shareholderId
+                ApprovalType.BORROWING -> runCatching {
+                    borrowingRepository.getBorrowingById(flow.entityId).shareholderId
+                }.getOrNull()
+
                 ApprovalType.REPAYMENT -> {
                     val repayment = repaymentRepository.findById(flow.entityId)
                     repayment?.borrowId?.let { borrowId ->

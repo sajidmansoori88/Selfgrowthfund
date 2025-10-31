@@ -4,16 +4,71 @@ import com.selfgrowthfund.sgf.data.local.dao.ActionItemDao
 import com.selfgrowthfund.sgf.data.local.entities.ActionItem
 import com.selfgrowthfund.sgf.model.enums.ActionResponse
 import com.selfgrowthfund.sgf.model.enums.ActionType
+import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 import java.time.LocalDateTime
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ActionItemRepository(private val dao: ActionItemDao) {
+/**
+ * ActionItemRepository (Realtime Firestore <-> Room Sync)
+ *
+ * - All local writes mark isSynced = false.
+ * - realtimeSyncRepository.pushAllUnsynced() automatically syncs with Firestore.
+ * - Firestore listeners handled globally by RealtimeSyncRepository.
+ */
+@Singleton
+class ActionItemRepository @Inject constructor(
+    private val dao: ActionItemDao,
+    private val realtimeSyncRepository: RealtimeSyncRepository
+) {
 
-    suspend fun addAction(action: ActionItem) = dao.insertAction(action)
+    // =============================
+    // CRUD Operations
+    // =============================
 
-    suspend fun updateAction(action: ActionItem) = dao.updateAction(action)
+    suspend fun addAction(action: ActionItem): Result<Unit> = try {
+        dao.insertAction(action.copy(isSynced = false, updatedAt = Instant.now()))
+        realtimeSyncRepository.pushAllUnsynced()
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
 
-    suspend fun deleteAction(action: ActionItem) = dao.deleteAction(action)
+    suspend fun updateAction(action: ActionItem): Result<Unit> = try {
+        dao.updateAction(action.copy(isSynced = false, updatedAt = Instant.now()))
+        realtimeSyncRepository.pushAllUnsynced()
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
+
+    suspend fun deleteAction(action: ActionItem): Result<Unit> = try {
+        dao.deleteAction(action)
+        realtimeSyncRepository.pushAllUnsynced()
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
+
+    suspend fun completeAction(action: ActionItem): Result<Unit> = try {
+        dao.updateAction(
+            action.copy(
+                response = ActionResponse.COMPLETED,
+                isSynced = false,
+                updatedAt = Instant.now()
+            )
+        )
+        realtimeSyncRepository.pushAllUnsynced()
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
+
+    // =============================
+    // Queries
+    // =============================
 
     suspend fun getActionById(actionId: String): ActionItem? = dao.getActionById(actionId)
 

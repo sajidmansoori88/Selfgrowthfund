@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 6,
-    "identityHash": "c91a543fa3250915bd51c2c519c17a95",
+    "identityHash": "fdfe8f95714edbcb7714c480d37478e8",
     "entities": [
       {
         "tableName": "shareholders",
@@ -928,7 +928,7 @@
       },
       {
         "tableName": "action_items",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`actionId` TEXT NOT NULL, `type` TEXT NOT NULL, `relatedEntityId` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `deadline` INTEGER, `response` TEXT NOT NULL, `isSynced` INTEGER NOT NULL, `responses` TEXT NOT NULL, `finalized` INTEGER NOT NULL, PRIMARY KEY(`actionId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`actionId` TEXT NOT NULL, `type` TEXT NOT NULL, `relatedEntityId` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deadline` INTEGER, `response` TEXT NOT NULL, `isSynced` INTEGER NOT NULL, `responses` TEXT NOT NULL, `finalized` INTEGER NOT NULL, PRIMARY KEY(`actionId`))",
         "fields": [
           {
             "fieldPath": "actionId",
@@ -973,6 +973,12 @@
             "notNull": true
           },
           {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "deadline",
             "columnName": "deadline",
             "affinity": "INTEGER"
@@ -1011,12 +1017,18 @@
       },
       {
         "tableName": "penalties",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `reason` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `provisionalId` TEXT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `reason` TEXT NOT NULL, `recordedBy` TEXT NOT NULL, `shareholderId` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provisionalId",
+            "columnName": "provisionalId",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -1062,6 +1074,12 @@
             "notNull": true
           },
           {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "isSynced",
             "columnName": "isSynced",
             "affinity": "INTEGER",
@@ -1077,12 +1095,18 @@
       },
       {
         "tableName": "other_incomes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `legacyApprovalAction` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `provisional_id` TEXT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approval_status` TEXT NOT NULL, `approved_by` TEXT, `approval_notes` TEXT, `updated_at` INTEGER NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `legacyApprovalAction` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provisionalId",
+            "columnName": "provisional_id",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -1164,12 +1188,18 @@
       },
       {
         "tableName": "other_expenses",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `approvedBy` TEXT, `approvalNotes` TEXT, `updatedAt` INTEGER NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `legacyApprovalAction` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `provisionalId` TEXT NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, `remarks` TEXT NOT NULL, `modeOfPayment` TEXT NOT NULL, `approvalStatus` TEXT NOT NULL, `approvedBy` TEXT, `approvalNotes` TEXT, `updatedAt` INTEGER NOT NULL, `recordedBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `legacyApprovalAction` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provisionalId",
+            "columnName": "provisionalId",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -1352,7 +1382,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c91a543fa3250915bd51c2c519c17a95')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fdfe8f95714edbcb7714c480d37478e8')"
     ]
   }
 }

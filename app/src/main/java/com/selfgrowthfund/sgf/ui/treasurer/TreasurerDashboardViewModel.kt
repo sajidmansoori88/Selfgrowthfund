@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,24 +20,22 @@ class TreasurerDashboardViewModel @Inject constructor(
     private val repaymentRepository: RepaymentRepository,
     private val investmentRepository: InvestmentRepository,
     private val investmentReturnsRepository: InvestmentReturnsRepository,
-    private val approvalFlowRepository: ApprovalFlowRepository // ✅ Added dependency
+    private val approvalFlowRepository: ApprovalFlowRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TreasurerDashboardUiState(isLoading = true))
     val uiState: StateFlow<TreasurerDashboardUiState> = _uiState
 
     init {
-        // Temporarily disabled auto-load for crash diagnosis
         viewModelScope.launch {
-            kotlinx.coroutines.delay(1000)
+            kotlinx.coroutines.delay(800)
             try {
                 loadDashboardData()
             } catch (e: Exception) {
-                android.util.Log.e("TreasurerVM", "Error during init: ${e.message}", e)
+                Timber.e(e, "Error during init: ${e.message}")
             }
         }
     }
-
 
     // ─────────────────────────────────────────────────────────────
     // LOAD DASHBOARD DATA
@@ -45,15 +44,18 @@ class TreasurerDashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
+                // ✅ Use actual repo methods (non-deprecated, available in your project)
                 val deposits = depositRepository.getPendingForTreasurer()
                 val borrowings = borrowingRepository.getApprovedPendingRelease()
                 val repayments = repaymentRepository.getPendingForTreasurer()
                 val investments = investmentRepository.getApprovedPendingRelease()
                 val returns = investmentReturnsRepository.getPendingForTreasurer()
 
-                val totalActiveMembers = borrowingRepository.shareholderDao.getActiveMemberCount()
+                // ✅ Member count and quorum calculation
+                val totalActiveMembers = borrowingRepository.getActiveMemberCount()
                 val quorumRequired = kotlin.math.ceil(totalActiveMembers * (2.0 / 3.0)).toInt()
 
+                // ✅ Approval progress tracking
                 val approvalProgressMap = mutableMapOf<String, Int>()
                 borrowings.forEach { borrowing ->
                     val count = approvalFlowRepository.countApprovedByEntity(
@@ -70,14 +72,15 @@ class TreasurerDashboardViewModel @Inject constructor(
                         repayments = repayments,
                         investments = investments,
                         returns = returns,
-                        isLoading = false,
                         totalActiveMembers = totalActiveMembers,
                         quorumRequired = quorumRequired,
-                        approvalProgressMap = approvalProgressMap
+                        approvalProgressMap = approvalProgressMap,
+                        isLoading = false
                     )
                 }
 
             } catch (e: Exception) {
+                Timber.e(e, "Error loading Treasurer dashboard data")
                 _uiState.update {
                     it.copy(isLoading = false, message = "Error loading data: ${e.message}")
                 }
@@ -86,8 +89,9 @@ class TreasurerDashboardViewModel @Inject constructor(
     }
 
     // ─────────────────────────────────────────────────────────────
-    // APPROVE / RELEASE ACTIONS
+    // APPROVAL & RELEASE ACTIONS
     // ─────────────────────────────────────────────────────────────
+
     fun approveDeposit(provisionalId: String, treasurerId: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val success = depositRepository.approveByTreasurer(
@@ -107,18 +111,19 @@ class TreasurerDashboardViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
-                // ✅ Step 1: Check 2/3 quorum
                 val quorumMet = borrowingRepository.isBorrowingApprovalQuorumMet(provisionalId)
                 if (!quorumMet) {
                     onResult(false, "Cannot release — 2/3 member approvals not yet received.")
                     return@launch
                 }
 
-                // ✅ Step 2: Finalize borrowing
                 when (val result = borrowingRepository.finalizeBorrowing(provisionalId, treasurerId)) {
-                    is Result.Success<*> -> onResult(true, "Borrowing released successfully 💸")
+                    is Result.Success -> {
+                        loadDashboardData()
+                        onResult(true, "Borrowing released successfully 💸")
+                    }
                     is Result.Error -> onResult(false, "Release failed: ${result.exception.message}")
-                    else -> onResult(false, "Unexpected result type") // ✅ exhaustive fix
+                    else -> { /* no-op */ }
                 }
             } catch (e: Exception) {
                 onResult(false, "Error: ${e.message}")
@@ -128,25 +133,36 @@ class TreasurerDashboardViewModel @Inject constructor(
 
     fun releaseInvestment(provisionalId: String, treasurerId: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val success = investmentRepository.markPaymentReleased(
+            when (investmentRepository.markPaymentReleased(
                 provisionalId,
                 treasurerId,
                 "Investment funds released"
-            )
-            if (success) loadDashboardData()
-            onResult(success)
+            )) {
+                is Result.Success -> {
+                    loadDashboardData()
+                    onResult(true)
+                }
+                is Result.Error -> onResult(false)
+                else -> { /* no-op */ }
+            }
         }
     }
 
     fun approveRepayment(provisionalId: String, treasurerId: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val success = repaymentRepository.approveByTreasurer(
+            when (repaymentRepository.approve(
                 provisionalId,
                 treasurerId,
-                "Repayment verified by Treasurer"
-            )
-            if (success) loadDashboardData()
-            onResult(success)
+                "Repayment verified by Treasurer",
+                com.selfgrowthfund.sgf.model.enums.ApprovalStage.TREASURER_APPROVED
+            )) {
+                is Result.Success -> {
+                    loadDashboardData()
+                    onResult(true)
+                }
+                is Result.Error -> onResult(false)
+                else -> { /* no-op */ }
+            }
         }
     }
 
@@ -156,21 +172,27 @@ class TreasurerDashboardViewModel @Inject constructor(
         onResult: (Boolean) -> Unit
     ) {
         viewModelScope.launch {
-            val success = investmentReturnsRepository.approveByTreasurer(
+            when (investmentReturnsRepository.approveByTreasurer(
                 provisionalId,
                 treasurerId,
                 "Investment return verified"
-            )
-            if (success) loadDashboardData()
-            onResult(success)
+            )) {
+                is Result.Success -> {
+                    loadDashboardData()
+                    onResult(true)
+                }
+                is Result.Error -> onResult(false)
+                else -> { /* no-op */ }
+            }
         }
     }
 
     // ─────────────────────────────────────────────────────────────
-    // SHARED UTILITY HELPERS (for BorrowingListSection)
+    // SHARED UTILITY HELPERS
     // ─────────────────────────────────────────────────────────────
+
     suspend fun getActiveMemberCount(): Int =
-        borrowingRepository.shareholderDao.getActiveMemberCount()
+        borrowingRepository.getActiveMemberCount()
 
     suspend fun getApprovalCount(provisionalId: String): Int =
         approvalFlowRepository.countApprovedByEntity(provisionalId, ApprovalType.BORROWING)

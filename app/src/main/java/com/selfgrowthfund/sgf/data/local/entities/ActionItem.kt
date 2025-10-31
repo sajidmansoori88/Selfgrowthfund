@@ -7,6 +7,7 @@ import com.selfgrowthfund.sgf.data.local.converters.AppTypeConverters
 import com.selfgrowthfund.sgf.model.enums.ActionType
 import com.selfgrowthfund.sgf.model.enums.ActionResponse
 import java.time.LocalDateTime
+import kotlin.time.Instant
 
 @Entity(tableName = "action_items")
 @TypeConverters(AppTypeConverters::class)
@@ -18,6 +19,7 @@ data class ActionItem(
     val description: String,
     val createdBy: String,
     val createdAt: LocalDateTime,
+    val updatedAt: java.time.Instant = java.time.Instant.now(),
     val deadline: LocalDateTime?,
     val response: ActionResponse,
     val isSynced: Boolean = false,

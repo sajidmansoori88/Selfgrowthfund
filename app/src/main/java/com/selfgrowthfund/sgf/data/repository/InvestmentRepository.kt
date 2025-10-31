@@ -8,43 +8,57 @@ import com.selfgrowthfund.sgf.model.enums.InvestmentStatus
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.IdGenerator
 import com.selfgrowthfund.sgf.utils.Result
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * InvestmentRepository (Realtime Firestore <-> Room Sync)
+ *
+ * - Room is the single source of truth.
+ * - Local writes mark isSynced = false and trigger realtimeSyncRepository.pushAllUnsynced().
+ * - Firestore updates handled by RealtimeSyncRepository global listener.
+ */
 @Singleton
 class InvestmentRepository @Inject constructor(
     private val dao: InvestmentDao,
-    dates: Dates
+    private val realtimeSyncRepository: RealtimeSyncRepository,
+    private val dates: Dates
 ) {
 
-    // --- Create & Update ---
+    // =========================
+    // Basic CRUD (Local + Sync)
+    // =========================
+
     suspend fun createInvestment(investment: Investment): Result<Unit> = try {
-        dao.insert(investment)
+        dao.insert(investment.copy(isSynced = false))
+        realtimeSyncRepository.pushAllUnsynced()
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
 
     suspend fun updateInvestment(investment: Investment): Result<Unit> = try {
-        dao.update(investment)
+        dao.update(investment.copy(isSynced = false))
+        realtimeSyncRepository.pushAllUnsynced()
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
 
-    // --- Delete ---
     suspend fun deleteInvestment(provisionalId: String): Result<Unit> = try {
         dao.deleteByProvisionalId(provisionalId)
+        realtimeSyncRepository.pushAllUnsynced()
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
     }
 
-    // --- Lookup ---
+    // =========================
+    // Queries
+    // =========================
+
     suspend fun getByProvisionalId(id: String): Investment? = dao.getByProvisionalId(id)
     suspend fun getByInvestmentId(id: String): Investment? = dao.getByInvestmentId(id)
 
@@ -55,10 +69,14 @@ class InvestmentRepository @Inject constructor(
     fun getActiveInvestments(): Flow<List<Investment>> = dao.getByStatus(InvestmentStatus.Active)
     fun getInvestmentsByType(type: InvesteeType): Flow<List<Investment>> = dao.getByInvesteeType(type)
 
-    // --- Business Logic ---
+    // =========================
+    // Business Logic
+    // =========================
+
     suspend fun changeInvestmentStatus(provisionalId: String, newStatus: InvestmentStatus): Result<Unit> = try {
         val investment = dao.getByProvisionalId(provisionalId) ?: throw Exception("Investment not found")
-        dao.update(investment.copy(status = newStatus))
+        dao.update(investment.copy(status = newStatus, isSynced = false))
+        realtimeSyncRepository.pushAllUnsynced()
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
@@ -78,7 +96,10 @@ class InvestmentRepository @Inject constructor(
         Result.Error(e)
     }
 
-    // --- Aggregates ---
+    // =========================
+    // Aggregates
+    // =========================
+
     suspend fun getTotalActiveInvestmentValue(): Result<Double> = try {
         Result.Success(dao.getTotalActiveAmount() ?: 0.0)
     } catch (e: Exception) {
@@ -97,105 +118,124 @@ class InvestmentRepository @Inject constructor(
         Result.Error(e)
     }
 
-    suspend fun getPendingForTreasurer(): List<Investment> {
-        return dao.getByApprovalStatus(ApprovalStage.PENDING)
-    }
+    suspend fun getPendingForTreasurer(): List<Investment> =
+        dao.getByApprovalStatus(ApprovalStage.PENDING)
 
-    suspend fun getApprovedPendingRelease(): List<Investment> {
-        return dao.getByApprovalStatus(ApprovalStage.TREASURER_APPROVED)
-    }
+    suspend fun getApprovedPendingRelease(): List<Investment> =
+        dao.getByApprovalStatus(ApprovalStage.TREASURER_APPROVED)
 
-    // --- Approval Workflow ---
+    // =========================
+    // Approval Workflow
+    // =========================
+
     suspend fun approve(
         provisionalId: String,
         approverId: String?,
         notes: String?,
         newStatus: ApprovalStage
-    ): Boolean = withContext(Dispatchers.IO) {
+    ): Result<Unit> = try {
         val updatedAt = LocalDate.now()
-        val rows = dao.updateApprovalStatus(provisionalId, newStatus, approverId, notes, updatedAt)
-        rows > 0
+        dao.updateApprovalStatus(provisionalId, newStatus, approverId, notes, updatedAt)
+        realtimeSyncRepository.pushAllUnsynced()
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error(e)
     }
 
     suspend fun reject(
         provisionalId: String,
         rejectedBy: String?,
         notes: String?
-    ): Boolean = withContext(Dispatchers.IO) {
+    ): Result<Unit> = try {
         val updatedAt = LocalDate.now()
-        val rows = dao.updateApprovalStatus(provisionalId, ApprovalStage.REJECTED, rejectedBy, notes, updatedAt)
-        rows > 0
+        dao.updateApprovalStatus(provisionalId, ApprovalStage.REJECTED, rejectedBy, notes, updatedAt)
+        realtimeSyncRepository.pushAllUnsynced()
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error(e)
     }
 
     suspend fun approveAndAssignId(
         provisionalId: String,
         approverId: String?,
         notes: String?
-    ): Boolean {
-        return try {
-            val investment = dao.getByProvisionalId(provisionalId) ?: return false
-            val lastId = dao.getLastApprovedInvestmentId()
-            val newId = IdGenerator.nextInvestmentId(lastId)
-            val updatedInvestment = investment.copy(
-                investmentId = newId,
-                approvalStatus = ApprovalStage.ADMIN_APPROVED,
-                approvedBy = approverId,
-                approvalNotes = notes,                    // ✅ fixed field name
-                investmentDate = investment.investmentDate ?: LocalDate.now(),
-                updatedAt = LocalDate.now()
-            )
-            dao.update(updatedInvestment)
-            true
-        } catch (e: Exception) {
-            false
-        }
+    ): Result<String> = try {
+        val investment = dao.getByProvisionalId(provisionalId) ?: throw Exception("Investment not found")
+        val lastId = dao.getLastApprovedInvestmentId()
+        val newId = IdGenerator.nextInvestmentId(lastId)
+        val updatedInvestment = investment.copy(
+            investmentId = newId,
+            approvalStatus = ApprovalStage.ADMIN_APPROVED,
+            approvedBy = approverId,
+            approvalNotes = notes,
+            investmentDate = investment.investmentDate ?: LocalDate.now(),
+            updatedAt = LocalDate.now(),
+            isSynced = false
+        )
+        dao.update(updatedInvestment)
+        realtimeSyncRepository.pushAllUnsynced()
+        Result.Success(newId)
+    } catch (e: Exception) {
+        Result.Error(e)
     }
 
     suspend fun markPaymentReleased(
         provisionalId: String,
         treasurerId: String?,
         remarks: String?
-    ): Boolean {
-        return try {
-            val investment = dao.getByProvisionalId(provisionalId) ?: return false
-            val updatedInvestment = investment.copy(
-                approvalStatus = ApprovalStage.TREASURER_APPROVED,
-                approvedBy = treasurerId,
-                approvalNotes = remarks,                  // ✅ fixed field name
-                investmentDate = LocalDate.now(),          // ✅ auto-set date
-                updatedAt = LocalDate.now()
-            )
-            dao.update(updatedInvestment)
-            true
-        } catch (e: Exception) {
-            false
-        }
+    ): Result<Unit> = try {
+        val investment = dao.getByProvisionalId(provisionalId) ?: throw Exception("Investment not found")
+        val updatedInvestment = investment.copy(
+            approvalStatus = ApprovalStage.TREASURER_APPROVED,
+            approvedBy = treasurerId,
+            approvalNotes = remarks,
+            investmentDate = LocalDate.now(),
+            updatedAt = LocalDate.now(),
+            isSynced = false
+        )
+        dao.update(updatedInvestment)
+        realtimeSyncRepository.pushAllUnsynced()
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error(e)
     }
 
-    // --- Reports ---
-    suspend fun countApproved(start: LocalDate, end: LocalDate) =
-        dao.countByStatus(ApprovalStage.APPROVED, start, end)
+    // =========================
+    // Reports
+    // =========================
 
-    suspend fun countRejected(start: LocalDate, end: LocalDate) =
-        dao.countByStatus(ApprovalStage.REJECTED, start, end)
+    suspend fun countByStatus(status: ApprovalStage, start: LocalDate, end: LocalDate): Result<Int> = try {
+        Result.Success(dao.countByStatus(status, start, end))
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
 
-    suspend fun countPending(start: LocalDate, end: LocalDate) =
-        dao.countByStatus(ApprovalStage.PENDING, start, end)
+    suspend fun countApproved(start: LocalDate, end: LocalDate): Result<Int> =
+        countByStatus(ApprovalStage.APPROVED, start, end)
 
-    suspend fun countTotal(start: LocalDate, end: LocalDate) =
-        dao.countTotal(start, end)
+    suspend fun countRejected(start: LocalDate, end: LocalDate): Result<Int> =
+        countByStatus(ApprovalStage.REJECTED, start, end)
+
+    suspend fun countPending(start: LocalDate, end: LocalDate): Result<Int> =
+        countByStatus(ApprovalStage.PENDING, start, end)
+
+    suspend fun countTotal(start: LocalDate, end: LocalDate): Result<Int> = try {
+        Result.Success(dao.countTotal(start, end))
+    } catch (e: Exception) {
+        Result.Error(e)
+    }
 
     suspend fun getApprovalsBetween(start: LocalDate, end: LocalDate): List<Investment> =
         dao.getApprovalsBetween(start, end)
 
-    suspend fun findById(id: String): Investment? {
-        // Look up by provisionalId first (since approvals happen before investmentId assignment)
-        return dao.getByProvisionalId(id) ?: dao.getByInvestmentId(id)
-    }
+    suspend fun findById(id: String): Investment? =
+        dao.getByProvisionalId(id) ?: dao.getByInvestmentId(id)
 
-    suspend fun updateApprovalStage(provisionalId: String, newStage: ApprovalStage) {
+    suspend fun updateApprovalStage(provisionalId: String, newStage: ApprovalStage): Result<Unit> = try {
         dao.updateApprovalStage(provisionalId, newStage.name)
+        realtimeSyncRepository.pushAllUnsynced()
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error(e)
     }
-
-
 }

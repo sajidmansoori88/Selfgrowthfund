@@ -3,6 +3,7 @@ package com.selfgrowthfund.sgf.di
 import android.content.Context
 import androidx.room.Room
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.gson.Gson
 import com.selfgrowthfund.sgf.data.local.AppDatabase
 import com.selfgrowthfund.sgf.data.local.Migrations
 import com.selfgrowthfund.sgf.data.local.dao.*
@@ -58,31 +59,81 @@ object AppModule {
     @Singleton
     fun provideDates(): Dates = Dates
 
+    @Provides
+    @Singleton
+    fun provideGson(): Gson = Gson()
+
+
     // ============================================================
     // ===============  REPOSITORIES  ==============================
     // ============================================================
 
     @Provides
     @Singleton
+    fun provideRealtimeSyncRepository(
+        borrowingDao: BorrowingDao,
+        repaymentDao: RepaymentDao,
+        depositDao: DepositDao,
+        investmentDao: InvestmentDao,
+        returnsDao: InvestmentReturnsDao,
+        shareholderDao: ShareholderDao,
+        approvalFlowDao: ApprovalFlowDao,
+        actionItemDao: ActionItemDao,
+        penaltyDao: PenaltyDao,
+        otherExpenseDao: OtherExpenseDao,
+        otherIncomeDao: OtherIncomeDao,
+        userSessionDao: UserSessionDao,
+        firestore: FirebaseFirestore,
+        gson: Gson
+    ): RealtimeSyncRepository = RealtimeSyncRepository(
+        borrowingDao,
+        repaymentDao,
+        depositDao,
+        investmentDao,
+        returnsDao,
+        shareholderDao,
+        approvalFlowDao,
+        actionItemDao,
+        penaltyDao,
+        otherExpenseDao,
+        otherIncomeDao,
+        userSessionDao,
+        firestore,
+        gson
+    )
+
+    @Provides
+    @Singleton
     fun provideShareholderRepository(
         shareholderDao: ShareholderDao,
         dates: Dates,
-        firestore: FirebaseFirestore
-    ): ShareholderRepository = ShareholderRepository(shareholderDao, dates, firestore)
+        realtimeSyncRepository: RealtimeSyncRepository
+    ): ShareholderRepository = ShareholderRepository(
+        shareholderDao,
+        dates,
+        realtimeSyncRepository
+    )
 
     @Provides
     @Singleton
     fun provideApprovalFlowRepository(
-        dao: ApprovalFlowDao
-    ): ApprovalFlowRepository = ApprovalFlowRepository(dao)
+        dao: ApprovalFlowDao,
+        realtimeSyncRepository: RealtimeSyncRepository
+    ): ApprovalFlowRepository = ApprovalFlowRepository(
+        dao,
+        realtimeSyncRepository
+    )
+
 
     @Provides
     @Singleton
     fun provideDepositRepository(
         depositDao: DepositDao,
-        firestore: FirebaseFirestore,
-        dates: Dates
-    ): DepositRepository = DepositRepository(depositDao, firestore, dates)
+        realtimeSyncRepository: RealtimeSyncRepository
+    ): DepositRepository = DepositRepository(
+        depositDao,
+        realtimeSyncRepository
+    )
 
     @Provides
     @Singleton
@@ -90,34 +141,49 @@ object AppModule {
         borrowingDao: BorrowingDao,
         shareholderDao: ShareholderDao,
         approvalFlowRepository: ApprovalFlowRepository,
-        dates: Dates
+        dates: Dates,
+        realtimeSyncRepository: RealtimeSyncRepository
     ): BorrowingRepository = BorrowingRepository(
-        borrowingDao = borrowingDao,
-        shareholderDao = shareholderDao,
-        approvalFlowRepository = approvalFlowRepository,
-        dates = dates
+        borrowingDao,
+        shareholderDao,
+        approvalFlowRepository,
+        dates,
+        realtimeSyncRepository
+    )
+
+    @Provides
+    @Singleton
+    fun provideRepaymentRepository(
+        dao: RepaymentDao,
+        borrowingRepository: BorrowingRepository,
+        realtimeSyncRepository: RealtimeSyncRepository
+    ): RepaymentRepository = RepaymentRepository(
+        dao,
+        borrowingRepository,
+        realtimeSyncRepository
     )
 
     @Provides
     @Singleton
     fun provideInvestmentRepository(
         investmentDao: InvestmentDao,
-        dates: Dates
-    ): InvestmentRepository = InvestmentRepository(investmentDao, dates)
+        dates: Dates,
+        realtimeSyncRepository: RealtimeSyncRepository
+    ): InvestmentRepository = InvestmentRepository(
+        investmentDao,
+        realtimeSyncRepository,dates
+    )
 
     @Provides
     @Singleton
     fun provideInvestmentReturnsRepository(
         returnsDao: InvestmentReturnsDao,
         investmentDao: InvestmentDao,
-        dates: Dates
-    ): InvestmentReturnsRepository = InvestmentReturnsRepository(returnsDao, investmentDao, dates)
-
-    @Provides
-    @Singleton
-    fun provideRepaymentRepository(
-        repaymentDao: RepaymentDao,
-        borrowingRepository: BorrowingRepository,
-        firestore: FirebaseFirestore
-    ): RepaymentRepository = RepaymentRepository(repaymentDao, borrowingRepository, firestore)
+        dates: Dates,
+        realtimeSyncRepository: RealtimeSyncRepository
+    ): InvestmentReturnsRepository = InvestmentReturnsRepository(
+        returnsDao,
+        investmentDao,
+        realtimeSyncRepository,dates
+    )
 }

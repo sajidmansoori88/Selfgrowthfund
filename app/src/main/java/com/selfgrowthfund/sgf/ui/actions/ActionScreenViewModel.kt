@@ -11,6 +11,7 @@ import com.selfgrowthfund.sgf.data.repository.InvestmentRepository
 import com.selfgrowthfund.sgf.model.enums.ActionResponse
 import com.selfgrowthfund.sgf.model.enums.ApprovalAction
 import com.selfgrowthfund.sgf.model.enums.ApprovalStage
+import com.selfgrowthfund.sgf.model.enums.ApprovalType
 import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -115,13 +116,13 @@ class ActionScreenViewModel @Inject constructor(
 
             // optional: update related entity stage
             when (flow.entityType) {
-                com.selfgrowthfund.sgf.model.enums.ApprovalType.INVESTMENT -> {
+                ApprovalType.INVESTMENT -> {
                     investmentRepository.updateApprovalStage(
                         provisionalId = flow.entityId,
                         newStage = ApprovalStage.APPROVED
                     )
                 }
-                com.selfgrowthfund.sgf.model.enums.ApprovalType.BORROWING -> {
+                ApprovalType.BORROWING -> {
                     borrowingRepository.updateApprovalStage(
                         borrowId = flow.entityId,
                         newStage = ApprovalStage.APPROVED
@@ -144,13 +145,13 @@ class ActionScreenViewModel @Inject constructor(
 
             // optional: reflect rejection in main entity
             when (flow.entityType) {
-                com.selfgrowthfund.sgf.model.enums.ApprovalType.INVESTMENT -> {
+                ApprovalType.INVESTMENT -> {
                     investmentRepository.updateApprovalStage(
                         provisionalId = flow.entityId,
                         newStage = ApprovalStage.REJECTED
                     )
                 }
-                com.selfgrowthfund.sgf.model.enums.ApprovalType.BORROWING -> {
+                ApprovalType.BORROWING -> {
                     borrowingRepository.updateApprovalStage(
                         borrowId = flow.entityId,
                         newStage = ApprovalStage.REJECTED

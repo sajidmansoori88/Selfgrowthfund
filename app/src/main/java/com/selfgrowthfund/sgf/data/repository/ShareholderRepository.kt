@@ -1,22 +1,28 @@
 package com.selfgrowthfund.sgf.data.repository
 
 import android.util.Log
-import com.google.firebase.firestore.FirebaseFirestore
 import com.selfgrowthfund.sgf.data.local.dao.ShareholderDao
 import com.selfgrowthfund.sgf.data.local.entities.Shareholder
-import com.selfgrowthfund.sgf.data.local.entities.ShareholderEntry
 import com.selfgrowthfund.sgf.utils.Dates
 import com.selfgrowthfund.sgf.utils.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import javax.inject.Inject
+import javax.inject.Singleton
 
+/**
+ * ShareholderRepository (Realtime Firestore <-> Room Sync)
+ *
+ * - Room is the single source of truth.
+ * - Local writes mark isSynced = false and trigger realtimeSyncRepository.pushAllUnsynced().
+ * - Firestore updates handled automatically by RealtimeSyncRepository global listener.
+ */
+@Singleton
 class ShareholderRepository @Inject constructor(
     private val dao: ShareholderDao,
     private val dates: Dates,
-    private val firestore: FirebaseFirestore
+    private val realtimeSyncRepository: RealtimeSyncRepository
 ) {
 
     // ──────────────── Reactive streams ────────────────
@@ -34,8 +40,11 @@ class ShareholderRepository @Inject constructor(
     suspend fun searchShareholders(query: String): List<Shareholder> =
         dao.searchShareholders("%$query%")
 
+    // ──────────────── Create / Update / Delete ────────────────
     suspend fun addShareholder(shareholder: Shareholder): Result<Unit> = try {
-        dao.insertShareholder(shareholder.withTimestamps())
+        val entry = shareholder.withTimestamps().copy(isSynced = false)
+        dao.insertShareholder(entry)
+        realtimeSyncRepository.pushAllUnsynced()
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
@@ -43,8 +52,12 @@ class ShareholderRepository @Inject constructor(
 
     suspend fun updateShareholder(shareholder: Shareholder): Result<Unit> = try {
         dao.update(
-            shareholder.copy(updatedAt = Instant.ofEpochMilli(dates.now()))
+            shareholder.copy(
+                updatedAt = Instant.ofEpochMilli(dates.now()),
+                isSynced = false
+            )
         )
+        realtimeSyncRepository.pushAllUnsynced()
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
@@ -53,41 +66,26 @@ class ShareholderRepository @Inject constructor(
     suspend fun deleteShareholderById(id: String): Result<Unit> = try {
         dao.getShareholderById(id)?.let {
             dao.deleteShareholder(it)
+            realtimeSyncRepository.pushAllUnsynced()
             Result.Success(Unit)
         } ?: Result.Error(Exception("Shareholder not found"))
     } catch (e: Exception) {
         Result.Error(e)
     }
+
     suspend fun deleteShareholder(shareholder: Shareholder): Result<Unit> = try {
         dao.deleteShareholder(shareholder)
+        realtimeSyncRepository.pushAllUnsynced()
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error(e)
-    }
-    suspend fun insertShareholderWithRoleCheck(shareholder: Shareholder) {
-        val safeRole = shareholder.role
-        dao.insertShareholder(shareholder.copy(role = safeRole))
     }
 
-    // ──────────────── Firestore sync ────────────────
-    suspend fun syncShareholderToFirestore(input: ShareholderEntry): Result<Unit> = try {
-        val now = Instant.ofEpochMilli(dates.now())
-        val doc = firestore.collection("shareholder").document()
-        val data = mapOf(
-            "name" to input.fullName,
-            "dob" to dates.format(input.dob),
-            "joiningDate" to dates.format(input.joiningDate),
-            "mobileNumber" to input.mobileNumber,
-            "email" to input.email,
-            "role" to input.role,
-            "createdAt" to now.toEpochMilli(),
-            "createdAtFormatted" to dates.format(now),
-            "uid" to null
-        )
-        doc.set(data).await()
-        Result.Success(Unit)
-    } catch (e: Exception) {
-        Result.Error(e)
+    suspend fun insertShareholderWithRoleCheck(shareholder: Shareholder) {
+        val safeRole = shareholder.role
+        val entry = shareholder.copy(role = safeRole, isSynced = false)
+        dao.insertShareholder(entry)
+        realtimeSyncRepository.pushAllUnsynced()
     }
 
     // ──────────────── Helpers ────────────────

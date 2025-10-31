@@ -4,6 +4,7 @@ sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Login : Screen("login")
     object Home : Screen("home")
+    object AuthEntry : Screen("auth_entry")
 
     // Profile with argument
     object Profile : Screen("profile/{shareholderId}") {

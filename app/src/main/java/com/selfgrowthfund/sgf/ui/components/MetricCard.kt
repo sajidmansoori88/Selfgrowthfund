@@ -8,11 +8,12 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun MetricCard(
+    modifier: Modifier = Modifier,
     title: String,
     count: Int? = null,
     value: Double? = null,
     highlight: Boolean = false,
-    modifier: Modifier = Modifier
+
 ) {
     Card(
         modifier = modifier,

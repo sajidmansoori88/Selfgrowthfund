@@ -17,17 +17,23 @@ import com.selfgrowthfund.sgf.data.local.entities.Borrowing
 import com.selfgrowthfund.sgf.ui.repayments.RepaymentSummary
 import com.selfgrowthfund.sgf.ui.repayments.RepaymentViewModel
 import com.selfgrowthfund.sgf.ui.theme.GradientBackground
+import com.selfgrowthfund.sgf.ui.treasurer.ApprovalProgressBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BorrowingCard(
     borrowing: Borrowing,
     summary: RepaymentSummary?,
-    onRepay: () -> Unit
+    onRepay: () -> Unit,
+    approvalProgressMap: Map<String, Int>? = null, // 🔹 optional for Treasurer
+    quorumRequired: Int? = null // 🔹 optional for Treasurer
 ) {
     val principalRepaid = summary?.totalPrincipal ?: 0.0
     val penaltyPaid = summary?.totalPenalty ?: 0.0
     val finalOutstanding = borrowing.amountRequested - principalRepaid
+
+    val approvals = approvalProgressMap?.get(borrowing.provisionalId) ?: 0
+    val showApproval = approvalProgressMap != null && quorumRequired != null
 
     Card(
         modifier = Modifier
@@ -57,6 +63,15 @@ fun BorrowingCard(
             Text("Penalty Paid: ₹$penaltyPaid", style = MaterialTheme.typography.bodySmall)
             Text("Outstanding: ₹${"%.2f".format(finalOutstanding)}", style = MaterialTheme.typography.bodySmall)
 
+            // 🔹 Show 2/3 approval progress if available
+            if (showApproval) {
+                Spacer(modifier = Modifier.height(12.dp))
+                ApprovalProgressBar(
+                    approvedCount = approvals,
+                    requiredCount = quorumRequired!!
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(onClick = onRepay, modifier = Modifier.align(Alignment.End)) {
@@ -65,6 +80,7 @@ fun BorrowingCard(
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

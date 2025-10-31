@@ -194,5 +194,6 @@ interface RepaymentDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(repayments: List<Repayment>)
+
 }
 

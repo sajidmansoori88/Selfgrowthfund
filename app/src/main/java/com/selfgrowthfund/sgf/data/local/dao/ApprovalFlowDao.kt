@@ -1,10 +1,6 @@
 package com.selfgrowthfund.sgf.data.local.dao
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Update
+import androidx.room.*
 import com.selfgrowthfund.sgf.data.local.entities.ApprovalFlow
 import com.selfgrowthfund.sgf.model.enums.ApprovalType
 import kotlinx.coroutines.flow.Flow
@@ -48,7 +44,7 @@ interface ApprovalFlowDao {
     SELECT COUNT(*) FROM approval_flow
     WHERE entityId = :entityId
       AND entityType = :type
-      AND approval_action = 'APPROVED'
+      AND approval_action = 'APPROVE'
 """
     )
     suspend fun countApprovedVotes(entityId: String, type: ApprovalType): Int
@@ -59,7 +55,7 @@ interface ApprovalFlowDao {
     SELECT COUNT(*) FROM approval_flow
     WHERE entityId = :entityId
       AND entityType = :type
-      AND approval_action = 'REJECTED'
+      AND approval_action = 'REJECT'
 """
     )
     suspend fun countRejectedVotes(entityId: String, type: ApprovalType): Int
@@ -76,28 +72,21 @@ interface ApprovalFlowDao {
     suspend fun getVotesForEntity(entityId: String, type: ApprovalType): List<ApprovalFlow>
 
     // ---------- NEW: Pending approvals flow ----------
-    /**
-     * Returns a Flow of ApprovalFlow entries that are pending:
-     * we consider pending those with no approvedAt timestamp yet.
-     *
-     * This is a safe way to get "pending" approvals without relying
-     * on specific enum column names that may differ across schema versions.
-     */
     @Query("""
-    SELECT * FROM approval_flow
-    WHERE approvedAt IS NULL
-    ORDER BY createdAt DESC
-""")
+        SELECT * FROM approval_flow
+        WHERE approvedAt IS NULL
+        ORDER BY createdAt DESC
+    """)
     fun getPendingApprovals(): Flow<List<ApprovalFlow>>
 
     @Query("SELECT * FROM approval_flow ORDER BY createdAt DESC")
     fun getAllApprovals(): Flow<List<ApprovalFlow>>
 
     @Query("""
-    SELECT * FROM approval_flow
-    WHERE approvedAt IS NOT NULL
-    ORDER BY approvedAt DESC
-""")
+        SELECT * FROM approval_flow
+        WHERE approvedAt IS NOT NULL
+        ORDER BY approvedAt DESC
+    """)
     fun getCompletedApprovals(): Flow<List<ApprovalFlow>>
 
     // --- 🔁 SYNC HELPERS ---
@@ -113,5 +102,13 @@ interface ApprovalFlowDao {
     @Update
     suspend fun update(approvalFlow: ApprovalFlow)
 
-}
+    // --- 🆕 Added for RealtimeSyncRepository compatibility ---
 
+    /** Delete a single approval record */
+    @Delete
+    suspend fun delete(flow: ApprovalFlow)
+
+    /** Optional: delete all local approvals (e.g., on logout) */
+    @Query("DELETE FROM approval_flow")
+    suspend fun clearAll()
+}

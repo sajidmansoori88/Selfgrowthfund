@@ -38,27 +38,15 @@ class RepaymentViewModel @Inject constructor(
     private val _borrowingDetails = MutableStateFlow<BorrowingDetails?>(null)
     val borrowingDetails: StateFlow<BorrowingDetails?> = _borrowingDetails
 
-    // ---------------- Firestore Live Repayments ----------------
+    // ---------------- Live Repayments (Room + RealtimeSync) ----------------
     val liveRepayments: StateFlow<List<Repayment>> =
-        repository.getLiveRepayments()
+        repository.getAllRepayments()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val liveRepaymentSummaries: StateFlow<List<com.selfgrowthfund.sgf.data.local.dto.RepaymentSummaryDTO>> =
-        repository.getLiveRepaymentSummaries()
+        repository.getRepaymentSummaries()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // ---------------- Manual Firestore → Room Refresh ----------------
-    fun refreshFromFirestore(onComplete: (Boolean) -> Unit = {}) {
-        viewModelScope.launch {
-            try {
-                repository.refreshFromFirestore()
-                onComplete(true)
-            } catch (e: Exception) {
-                Timber.e(e, "Repayment refresh failed")
-                onComplete(false)
-            }
-        }
-    }
 
     // ---------------- ID Preview ----------------
     fun fetchNextRepaymentId() {
@@ -167,48 +155,45 @@ class RepaymentViewModel @Inject constructor(
     // ---------------- Approvals ----------------
     fun approveAsTreasurer(provisionalId: String, treasurerId: String, notes: String? = null) {
         viewModelScope.launch {
-            try {
-                val success = repository.approve(
-                    provisionalId,
-                    approverId = treasurerId,
-                    notes = notes,
-                    newStatus = com.selfgrowthfund.sgf.model.enums.ApprovalStage.TREASURER_APPROVED
-                )
-                approvalResult.value = if (success) Result.Success(Unit) else Result.Error(Exception("Approval failed"))
-            } catch (e: Exception) {
-                Timber.e(e, "Treasurer approval failed")
-                approvalResult.value = Result.Error(e)
+            when (val result = repository.approve(
+                provisionalId,
+                approverId = treasurerId,
+                notes = notes,
+                newStatus = com.selfgrowthfund.sgf.model.enums.ApprovalStage.TREASURER_APPROVED
+            )) {
+                is Result.Success -> approvalResult.value = Result.Success(Unit)
+                is Result.Error -> approvalResult.value = Result.Error(result.exception)
+                Result.Loading -> { /* optional: show loading spinner */ }
             }
         }
     }
+
 
     fun approveAsAdmin(provisionalId: String, adminId: String, notes: String? = null) {
         viewModelScope.launch {
-            try {
-                val success = repository.approveAndAssignId(
-                    provisionalId,
-                    approverId = adminId,
-                    notes = notes
-                )
-                approvalResult.value = if (success) Result.Success(Unit) else Result.Error(Exception("Admin approval failed"))
-            } catch (e: Exception) {
-                Timber.e(e, "Admin approval failed")
-                approvalResult.value = Result.Error(e)
+            when (val result = repository.approveAndAssignId(
+                provisionalId,
+                approverId = adminId,
+                notes = notes
+            )) {
+                is Result.Success -> approvalResult.value = Result.Success(Unit)
+                is Result.Error -> approvalResult.value = Result.Error(result.exception)
+                Result.Loading -> { /* optional: show loading spinner */ }
             }
         }
     }
 
+
     fun rejectRepayment(provisionalId: String, rejectedBy: String, notes: String? = null) {
         viewModelScope.launch {
-            try {
-                val success = repository.reject(provisionalId, rejectedBy, notes)
-                approvalResult.value = if (success) Result.Success(Unit) else Result.Error(Exception("Rejection failed"))
-            } catch (e: Exception) {
-                Timber.e(e, "Repayment rejection failed")
-                approvalResult.value = Result.Error(e)
+            when (val result = repository.reject(provisionalId, rejectedBy, notes)) {
+                is Result.Success -> approvalResult.value = Result.Success(Unit)
+                is Result.Error -> approvalResult.value = Result.Error(result.exception)
+                Result.Loading -> { /* optional: show loading spinner */ }
             }
         }
     }
+
 
     // ---------------- Summary Loader ----------------
     fun loadSummaries(borrowings: List<Borrowing>) {

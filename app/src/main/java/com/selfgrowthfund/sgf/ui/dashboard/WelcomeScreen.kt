@@ -1,4 +1,4 @@
-package com.selfgrowthfund.sgf.ui
+package com.selfgrowthfund.sgf.ui.dashboard
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -60,13 +60,13 @@ fun WelcomeScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(180.dp))
 
             Text(
-                text = "Developer - Sajid Mansoori",
+                text = "Concept - Sajid Mansoori",
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onPrimary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Powered by: Copilot & other AIs",
+                text = "Powered by: Artificial Intelligence",
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
             )

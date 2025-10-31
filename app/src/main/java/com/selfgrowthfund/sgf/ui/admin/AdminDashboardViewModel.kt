@@ -16,9 +16,9 @@ import com.selfgrowthfund.sgf.ui.components.reportingperiod.ReportPeriod
 import com.selfgrowthfund.sgf.ui.components.reportingperiod.ReportPeriodCalculator
 import com.selfgrowthfund.sgf.ui.components.reportingperiod.CustomPeriod
 import com.selfgrowthfund.sgf.utils.ExportUtils
+import com.selfgrowthfund.sgf.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -55,26 +55,46 @@ class AdminDashboardViewModel @Inject constructor(
     fun loadSessionHistory() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
+
             try {
-                // ✅ Use new reactive shareholders flow instead of old _shareholders
+                // Build map of shareholder IDs to names
                 val shareholderMap = shareholders.value.associateBy(
                     { it.shareholderId },
                     { it.fullName }
                 )
-                _sessionHistory.value = sessionRepository.getUserSessions(shareholderMap)
-                _uiState.update { it.copy(isLoading = false) }
+
+                // Fetch session history wrapped in Result
+                when (val result = sessionRepository.getUserSessions(shareholderMap)) {
+                    is Result.Success -> {
+                        _sessionHistory.value = result.data
+                        _uiState.update { it.copy(isLoading = false) }
+                    }
+                    is Result.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = "Failed to load session history: ${result.exception.message}"
+                            )
+                        }
+                    }
+                    Result.Loading -> {
+                        _uiState.update { it.copy(isLoading = true) }
+                    }
+                }
+
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "Failed to load session history: ${e.message}"
+                        errorMessage = "Unexpected error: ${e.message}"
                     )
                 }
             }
         }
     }
 
-    fun exportSessionHistoryCsv(context: android.content.Context) {
+
+    fun exportSessionHistoryCsv(context: Context) {
         viewModelScope.launch {
             try {
                 if (_sessionHistory.value.isEmpty()) {

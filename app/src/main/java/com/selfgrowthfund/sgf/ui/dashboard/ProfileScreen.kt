@@ -1,4 +1,4 @@
-package com.selfgrowthfund.sgf.ui
+package com.selfgrowthfund.sgf.ui.dashboard
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
@@ -24,7 +24,7 @@ fun ProfileScreen(
     val userSessionViewModel: UserSessionViewModel = hiltViewModel()
     val user by userSessionViewModel.currentUser.collectAsState()
 
-    val activeUser = user ?: return
+    val activeUser = user
 
     Column(
         modifier = Modifier

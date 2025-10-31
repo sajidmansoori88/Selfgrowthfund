@@ -7,11 +7,15 @@ import com.selfgrowthfund.sgf.model.enums.ApprovalStage
 import com.selfgrowthfund.sgf.model.enums.PaymentMode
 import java.time.Instant
 import java.time.LocalDate
+import java.util.UUID
 
 @Entity(tableName = "other_expenses")
 data class OtherExpense(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    /** Unique temporary ID for Firestore sync before permanent ID is assigned */
+    val provisionalId: String = UUID.randomUUID().toString(),
 
     val date: LocalDate,
     val amount: Double,

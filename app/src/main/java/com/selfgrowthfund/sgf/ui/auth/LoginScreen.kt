@@ -1,5 +1,8 @@
 package com.selfgrowthfund.sgf.ui.auth
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -7,113 +10,129 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import androidx.navigation.NavController
+import com.google.android.gms.auth.api.signin.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
-import com.selfgrowthfund.sgf.model.User
-import com.selfgrowthfund.sgf.model.enums.MemberRole
-import com.selfgrowthfund.sgf.session.UserSessionViewModel
-import com.selfgrowthfund.sgf.ui.theme.PrimaryGreen
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import com.google.android.gms.common.api.ApiException
+import com.selfgrowthfund.sgf.R
 import com.selfgrowthfund.sgf.ui.navigation.Screen
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @Composable
-fun LoginScreen(
-    navController: NavHostController,
-    shareholderId: String = "" // Default for preview or fallback
-) {
+fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
-    val auth = FirebaseAuth.getInstance()
-    val firestore = FirebaseFirestore.getInstance()
-    val userSessionViewModel: UserSessionViewModel = hiltViewModel()
+    val auth = remember { FirebaseAuth.getInstance() }
+    val firestore = remember { FirebaseFirestore.getInstance() }
+    val scope = rememberCoroutineScope()
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-        try {
-            val account = task.getResult(ApiException::class.java)
-            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        .requestIdToken(context.getString(R.string.default_web_client_id))
+        .requestEmail()
+        .build()
+    val googleSignInClient = GoogleSignIn.getClient(context, gso)
 
-            auth.signInWithCredential(credential)
-                .addOnSuccessListener {
-                    val email = it.user?.email
-                    val name = it.user?.displayName ?: "User"
-                    val uid = it.user?.uid ?: "unknown"
+    var loading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-                    if (email != null) {
-                        firestore.collection("Shareholders")
-                            .whereEqualTo("email", email)
-                            .get()
-                            .addOnSuccessListener { querySnapshot ->
-                                if (!querySnapshot.isEmpty) {
-                                    val doc = querySnapshot.documents.first()
-                                    val roleString = doc.getString("role") ?: "MEMBER"
-                                    val role = MemberRole.valueOf(roleString)
-
-                                    val user = User(
-                                        id = uid,
-                                        name = name,
-                                        role = role,
-                                        shareholderId = shareholderId // ✅ Now passed into session
-                                    )
-                                    userSessionViewModel.updateUser(user)
-
-                                    when (role) {
-                                        MemberRole.MEMBER_ADMIN -> navController.navigate(Screen.AdminDashboard.route)
-                                        MemberRole.MEMBER_TREASURER -> navController.navigate(Screen.TreasurerDashboard.route)
-                                        MemberRole.MEMBER -> navController.navigate(Screen.Home.route)
-                                    }
-                                } else {
-                                    navController.navigate(Screen.AccessDenied.route)
-                                }
-                            }
-                            .addOnFailureListener {
-                                navController.navigate(Screen.AccessDenied.route)
-                            }
-                    } else {
-                        navController.navigate(Screen.AccessDenied.route)
-                    }
+    // ✅ Modern activity launcher (replaces deprecated startActivityForResult)
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.result
+                if (account != null) {
+                    loading = true
+                    scope.launch { handleGoogleSignIn(account, auth, firestore, navController) }
                 }
-                .addOnFailureListener {
-                    navController.navigate(Screen.AccessDenied.route)
-                }
-        } catch (_: Exception) {
-            navController.navigate(Screen.AccessDenied.route)
+            } catch (e: Exception) {
+                Timber.e(e, "Google Sign-In failed.")
+                errorMessage = "Google Sign-In failed: ${e.localizedMessage}"
+                loading = false
+            }
+        } else {
+            errorMessage = "Sign-in canceled"
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    // ✅ UI
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "Login to Self Growth Fund",
-            style = MaterialTheme.typography.headlineMedium,
-            color = PrimaryGreen
-        )
+        if (loading) {
+            CircularProgressIndicator()
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Welcome to Self Growth Fund",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
 
-        Spacer(modifier = Modifier.height(24.dp))
+                Button(onClick = {
+                    launcher.launch(googleSignInClient.signInIntent)
+                }) {
+                    Text("Continue with Google")
+                }
 
-        Button(onClick = {
-            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("YOUR_WEB_CLIENT_ID") // Replace with actual client ID
-                .requestEmail()
-                .build()
-
-            val client = GoogleSignIn.getClient(context, gso)
-            launcher.launch(client.signInIntent)
-        }) {
-            Text("Sign in with Google")
+                errorMessage?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+                }
+            }
         }
+    }
+}
+
+// ✅ Refactored logic block (clean & coroutine-safe)
+private suspend fun handleGoogleSignIn(
+    account: GoogleSignInAccount,
+    auth: FirebaseAuth,
+    firestore: FirebaseFirestore,
+    navController: NavController
+) {
+    try {
+        val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+        auth.signInWithCredential(credential).addOnSuccessListener {
+            val email = account.email ?: return@addOnSuccessListener
+            Timber.i("✅ Signed in as $email")
+
+            // --- Bootstrap Admin ---
+            if (email == "selfgrowthf@gmail.com") {
+                navController.navigate(Screen.CreatePin.route) {
+                    popUpTo(Screen.Login.route) { inclusive = true }
+                }
+                return@addOnSuccessListener
+            }
+
+            // --- Role-based Access ---
+            firestore.collection("shareholders")
+                .whereEqualTo("email", email)
+                .get()
+                .addOnSuccessListener { query ->
+                    if (!query.isEmpty) {
+                        val role = query.documents[0].getString("role") ?: "Unknown"
+                        Timber.i("User role = $role")
+                        navController.navigate(Screen.CreatePin.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    } else {
+                        Timber.w("Access denied: user not found in shareholders.")
+                        navController.navigate(Screen.AccessDenied.route)
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Timber.e(e, "Error verifying user role: ${e.message}")
+                }
+        }.addOnFailureListener {
+            Timber.e(it, "Firebase authentication failed.")
+        }
+    } catch (e: Exception) {
+        Timber.e(e, "Google authentication error.")
     }
 }

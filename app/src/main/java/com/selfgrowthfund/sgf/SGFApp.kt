@@ -11,14 +11,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.selfgrowthfund.sgf.model.User
 import com.selfgrowthfund.sgf.session.UserSessionViewModel
 import com.selfgrowthfund.sgf.ui.navigation.AppNavGraph
 import com.selfgrowthfund.sgf.ui.navigation.DrawerItem
-import kotlinx.coroutines.launch
 import com.selfgrowthfund.sgf.ui.navigation.getDrawerItems
 import com.selfgrowthfund.sgf.model.enums.MemberRole
 import com.selfgrowthfund.sgf.ui.navigation.Screen
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,20 +25,7 @@ fun SGFApp() {
     val userSessionViewModel: UserSessionViewModel = hiltViewModel()
     val currentUser by userSessionViewModel.currentUser.collectAsState()
 
-    // Ensure user set synchronously if empty
-    if (currentUser.shareholderId.isBlank()) {
-        // Synchronous set to avoid race
-        userSessionViewModel.setMockUserSync(
-            User(
-                id = "U002",
-                shareholderId = "SH002",
-                name = "Treasurer Test",
-                role = MemberRole.MEMBER_TREASURER
-            )
-        )
-    }
-
-    // Wait until user is populated before continuing
+    // 🔒 Block until authenticated user is available
     if (currentUser.shareholderId.isBlank()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -59,17 +45,15 @@ fun SGFApp() {
         getDrawerItems(currentUser.role, currentUser.shareholderId)
     }
 
-    // compute start destination from current role
     val startDestination = when (currentUser.role) {
         MemberRole.MEMBER_ADMIN -> "admin_dashboard"
         MemberRole.MEMBER_TREASURER -> Screen.TreasurerDashboard.route
         else -> Screen.Home.route
     }
 
-    // Logging for debugging
     LaunchedEffect(currentUser) {
-        Log.d("SGFApp", "currentUser: $currentUser")
-        Log.d("SGFApp", "determined startDestination: $startDestination")
+        Log.d("SGFApp", "User session active: $currentUser")
+        Log.d("SGFApp", "Start destination: $startDestination")
     }
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
